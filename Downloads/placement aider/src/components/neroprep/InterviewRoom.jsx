@@ -94,7 +94,6 @@ export default function InterviewRoom() {
   const [currentCode,    setCurrentCode]    = useState('');
   const [currentQ,       setCurrentQ]       = useState('');
   const [questionNum,    setQuestionNum]    = useState(1);
-  const [adaptation,     setAdaptation]     = useState(null);
   const [audioMetrics,   setAudioMetrics]   = useState({ volume: 0, wpm: 0, isVoice: false });
   const [faceTelemetry,  setFaceTelemetry]  = useState({ faceDetected: false, blinkRate: 0, headPose: 'forward', eyeContact: 100 });
   const [vocalAnalysis,  setVocalAnalysis]  = useState(null);
@@ -102,7 +101,25 @@ export default function InterviewRoom() {
   const [responseTimer,  setResponseTimer]  = useState(0);
   const [thinkingTime,   setThinkingTime]   = useState(false);
 
-  // WebSocket
+  // Helper to safely speak question via TTS and transition to listening
+  const speakQuestion = useCallback((text) => {
+    if (!text) return;
+    setAiStatus('speaking');
+    setThinkingTime(false);
+    voiceRef.current?.stopListening();
+
+    voiceRef.current?.speak(text).then(() => {
+      setAiStatus('listening');
+      setResponseTimer(0);
+      voiceRef.current?.startListening();
+    }).catch(() => {
+      setAiStatus('listening');
+      setResponseTimer(0);
+      voiceRef.current?.startListening();
+    });
+  }, []);
+
+  // WebSocket hook
   const { sendAnswer, sendTelemetry } = useInterviewSocket({
     sessionId,
     onQuestion: (text, qNum) => {
@@ -110,20 +127,14 @@ export default function InterviewRoom() {
       setCurrentQ(text);
       if (qNum) setQuestionNum(qNum);
       addTranscriptLine({ role: 'ai', text });
-      setAiStatus('speaking');
-      setThinkingTime(false);
-      voiceRef.current?.speak(text).then(() => {
-        setAiStatus('listening');
-        setResponseTimer(0);
-        voiceRef.current?.startListening();
-      });
+      speakQuestion(text);
     },
     onEval:         (rubric) => useInterviewStore.getState().setLastRubric?.(rubric),
     onReport:       (report) => {
       useInterviewStore.getState().setReport?.(report);
       _cleanupAndEnd();
     },
-    onAdaptation:   (adpt)  => setAdaptation(adpt),
+    onAdaptation:   () => {},
     onStressUpdate: (score) => setStressIndex(score),
   });
 
@@ -141,17 +152,36 @@ export default function InterviewRoom() {
     return () => clearInterval(rt);
   }, [aiStatus]);
 
+  // Voice Engine setup (initialized once on mount)
+  useEffect(() => {
+    const ve = new VoiceEngine({
+      onInterimResult: (t) => {
+        setInterimText(t);
+        setUserAnswerText(t);
+      },
+      onFinalResult: (t) => {
+        setUserAnswerText(t);
+        setInterimText('');
+      },
+    });
+    voiceRef.current = ve;
+
+    return () => {
+      ve.destroy();
+    };
+  }, []);
+
   // Handle user answer submission (Voice-first)
   const handleUserAnswer = useCallback((overrideText) => {
-    const textToSend = overrideText || userAnswerText || interimText;
-    if (!textToSend.trim()) return;
+    const textToSend = (overrideText || userAnswerText || interimText || '').trim();
+    if (!textToSend) return;
 
     voiceRef.current?.stopListening();
     addTranscriptLine({ role: 'user', text: textToSend });
     setAiStatus('thinking');
 
     if (backendUp && sessionId) {
-      sendAnswer(textToSend, currentCode);
+      sendAnswer(currentQ, textToSend, currentCode);
     } else {
       setTimeout(() => {
         const list = FALLBACK_QUESTIONS[trackId] || FALLBACK_QUESTIONS.default;
@@ -160,82 +190,57 @@ export default function InterviewRoom() {
         setQuestionNum(n => n + 1);
         setCurrentQ(nextQ);
         addTranscriptLine({ role: 'ai', text: nextQ });
-        setAiStatus('speaking');
-        voiceRef.current?.speak(nextQ).then(() => {
-          setAiStatus('listening');
-          setResponseTimer(0);
-          voiceRef.current?.startListening();
-        });
+        speakQuestion(nextQ);
       }, 1000);
     }
 
     setUserAnswerText('');
     setInterimText('');
-  }, [userAnswerText, interimText, currentCode, backendUp, sessionId, trackId, addTranscriptLine, sendAnswer]);
+  }, [userAnswerText, interimText, currentCode, backendUp, sessionId, trackId, currentQ, addTranscriptLine, sendAnswer, speakQuestion]);
 
-  // Initializing session and engines
+  // Initializing session and first question
   useEffect(() => {
     let isMounted = true;
     startInterviewSession(config)
       .then(sess => {
         if (!isMounted) return;
-        setSessionId(sess.session_id);
-        if (sess.first_question) {
-          setCurrentQ(sess.first_question);
-          addTranscriptLine({ role: 'ai', text: sess.first_question });
+        if (sess && sess.session_id) {
+          setSessionId(sess.session_id);
+          if (sess.first_question) {
+            setCurrentQ(sess.first_question);
+            addTranscriptLine({ role: 'ai', text: sess.first_question });
+            speakQuestion(sess.first_question);
+            return;
+          }
         }
+        throw new Error('No session ID');
       })
       .catch(err => {
         console.warn('[InterviewRoom] Backend offline, using local mode:', err);
         setBackendUp(false);
         const list = FALLBACK_QUESTIONS[trackId] || FALLBACK_QUESTIONS.default;
-        setCurrentQ(list[0]);
+        const firstQ = list[0];
+        setCurrentQ(firstQ);
         fallbackIndexRef.current = 1;
-        addTranscriptLine({ role: 'ai', text: list[0] });
+        addTranscriptLine({ role: 'ai', text: firstQ });
+        speakQuestion(firstQ);
       });
+
     return () => { isMounted = false; };
-  }, []);
-
-  // Voice Engine setup
-  useEffect(() => {
-    const ve = new VoiceEngine({
-      onInterimText: (t) => { setInterimText(t); setUserAnswerText(t); },
-      onFinalText:   (t) => { setUserAnswerText(t); setInterimText(''); },
-    });
-    voiceRef.current = ve;
-
-    if (currentQ) {
-      setAiStatus('speaking');
-      ve.speak(currentQ).then(() => {
-        setAiStatus('listening');
-        setResponseTimer(0);
-        ve.startListening();
-      });
-    }
-
-    return () => ve.destroy();
-  }, [currentQ]);
+  }, [config, trackId, addTranscriptLine, speakQuestion]);
 
   // Video Stream setup
   useEffect(() => {
-    let localStream = null;
-    if (sharedStream) {
+    if (sharedStream && sharedStream.active) {
       setStream(sharedStream);
-      streamRef.current = sharedStream;
     } else {
       navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
         .then(s => {
           setStream(s);
-          streamRef.current = s;
           useInterviewStore.getState().setMediaStream(s);
         })
         .catch(err => console.warn('[InterviewRoom] Camera/Mic access denied:', err));
     }
-    return () => {
-      if (streamRef.current && !sharedStream) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-      }
-    };
   }, [sharedStream]);
 
   // Video Ready
@@ -296,12 +301,7 @@ export default function InterviewRoom() {
 
   const replayQuestion = () => {
     if (currentQ) {
-      voiceRef.current?.stopListening();
-      setAiStatus('speaking');
-      voiceRef.current?.speak(currentQ).then(() => {
-        setAiStatus('listening');
-        voiceRef.current?.startListening();
-      });
+      speakQuestion(currentQ);
     }
   };
 

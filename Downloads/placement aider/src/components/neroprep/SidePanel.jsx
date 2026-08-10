@@ -2,7 +2,12 @@ import React from 'react';
 import useInterviewStore from '../../store/interviewStore';
 import { StressScorer } from './engines/StressScorer';
 
-const scorer = new StressScorer();
+let scorerInstance = null;
+try {
+  scorerInstance = new StressScorer();
+} catch (e) {
+  console.warn('[SidePanel] StressScorer init:', e);
+}
 
 // ── Monochrome formatting helpers ────────────────────────────────────────────
 const BLACK  = '#111111';
@@ -20,30 +25,33 @@ export default function SidePanel({
   aiStatus = 'listening',
   elapsedSeconds = 0,
 }) {
-  const stressIndex = useInterviewStore((s) => s.stressIndex);
-  const transcript  = useInterviewStore((s) => s.transcript);
+  const stressIndex = useInterviewStore((s) => s.stressIndex) || 0;
+  const transcript  = useInterviewStore((s) => s.transcript) || [];
 
   const {
     faceDetected  = false,
     stressScore   = 0,
     cognitiveLoad = null,
     headPose      = 'forward',
-  } = faceTelemetry;
+  } = faceTelemetry || {};
 
-  const { volume = 0, wpm = 0, isVoice = false } = audioMetrics;
+  const { volume = 0, wpm = 0, isVoice = false } = audioMetrics || {};
 
   const hasStressData = faceDetected && stressScore > 0;
-  const stress        = hasStressData ? scorer.getLabel(stressScore) : null;
+  let stress = null;
+  if (hasStressData && scorerInstance?.getLabel) {
+    try {
+      stress = scorerInstance.getLabel(stressScore);
+    } catch (_) {}
+  }
 
   // Calculate Cognitive Load bar percentage (0-100)
-  const loadPct = hasStressData ? Math.min(100, Math.max(10, stressScore)) : 35;
+  const loadPct = hasStressData ? Math.min(100, Math.max(10, Number(stressScore) || 0)) : 35;
 
   // Live text stream from candidate
-  const liveText = userAnswerText || interimText || (
-    transcript.length > 0
-      ? transcript.filter(t => t.role === 'user').slice(-1)[0]?.text
-      : ''
-  );
+  const userLines = Array.isArray(transcript) ? transcript.filter(t => t && t.role === 'user') : [];
+  const lastUserText = userLines.length > 0 ? userLines[userLines.length - 1]?.text : '';
+  const liveText = userAnswerText || interimText || lastUserText || '';
 
   return (
     <div style={{
@@ -100,7 +108,7 @@ export default function SidePanel({
           <div style={{ padding: '8px 10px', backgroundColor: BG, borderRadius: '6px', border: `1px solid ${BORDER}` }}>
             <span style={{ fontSize: '10px', color: GREY, display: 'block', fontWeight: 600 }}>Head Alignment</span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: BLACK }}>
-              {headPose === 'forward' ? 'Center' : headPose}
+              {headPose === 'forward' ? 'Center' : headPose || 'Center'}
             </span>
           </div>
         </div>

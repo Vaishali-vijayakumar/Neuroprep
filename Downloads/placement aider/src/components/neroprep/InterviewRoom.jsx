@@ -62,7 +62,7 @@ const FALLBACK_QUESTIONS = {
 
 export default function InterviewRoom() {
   const config            = useInterviewStore((s) => s.config);
-  const elapsedSeconds    = useInterviewStore((s) => s.elapsedSeconds);
+  const elapsedSeconds    = useInterviewStore((s) => s.elapsedSeconds) || 0;
   const tickTimer         = useInterviewStore((s) => s.tickTimer);
   const endInterview      = useInterviewStore((s) => s.endInterview);
   const exitInterview     = useInterviewStore((s) => s.exitInterview);
@@ -70,9 +70,9 @@ export default function InterviewRoom() {
   const setStressIndex    = useInterviewStore((s) => s.setStressIndex);
   const sharedStream      = useInterviewStore((s) => s.mediaStream);
 
-  const trackId  = config?.trackId || 'default';
-  const persona  = TRACK_PERSONAS[trackId] || TRACK_PERSONAS.default;
-  const stages   = TRACK_STAGES[trackId]   || TRACK_STAGES.default;
+  const trackId  = String(config?.trackId || 'default').toLowerCase();
+  const persona  = TRACK_PERSONAS[trackId] || TRACK_PERSONAS.default || { name: 'MORGAN', title: 'AI Interviewer' };
+  const stages   = TRACK_STAGES[trackId]   || TRACK_STAGES.default   || ['Introduction', 'Core Questions', 'Wrap-up'];
   const isCoding = trackId === 'coding'    || trackId === 'dsa';
 
   // Engine refs
@@ -106,17 +106,26 @@ export default function InterviewRoom() {
     if (!text) return;
     setAiStatus('speaking');
     setThinkingTime(false);
-    voiceRef.current?.stopListening();
+    try {
+      voiceRef.current?.stopListening();
+    } catch (_) {}
 
-    voiceRef.current?.speak(text).then(() => {
+    if (voiceRef.current?.speak) {
+      voiceRef.current.speak(text)
+        .then(() => {
+          setAiStatus('listening');
+          setResponseTimer(0);
+          try { voiceRef.current?.startListening(); } catch (_) {}
+        })
+        .catch(() => {
+          setAiStatus('listening');
+          setResponseTimer(0);
+          try { voiceRef.current?.startListening(); } catch (_) {}
+        });
+    } else {
       setAiStatus('listening');
       setResponseTimer(0);
-      voiceRef.current?.startListening();
-    }).catch(() => {
-      setAiStatus('listening');
-      setResponseTimer(0);
-      voiceRef.current?.startListening();
-    });
+    }
   }, []);
 
   // WebSocket hook
@@ -124,9 +133,9 @@ export default function InterviewRoom() {
     sessionId,
     onQuestion: (text, qNum) => {
       if (text === '...') { setAiStatus('thinking'); return; }
-      setCurrentQ(text);
+      setCurrentQ(text || '');
       if (qNum) setQuestionNum(qNum);
-      addTranscriptLine({ role: 'ai', text });
+      if (addTranscriptLine) addTranscriptLine({ role: 'ai', text });
       speakQuestion(text);
     },
     onEval:         (rubric) => useInterviewStore.getState().setLastRubric?.(rubric),
@@ -135,11 +144,12 @@ export default function InterviewRoom() {
       _cleanupAndEnd();
     },
     onAdaptation:   () => {},
-    onStressUpdate: (score) => setStressIndex(score),
+    onStressUpdate: (score) => setStressIndex?.(score),
   });
 
   // Master timer & candidate response timer
   useEffect(() => {
+    if (!tickTimer) return;
     const t = setInterval(tickTimer, 1000);
     return () => clearInterval(t);
   }, [tickTimer]);
@@ -154,20 +164,24 @@ export default function InterviewRoom() {
 
   // Voice Engine setup (initialized once on mount)
   useEffect(() => {
-    const ve = new VoiceEngine({
-      onInterimResult: (t) => {
-        setInterimText(t);
-        setUserAnswerText(t);
-      },
-      onFinalResult: (t) => {
-        setUserAnswerText(t);
-        setInterimText('');
-      },
-    });
-    voiceRef.current = ve;
+    try {
+      const ve = new VoiceEngine({
+        onInterimResult: (t) => {
+          setInterimText(t);
+          setUserAnswerText(t);
+        },
+        onFinalResult: (t) => {
+          setUserAnswerText(t);
+          setInterimText('');
+        },
+      });
+      voiceRef.current = ve;
+    } catch (e) {
+      console.warn('[InterviewRoom] VoiceEngine init error:', e);
+    }
 
     return () => {
-      ve.destroy();
+      try { voiceRef.current?.destroy(); } catch (_) {}
     };
   }, []);
 
@@ -176,12 +190,16 @@ export default function InterviewRoom() {
     const textToSend = (overrideText || userAnswerText || interimText || '').trim();
     if (!textToSend) return;
 
-    voiceRef.current?.stopListening();
-    addTranscriptLine({ role: 'user', text: textToSend });
+    try { voiceRef.current?.stopListening(); } catch (_) {}
+    if (addTranscriptLine) addTranscriptLine({ role: 'user', text: textToSend });
     setAiStatus('thinking');
 
     if (backendUp && sessionId) {
-      sendAnswer(currentQ, textToSend, currentCode);
+      try {
+        sendAnswer(currentQ, textToSend, currentCode);
+      } catch (e) {
+        console.warn('sendAnswer error:', e);
+      }
     } else {
       setTimeout(() => {
         const list = FALLBACK_QUESTIONS[trackId] || FALLBACK_QUESTIONS.default;
@@ -189,7 +207,7 @@ export default function InterviewRoom() {
         fallbackIndexRef.current += 1;
         setQuestionNum(n => n + 1);
         setCurrentQ(nextQ);
-        addTranscriptLine({ role: 'ai', text: nextQ });
+        if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: nextQ });
         speakQuestion(nextQ);
       }, 1000);
     }
@@ -201,28 +219,28 @@ export default function InterviewRoom() {
   // Initializing session and first question
   useEffect(() => {
     let isMounted = true;
-    startInterviewSession(config)
+    startInterviewSession(config || {})
       .then(sess => {
         if (!isMounted) return;
         if (sess && sess.session_id) {
           setSessionId(sess.session_id);
           if (sess.first_question) {
             setCurrentQ(sess.first_question);
-            addTranscriptLine({ role: 'ai', text: sess.first_question });
+            if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: sess.first_question });
             speakQuestion(sess.first_question);
             return;
           }
         }
-        throw new Error('No session ID');
+        throw new Error('No session ID returned');
       })
       .catch(err => {
-        console.warn('[InterviewRoom] Backend offline, using local mode:', err);
+        console.warn('[InterviewRoom] Backend offline or unavailable, using local mode:', err);
         setBackendUp(false);
         const list = FALLBACK_QUESTIONS[trackId] || FALLBACK_QUESTIONS.default;
         const firstQ = list[0];
         setCurrentQ(firstQ);
         fallbackIndexRef.current = 1;
-        addTranscriptLine({ role: 'ai', text: firstQ });
+        if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: firstQ });
         speakQuestion(firstQ);
       });
 
@@ -237,7 +255,7 @@ export default function InterviewRoom() {
       navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
         .then(s => {
           setStream(s);
-          useInterviewStore.getState().setMediaStream(s);
+          useInterviewStore.getState().setMediaStream?.(s);
         })
         .catch(err => console.warn('[InterviewRoom] Camera/Mic access denied:', err));
     }
@@ -245,44 +263,58 @@ export default function InterviewRoom() {
 
   // Video Ready
   const onVideoReady = useCallback((videoEl) => {
-    if (!videoEl) return;
-    if (audioRef.current) audioRef.current.destroy();
-    const aa = new AudioAnalyser(videoEl.srcObject, (m) => setAudioMetrics(m));
-    audioRef.current = aa;
-
-    if (canvasRef.current && !faceRef.current) {
-      const fe = new FaceEngine(videoEl, canvasRef.current, (telem) => {
-        setFaceTelemetry(telem);
-        if (telem.stressScore > 0) sendTelemetry(telem);
-      });
-      fe.start();
-      faceRef.current = fe;
+    if (!videoEl || !videoEl.srcObject) return;
+    try {
+      if (audioRef.current) audioRef.current.destroy();
+      const aa = new AudioAnalyser(videoEl.srcObject, { onMetrics: (m) => setAudioMetrics(m) });
+      audioRef.current = aa;
+    } catch (e) {
+      console.warn('AudioAnalyser init error:', e);
     }
 
-    if (!vocalRef.current) {
-      const vi = new VocalIntelligenceEngine(videoEl.srcObject, (analysis) => {
-        setVocalAnalysis(analysis);
-      });
-      vi.start(3000);
-      vocalRef.current = vi;
+    try {
+      if (canvasRef.current && !faceRef.current) {
+        const fe = new FaceEngine(videoEl, canvasRef.current, {
+          onTelemetry: (telem) => {
+            setFaceTelemetry(telem);
+            if (telem?.stressScore > 0) sendTelemetry?.(telem);
+          }
+        });
+        fe.start();
+        faceRef.current = fe;
+      }
+    } catch (e) {
+      console.warn('FaceEngine init error:', e);
     }
-  }, [sendTelemetry]);
+
+    try {
+      if (!vocalRef.current && sessionId) {
+        const vi = new VocalIntelligenceEngine(videoEl.srcObject, sessionId, {
+          onAnalysis: (analysis) => setVocalAnalysis(analysis),
+        });
+        vi.start();
+        vocalRef.current = vi;
+      }
+    } catch (e) {
+      console.warn('VocalIntelligenceEngine init error:', e);
+    }
+  }, [sessionId, sendTelemetry]);
 
   // Cleanup & End
   const _cleanupAndEnd = () => {
-    voiceRef.current?.destroy();
-    audioRef.current?.destroy();
-    faceRef.current?.stop();
-    vocalRef.current?.stop();
-    endInterview();
+    try { voiceRef.current?.destroy(); } catch (_) {}
+    try { audioRef.current?.destroy(); } catch (_) {}
+    try { faceRef.current?.stop(); } catch (_) {}
+    try { vocalRef.current?.stop(); } catch (_) {}
+    endInterview?.();
   };
 
   const handleExit = () => {
-    voiceRef.current?.destroy();
-    audioRef.current?.destroy();
-    faceRef.current?.stop();
-    vocalRef.current?.stop();
-    exitInterview();
+    try { voiceRef.current?.destroy(); } catch (_) {}
+    try { audioRef.current?.destroy(); } catch (_) {}
+    try { faceRef.current?.stop(); } catch (_) {}
+    try { vocalRef.current?.stop(); } catch (_) {}
+    exitInterview?.();
   };
 
   const toggleMic = () => {
@@ -306,11 +338,12 @@ export default function InterviewRoom() {
   };
 
   // Stepper active index (0 to stages.length - 1)
-  const activeStageIdx = Math.min(questionNum - 1, stages.length - 1);
+  const activeStageIdx = Math.min(Math.max(0, questionNum - 1), (stages?.length || 1) - 1);
 
   const formatTimer = (s) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
+    const total = Number(s) || 0;
+    const mins = Math.floor(total / 60);
+    const secs = total % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
@@ -332,20 +365,20 @@ export default function InterviewRoom() {
             fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '4px',
             backgroundColor: BLACK, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.6px',
           }}>
-            {trackId.replace('_', ' ')}
+            {String(trackId || 'interview').replace(/_/g, ' ')}
           </span>
           <span style={{ fontSize: '13px', fontWeight: 700, color: BLACK }}>
-            {persona.name} ({persona.title})
+            {persona?.name || 'AI'} ({persona?.title || 'Interviewer'})
           </span>
         </div>
 
         {/* Center: Stage Stepper */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {stages.map((stg, i) => {
+          {(stages || []).map((stg, i) => {
             const isDone   = i < activeStageIdx;
             const isActive = i === activeStageIdx;
             return (
-              <React.Fragment key={stg}>
+              <React.Fragment key={stg || i}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%',
@@ -405,11 +438,11 @@ export default function InterviewRoom() {
                 color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 800, fontSize: '14px', letterSpacing: '1px',
               }}>
-                {persona.name.slice(0, 2)}
+                {String(persona?.name || 'AI').slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: BLACK }}>{persona.name}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: GREY }}>{persona.title}</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: BLACK }}>{persona?.name || 'AI'}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: GREY }}>{persona?.title || 'Interviewer'}</p>
               </div>
             </div>
 
@@ -441,7 +474,7 @@ export default function InterviewRoom() {
             padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '10px',
           }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: GREY, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-              QUESTION {String(questionNum).padStart(2, '0')}
+              QUESTION {String(questionNum || 1).padStart(2, '0')}
             </span>
             <p style={{
               fontSize: '18px', fontWeight: 600, color: BLACK, margin: 0,

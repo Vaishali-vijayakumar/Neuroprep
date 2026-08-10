@@ -135,18 +135,6 @@ export default function SidePanel({
         </div>
       </div>
 
-      {/* ── 3. ADAPTIVE INTERVIEW INDICATOR ───────────────────────────────── */}
-      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, backgroundColor: BG }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: BLACK, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Adaptive Engine
-          </span>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: GREY }}>Level 3</span>
-        </div>
-        <p style={{ fontSize: '11px', color: GREY, margin: 0, lineHeight: 1.4 }}>
-          Questions adapt dynamically based on your previous answers and code logic.
-        </p>
-      </div>
 
       {/* ── 4. LIVE TRANSCRIPT (NO CHAT UI) ───────────────────────────────── */}
       <div style={{ flex: 1, padding: '16px 18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

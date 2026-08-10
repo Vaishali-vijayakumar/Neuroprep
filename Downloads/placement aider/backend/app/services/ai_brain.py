@@ -160,9 +160,43 @@ TRACK_PROFILES = {
 def _build_prompt(config: dict, question_count: int, stress_index: int = 0, strong_topics: list = None, weak_topics: list = None) -> str:
     track       = config.get("trackId", "default")
     personality = config.get("personality", "professional")
-    difficulty  = config.get("difficulty", "Intermediate")
-    role        = config.get("role", "Software Engineer")
-    duration    = config.get("duration", 30)
+    difficulty      = config.get("difficulty", "Intermediate")
+    role            = config.get("role", "Software Engineer")
+    duration        = config.get("duration", 30)
+    company         = config.get("company", "")
+    experience      = config.get("experience", "")
+    resume_text     = config.get("resume", "")
+    job_desc        = config.get("jobDescription", "")
+    career_goals    = config.get("careerGoals", "")
+    achievements    = config.get("achievements", "")
+    # Tech / DSA fields
+    coding_lang     = config.get("codingLang", "")
+    tech_subjects   = config.get("techSubjects") or []
+    dsa_topics      = config.get("dsaTopics") or []
+    aiml_topics     = config.get("aimlTopics") or []
+    devops_tools    = config.get("devopsTools") or []
+    cloud_provider  = config.get("cloudProvider", "")
+    cloud_services  = config.get("cloudServices") or []
+    security_domains= config.get("securityDomains") or []
+    qa_tools        = config.get("qaTools") or []
+    aptitude_topics = config.get("aptitudeTopics") or []
+    # Project Viva fields
+    project_name    = config.get("projectName", "")
+    github_url      = config.get("githubUrl", "")
+    tech_stack      = config.get("techStack", "")
+    user_role_proj  = config.get("userRole", "")
+    deployment_info = config.get("deploymentInfo", "")
+    # System Design fields
+    system_to_design= config.get("systemToDesign", "")
+    expected_scale  = config.get("expectedScale", "")
+    preferred_tech  = config.get("preferredTech", "")
+    # Group Discussion / Communication
+    gd_topic        = config.get("gdTopic", "")
+    gd_participants = config.get("gdParticipants", "3")
+    industry        = config.get("industry", "")
+    product_idea    = config.get("productIdea", "")
+    team_size       = config.get("teamSize", "")
+    question_count_cfg = config.get("questionCount", "10")
 
     persona_override = PERSONALITY_PROMPTS.get(personality)
     profile = TRACK_PROFILES.get(track, TRACK_PROFILES["default"])
@@ -192,11 +226,54 @@ def _build_prompt(config: dict, question_count: int, stress_index: int = 0, stro
         weak_str = ", ".join(weak_topics) if weak_topics else "None"
         adaptive_memory = f"\n[ADAPTIVE MEMORY]\nCandidate excelled at: {strong_str}\nCandidate struggled with: {weak_str}\nAdjust your next question to probe weak areas or increase difficulty in strong areas."
     
+    # --- Build a rich USER PROFILE block from all config fields ---
+    profile_parts = []
+    if role:             profile_parts.append(f"Target Role: {role}")
+    if company:          profile_parts.append(f"Company: {company}")
+    if experience:       profile_parts.append(f"Experience: {experience}")
+    if coding_lang:      profile_parts.append(f"Language: {coding_lang}")
+    if tech_subjects:    profile_parts.append(f"Subjects: {', '.join(tech_subjects)}")
+    if dsa_topics:       profile_parts.append(f"DSA Topics: {', '.join(dsa_topics)}")
+    if aiml_topics:      profile_parts.append(f"AI/ML Topics: {', '.join(aiml_topics)}")
+    if devops_tools:     profile_parts.append(f"DevOps Tools: {', '.join(devops_tools)}")
+    if cloud_provider:   profile_parts.append(f"Cloud: {cloud_provider}")
+    if cloud_services:   profile_parts.append(f"Cloud Services: {', '.join(cloud_services)}")
+    if security_domains: profile_parts.append(f"Security Domains: {', '.join(security_domains)}")
+    if qa_tools:         profile_parts.append(f"QA Tools: {', '.join(qa_tools)}")
+    if aptitude_topics:  profile_parts.append(f"Aptitude Topics: {', '.join(aptitude_topics)}")
+    if system_to_design: profile_parts.append(f"System to Design: {system_to_design}")
+    if expected_scale:   profile_parts.append(f"Expected Scale: {expected_scale}")
+    if preferred_tech:   profile_parts.append(f"Preferred Tech: {preferred_tech}")
+    if project_name:     profile_parts.append(f"Project: {project_name}")
+    if github_url:       profile_parts.append(f"GitHub: {github_url}")
+    if tech_stack:       profile_parts.append(f"Tech Stack: {tech_stack}")
+    if user_role_proj:   profile_parts.append(f"Role in Project: {user_role_proj}")
+    if deployment_info:  profile_parts.append(f"Deployment: {deployment_info}")
+    if gd_topic:         profile_parts.append(f"Discussion Topic: {gd_topic}")
+    if gd_participants:  profile_parts.append(f"AI Participants: {gd_participants}")
+    if industry:         profile_parts.append(f"Industry: {industry}")
+    if product_idea:     profile_parts.append(f"Product: {product_idea}")
+    if team_size:        profile_parts.append(f"Team Size: {team_size}")
+    if question_count_cfg: profile_parts.append(f"Target Questions: {question_count_cfg}")
+    if career_goals:     profile_parts.append(f"Career Goals: {career_goals}")
+    if achievements:     profile_parts.append(f"Achievements: {achievements[:300]}")
+    if resume_text:      profile_parts.append(f"Resume Summary: {resume_text[:500]}")
+    if job_desc:         profile_parts.append(f"Job Description: {job_desc[:400]}")
+
+    user_profile_block = "\n".join(profile_parts) if profile_parts else "(No additional candidate profile provided)"
+
     return f"""You are {profile['persona_name']} interviewing for the role of {role}.
 Difficulty: {difficulty} | Duration: {duration} min | Max {max_q} questions.
 
 System Instruction: {profile['system_instruction']}
 {f"Personality Override: {persona_override}" if persona_override else ""}
+
+=== CANDIDATE PROFILE (SOURCE OF TRUTH) ===
+{user_profile_block}
+===========================================
+IMPORTANT: Generate ALL questions STRICTLY from the candidate profile above.
+Do NOT invent skills or experience the candidate has not mentioned.
+Always reference specific items from the profile in your questions.
 
 Evaluation Metrics to enforce: [{metrics}]
 
@@ -206,9 +283,11 @@ State Machine Phase: {phase}
 
 Rules:
 - Ask ONE question at a time, never multiple.
-- Generate follow-ups based on the answer and the Evaluation Metrics.
+- Every question must directly reference something from the CANDIDATE PROFILE.
+- Generate follow-ups based on the candidate's actual previous answers.
 - Keep all responses concise (2-3 sentences max).
 - Be natural and conversational."""
+
 
 
 async def get_next_question(

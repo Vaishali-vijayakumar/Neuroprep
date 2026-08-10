@@ -167,11 +167,17 @@ export default function InterviewRoom() {
     try {
       const ve = new VoiceEngine({
         onInterimResult: (t) => {
-          setInterimText(t);
-          setUserAnswerText(t);
+          setInterimText(t || '');
         },
         onFinalResult: (t) => {
-          setUserAnswerText(t);
+          if (!t) return;
+          const clean = t.trim();
+          if (!clean) return;
+          setUserAnswerText((prev) => {
+            if (!prev) return clean;
+            if (prev.endsWith(clean)) return prev;
+            return `${prev} ${clean}`;
+          });
           setInterimText('');
         },
       });
@@ -187,7 +193,8 @@ export default function InterviewRoom() {
 
   // Handle user answer submission (Voice-first)
   const handleUserAnswer = useCallback((overrideText) => {
-    const textToSend = (overrideText || userAnswerText || interimText || '').trim() || 'I have completed my answer.';
+    const fullSpoken = [userAnswerText, interimText].filter(Boolean).join(' ').trim();
+    const textToSend = (overrideText || fullSpoken || '').trim() || 'I have completed my answer.';
 
     try { voiceRef.current?.stopListening(); } catch (_) {}
     if (addTranscriptLine) addTranscriptLine({ role: 'user', text: textToSend });

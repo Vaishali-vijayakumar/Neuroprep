@@ -49,9 +49,10 @@ export default function SidePanel({
   const loadPct = hasStressData ? Math.min(100, Math.max(10, Number(stressScore) || 0)) : 35;
 
   // Live text stream from candidate
+  const currentLive = [userAnswerText, interimText].filter(Boolean).join(' ').trim();
   const userLines = Array.isArray(transcript) ? transcript.filter(t => t && t.role === 'user') : [];
   const lastUserText = userLines.length > 0 ? userLines[userLines.length - 1]?.text : '';
-  const liveText = userAnswerText || interimText || lastUserText || '';
+  const liveText = currentLive || lastUserText || '';
 
   return (
     <div style={{

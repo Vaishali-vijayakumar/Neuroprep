@@ -187,8 +187,7 @@ export default function InterviewRoom() {
 
   // Handle user answer submission (Voice-first)
   const handleUserAnswer = useCallback((overrideText) => {
-    const textToSend = (overrideText || userAnswerText || interimText || '').trim();
-    if (!textToSend) return;
+    const textToSend = (overrideText || userAnswerText || interimText || '').trim() || 'I have completed my answer.';
 
     try { voiceRef.current?.stopListening(); } catch (_) {}
     if (addTranscriptLine) addTranscriptLine({ role: 'user', text: textToSend });
@@ -520,15 +519,15 @@ export default function InterviewRoom() {
               )}
               <button
                 onClick={() => handleUserAnswer()}
-                disabled={aiStatus !== 'listening'}
+                disabled={aiStatus === 'thinking'}
                 style={{
-                  padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: aiStatus === 'listening' ? 'pointer' : 'default',
-                  backgroundColor: aiStatus === 'listening' ? BLACK : '#F3F4F6',
-                  color:           aiStatus === 'listening' ? '#FFFFFF' : GREY,
+                  padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: aiStatus === 'thinking' ? 'not-allowed' : 'pointer',
+                  backgroundColor: aiStatus === 'thinking' ? '#F3F4F6' : BLACK,
+                  color:           aiStatus === 'thinking' ? GREY : '#FFFFFF',
                   border: 'none', borderRadius: '6px', transition: 'all 0.1s ease',
                 }}
               >
-                Finish Answer →
+                {aiStatus === 'thinking' ? 'Analyzing...' : 'Finish Answer'}
               </button>
             </div>
           </div>

@@ -3,216 +3,96 @@ import useInterviewStore from '../../store/interviewStore';
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Adaptive AI'];
 const PERSONALITIES = [
-  { id: 'friendly',     label: 'Friendly Mentor',            desc: 'Encouraging, supportive tone.' },
-  { id: 'professional', label: 'Professional Recruiter',      desc: 'Balanced and formal.' },
-  { id: 'strict',       label: 'Strict Technical Lead',       desc: 'Deep technical pressure.' },
-  { id: 'manager',      label: 'Senior Engineering Manager',  desc: 'Leadership and systems thinking.' },
-  { id: 'stress',       label: 'Stress Interviewer',          desc: 'Interrupts and challenges answers.' },
+  { id: 'friendly',     label: 'Friendly Mentor',           desc: 'Encouraging, supportive tone.' },
+  { id: 'professional', label: 'Professional Recruiter',     desc: 'Balanced and formal.' },
+  { id: 'strict',       label: 'Strict Technical Lead',      desc: 'Deep technical pressure.' },
+  { id: 'manager',      label: 'Senior Engineering Manager', desc: 'Leadership and systems thinking.' },
+  { id: 'stress',       label: 'Stress Interviewer',         desc: 'Interrupts and challenges answers.' },
 ];
-const LANGUAGES  = ['English', 'Hindi', 'Tamil', 'Telugu', 'Malayalam'];
-const DURATIONS  = ['15', '30', '45', '60', '90'];
-const CODING_LANGS = ['JavaScript', 'Python', 'Java', 'C++', 'Go', 'Rust', 'TypeScript'];
+const LANGUAGES     = ['English', 'Hindi', 'Tamil', 'Telugu', 'Malayalam'];
+const DURATIONS     = ['15', '30', '45', '60', '90'];
+const CODING_LANGS  = ['JavaScript', 'Python', 'Java', 'C++', 'Go', 'Rust', 'TypeScript'];
 const CLOUD_PROVIDERS = ['AWS', 'Google Cloud', 'Azure', 'Multi-Cloud'];
-const AWS_SERVICES = ['EC2', 'S3', 'Lambda', 'RDS', 'DynamoDB', 'ECS', 'CloudFront', 'API Gateway', 'IAM', 'VPC', 'SQS', 'SNS'];
-const DSA_TOPICS = ['Arrays', 'Linked Lists', 'Trees', 'Graphs', 'Dynamic Programming', 'Sorting', 'Searching', 'Stacks & Queues', 'Heaps', 'Tries', 'Bit Manipulation'];
+const AWS_SERVICES  = ['EC2', 'S3', 'Lambda', 'RDS', 'DynamoDB', 'ECS', 'CloudFront', 'API Gateway', 'IAM', 'VPC', 'SQS', 'SNS'];
+const DSA_TOPICS    = ['Arrays', 'Linked Lists', 'Trees', 'Graphs', 'Dynamic Programming', 'Sorting', 'Searching', 'Stacks & Queues', 'Heaps', 'Tries', 'Bit Manipulation'];
 const TECH_SUBJECTS = ['OOP', 'DBMS', 'Operating Systems', 'Computer Networks', 'System Software', 'Data Structures', 'Compiler Design'];
-const AIML_TOPICS = ['Machine Learning', 'Deep Learning', 'CNN', 'RNN/LSTM', 'Transformers', 'LLMs', 'RAG', 'Fine-tuning', 'Vector Databases', 'MLOps', 'Reinforcement Learning'];
-const DEVOPS_TOOLS = ['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Prometheus', 'Grafana', 'AWS', 'GCP', 'Azure'];
+const AIML_TOPICS   = ['Machine Learning', 'Deep Learning', 'CNN', 'RNN/LSTM', 'Transformers', 'LLMs', 'RAG', 'Fine-tuning', 'Vector Databases', 'MLOps', 'Reinforcement Learning'];
+const DEVOPS_TOOLS  = ['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Prometheus', 'Grafana', 'AWS', 'GCP', 'Azure'];
 const SECURITY_DOMAINS = ['OWASP', 'Encryption', 'Authentication & OAuth', 'Network Security', 'Firewalls', 'SOC Analysis', 'Incident Response', 'Penetration Testing', 'Cloud Security'];
-const QA_TOOLS = ['Selenium', 'Cypress', 'Playwright', 'Postman', 'JUnit', 'TestNG', 'Jest', 'Pytest', 'API Testing', 'Performance Testing'];
+const QA_TOOLS      = ['Selenium', 'Cypress', 'Playwright', 'Postman', 'JUnit', 'TestNG', 'Jest', 'Pytest', 'API Testing', 'Performance Testing'];
 const GD_PARTICIPANTS = ['3', '4', '5', '6'];
 const APTITUDE_TOPICS = ['Percentages', 'Profit & Loss', 'Time & Work', 'Speed & Distance', 'Probability', 'Number System', 'Logical Reasoning', 'Verbal Reasoning', 'Data Interpretation'];
 
 // ── Track-specific configuration schema ──────────────────────────────────────
 const TRACK_FIELDS = {
-  hr: {
-    label: 'HR Interview',
-    icon: '🤝',
-    color: '#6366F1',
-    fields: ['role', 'company', 'experience', 'resume', 'jobDescription', 'careerGoals'],
-  },
-  tech: {
-    label: 'Technical',
-    icon: '⚙️',
-    color: '#0EA5E9',
-    fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'jobDescription'],
-  },
-  dsa: {
-    label: 'DSA',
-    icon: '🌲',
-    color: '#10B981',
-    fields: ['codingLang', 'dsaTopics', 'company', 'experience', 'questionCount'],
-  },
-  coding: {
-    label: 'Coding',
-    icon: '💻',
-    color: '#F59E0B',
-    fields: ['codingLang', 'dsaTopics', 'company', 'role', 'questionCount'],
-  },
-  system_design: {
-    label: 'System Design',
-    icon: '🏗️',
-    color: '#8B5CF6',
-    fields: ['role', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech'],
-  },
-  lld: {
-    label: 'Low-Level Design',
-    icon: '🔩',
-    color: '#EC4899',
-    fields: ['codingLang', 'role', 'systemToDesign', 'experience'],
-  },
-  behavioral: {
-    label: 'Behavioral',
-    icon: '🌟',
-    color: '#F97316',
-    fields: ['role', 'company', 'experience', 'resume', 'achievements'],
-  },
-  managerial: {
-    label: 'Managerial',
-    icon: '📋',
-    color: '#64748B',
-    fields: ['role', 'company', 'experience', 'teamSize', 'jobDescription'],
-  },
-  group_discussion: {
-    label: 'Group Discussion',
-    icon: '💬',
-    color: '#06B6D4',
-    fields: ['gdTopic', 'industry', 'gdParticipants'],
-  },
-  resume: {
-    label: 'Resume Interview',
-    icon: '📄',
-    color: '#84CC16',
-    fields: ['resume', 'role', 'company', 'jobDescription'],
-  },
-  project: {
-    label: 'Project Viva',
-    icon: '🔬',
-    color: '#EF4444',
-    fields: ['projectName', 'githubUrl', 'techStack', 'userRole', 'deploymentInfo'],
-  },
-  company: {
-    label: 'Company Specific',
-    icon: '🏢',
-    color: '#7C3AED',
-    fields: ['company', 'role', 'experience', 'resume', 'jobDescription'],
-  },
-  aptitude: {
-    label: 'Aptitude',
-    icon: '🔢',
-    color: '#0891B2',
-    fields: ['aptitudeTopics', 'company', 'questionCount'],
-  },
-  communication: {
-    label: 'Communication',
-    icon: '🗣️',
-    color: '#16A34A',
-    fields: ['role', 'experience', 'gdTopic'],
-  },
-  stress: {
-    label: 'Stress Interview',
-    icon: '🔥',
-    color: '#DC2626',
-    fields: ['role', 'experience', 'techSubjects'],
-  },
-  rapid_fire: {
-    label: 'Rapid Fire',
-    icon: '⚡',
-    color: '#D97706',
-    fields: ['techSubjects', 'questionCount', 'codingLang'],
-  },
-  ai_ml: {
-    label: 'AI / ML',
-    icon: '🤖',
-    color: '#7C3AED',
-    fields: ['aimlTopics', 'role', 'experience', 'resume'],
-  },
-  devops: {
-    label: 'DevOps',
-    icon: '🐳',
-    color: '#0F766E',
-    fields: ['devopsTools', 'role', 'experience', 'cloudProvider'],
-  },
-  cloud: {
-    label: 'Cloud',
-    icon: '☁️',
-    color: '#2563EB',
-    fields: ['cloudProvider', 'cloudServices', 'role', 'experience'],
-  },
-  cybersecurity: {
-    label: 'Cybersecurity',
-    icon: '🔐',
-    color: '#991B1B',
-    fields: ['securityDomains', 'role', 'experience'],
-  },
-  qa: {
-    label: 'QA / Testing',
-    icon: '🧪',
-    color: '#4D7C0F',
-    fields: ['qaTools', 'role', 'experience', 'codingLang'],
-  },
-  product_management: {
-    label: 'Product Management',
-    icon: '📊',
-    color: '#BE185D',
-    fields: ['role', 'company', 'experience', 'industry', 'productIdea'],
-  },
-  assessment_center: {
-    label: 'Assessment Center',
-    icon: '🏛️',
-    color: '#374151',
-    fields: ['company', 'role', 'experience', 'resume', 'jobDescription'],
-  },
-  custom: {
-    label: 'Custom Builder',
-    icon: '🛠️',
-    color: '#6B7280',
-    fields: ['role', 'company', 'techSubjects', 'codingLang', 'experience', 'jobDescription', 'questionCount'],
-  },
+  hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'resume', 'jobDescription', 'careerGoals'] },
+  tech:              { label: 'Technical',             fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'jobDescription'] },
+  dsa:               { label: 'DSA',                   fields: ['codingLang', 'dsaTopics', 'company', 'experience', 'questionCount'] },
+  coding:            { label: 'Coding',                fields: ['codingLang', 'dsaTopics', 'company', 'role', 'questionCount'] },
+  system_design:     { label: 'System Design',         fields: ['role', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech'] },
+  lld:               { label: 'Low-Level Design',      fields: ['codingLang', 'role', 'systemToDesign', 'experience'] },
+  behavioral:        { label: 'Behavioral',            fields: ['role', 'company', 'experience', 'resume', 'achievements'] },
+  managerial:        { label: 'Managerial',            fields: ['role', 'company', 'experience', 'teamSize', 'jobDescription'] },
+  group_discussion:  { label: 'Group Discussion',      fields: ['gdTopic', 'industry', 'gdParticipants'] },
+  resume:            { label: 'Resume Interview',      fields: ['resume', 'role', 'company', 'jobDescription'] },
+  project:           { label: 'Project Viva',          fields: ['projectName', 'githubUrl', 'techStack', 'userRole', 'deploymentInfo'] },
+  company:           { label: 'Company Specific',      fields: ['company', 'role', 'experience', 'resume', 'jobDescription'] },
+  aptitude:          { label: 'Aptitude',              fields: ['aptitudeTopics', 'company', 'questionCount'] },
+  communication:     { label: 'Communication',         fields: ['role', 'experience', 'gdTopic'] },
+  stress:            { label: 'Stress Interview',      fields: ['role', 'experience', 'techSubjects'] },
+  rapid_fire:        { label: 'Rapid Fire',            fields: ['techSubjects', 'questionCount', 'codingLang'] },
+  ai_ml:             { label: 'AI / ML',               fields: ['aimlTopics', 'role', 'experience', 'resume'] },
+  devops:            { label: 'DevOps',                fields: ['devopsTools', 'role', 'experience', 'cloudProvider'] },
+  cloud:             { label: 'Cloud',                 fields: ['cloudProvider', 'cloudServices', 'role', 'experience'] },
+  cybersecurity:     { label: 'Cybersecurity',         fields: ['securityDomains', 'role', 'experience'] },
+  qa:                { label: 'QA / Testing',          fields: ['qaTools', 'role', 'experience', 'codingLang'] },
+  product_management:{ label: 'Product Management',   fields: ['role', 'company', 'experience', 'industry', 'productIdea'] },
+  assessment_center: { label: 'Assessment Center',    fields: ['company', 'role', 'experience', 'resume', 'jobDescription'] },
+  custom:            { label: 'Custom Builder',        fields: ['role', 'company', 'techSubjects', 'codingLang', 'experience', 'jobDescription', 'questionCount'] },
 };
 
-// ── Reusable field primitives ────────────────────────────────────────────────
+// ── Design tokens — pure black / white / grey ────────────────────────────────
+const BLACK  = '#111111';
+const GREY   = '#6B7280';
+const BORDER = '#E5E7EB';
+const BG     = '#F9FAFB';
+
 const inputStyle = {
-  padding: '8px 10px', fontSize: '13px', borderRadius: '7px',
-  border: '1px solid var(--border-color)', backgroundColor: '#FAFAFA',
-  color: 'var(--text-main)', outline: 'none', width: '100%',
+  padding: '8px 10px', fontSize: '13px', borderRadius: '6px',
+  border: `1px solid ${BORDER}`, backgroundColor: '#FFFFFF',
+  color: BLACK, outline: 'none', width: '100%',
   fontFamily: 'var(--font-inter)',
 };
-const textareaStyle = { ...inputStyle, resize: 'vertical', minHeight: '80px' };
-const selectStyle   = { ...inputStyle, backgroundColor: '#FFFFFF' };
+const textareaStyle = { ...inputStyle, resize: 'vertical', minHeight: '82px' };
+const selectStyle   = { ...inputStyle };
 
+// ── Field label wrapper ───────────────────────────────────────────────────────
 const Field = ({ label, children }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+    <label style={{ fontSize: '11px', fontWeight: 700, color: GREY, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
       {label}
     </label>
     {children}
   </div>
 );
 
-// Multi-select tag chips
-const MultiSelect = ({ options, selected, onChange, color = '#111827' }) => {
+// ── Multi-select chip row ─────────────────────────────────────────────────────
+const MultiSelect = ({ options, selected, onChange }) => {
   const sel = selected || [];
-  const toggle = (opt) => {
-    if (sel.includes(opt)) onChange(sel.filter(o => o !== opt));
-    else onChange([...sel, opt]);
-  };
+  const toggle = (opt) =>
+    sel.includes(opt) ? onChange(sel.filter(o => o !== opt)) : onChange([...sel, opt]);
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
       {options.map(opt => {
         const active = sel.includes(opt);
         return (
-          <button
-            key={opt}
-            onClick={() => toggle(opt)}
-            style={{
-              padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-              border: `1px solid ${active ? color : 'var(--border-color)'}`,
-              backgroundColor: active ? color : '#FFFFFF',
-              color: active ? '#FFFFFF' : 'var(--text-body)',
-              transition: 'all 0.12s ease',
-            }}
-          >
+          <button key={opt} onClick={() => toggle(opt)} style={{
+            padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer',
+            border: `1px solid ${active ? BLACK : BORDER}`,
+            backgroundColor: active ? BLACK : '#FFFFFF',
+            color: active ? '#FFFFFF' : BLACK,
+            transition: 'all 0.1s ease',
+          }}>
             {opt}
           </button>
         );
@@ -221,11 +101,54 @@ const MultiSelect = ({ options, selected, onChange, color = '#111827' }) => {
   );
 };
 
-// ── The dynamic field renderer ───────────────────────────────────────────────
-function TrackFields({ trackId, config, set, accentColor }) {
+// ── Toggle switch ─────────────────────────────────────────────────────────────
+const Toggle = ({ active, onToggle, label }) => (
+  <div onClick={onToggle} style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+    border: `1px solid ${BORDER}`, backgroundColor: '#FFFFFF',
+  }}>
+    <span style={{ fontSize: '13px', fontWeight: 500, color: BLACK }}>{label}</span>
+    <div style={{
+      width: '34px', height: '18px', borderRadius: '9px',
+      backgroundColor: active ? BLACK : '#D1D5DB',
+      position: 'relative', transition: 'background-color 0.15s ease', flexShrink: 0,
+    }}>
+      <div style={{
+        position: 'absolute', top: '2px', left: active ? '16px' : '2px',
+        width: '14px', height: '14px', borderRadius: '50%',
+        backgroundColor: '#FFFFFF', transition: 'left 0.15s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+      }} />
+    </div>
+  </div>
+);
+
+// ── Pill button (single-select row) ──────────────────────────────────────────
+const PillRow = ({ options, value, onChange, suffix = '' }) => (
+  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+    {options.map(opt => {
+      const active = value === opt;
+      return (
+        <button key={opt} onClick={() => onChange(opt)} style={{
+          padding: '5px 13px', borderRadius: '4px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+          border: `1px solid ${active ? BLACK : BORDER}`,
+          backgroundColor: active ? BLACK : '#FFFFFF',
+          color: active ? '#FFFFFF' : BLACK,
+          transition: 'all 0.1s ease',
+        }}>
+          {opt}{suffix}
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ── Dynamic track field renderer ─────────────────────────────────────────────
+function TrackFields({ trackId, config, set }) {
   const fieldNames = (TRACK_FIELDS[trackId] || TRACK_FIELDS['custom']).fields;
 
-  const FIELD_RENDERERS = {
+  const RENDERERS = {
     role: (
       <Field label="Target Role">
         <input type="text" style={inputStyle} placeholder="e.g. Backend Developer"
@@ -253,8 +176,8 @@ function TrackFields({ trackId, config, set, accentColor }) {
       </Field>
     ),
     resume: (
-      <Field label="Resume / Profile Summary (paste text)">
-        <textarea style={textareaStyle} placeholder="Paste your resume text or a brief summary here..."
+      <Field label="Resume / Profile Summary">
+        <textarea style={textareaStyle} placeholder="Paste your resume text or a brief summary..."
           value={config.resume || ''} onChange={e => set('resume', e.target.value)} />
       </Field>
     ),
@@ -278,22 +201,22 @@ function TrackFields({ trackId, config, set, accentColor }) {
     ),
     techSubjects: (
       <Field label="Subjects / Topics">
-        <MultiSelect options={TECH_SUBJECTS} selected={config.techSubjects} onChange={v => set('techSubjects', v)} color={accentColor} />
+        <MultiSelect options={TECH_SUBJECTS} selected={config.techSubjects} onChange={v => set('techSubjects', v)} />
       </Field>
     ),
     dsaTopics: (
       <Field label="DSA Topics">
-        <MultiSelect options={DSA_TOPICS} selected={config.dsaTopics} onChange={v => set('dsaTopics', v)} color={accentColor} />
+        <MultiSelect options={DSA_TOPICS} selected={config.dsaTopics} onChange={v => set('dsaTopics', v)} />
       </Field>
     ),
     aimlTopics: (
       <Field label="AI / ML Topics">
-        <MultiSelect options={AIML_TOPICS} selected={config.aimlTopics} onChange={v => set('aimlTopics', v)} color={accentColor} />
+        <MultiSelect options={AIML_TOPICS} selected={config.aimlTopics} onChange={v => set('aimlTopics', v)} />
       </Field>
     ),
     devopsTools: (
-      <Field label="Tools & Technologies">
-        <MultiSelect options={DEVOPS_TOOLS} selected={config.devopsTools} onChange={v => set('devopsTools', v)} color={accentColor} />
+      <Field label="Tools and Technologies">
+        <MultiSelect options={DEVOPS_TOOLS} selected={config.devopsTools} onChange={v => set('devopsTools', v)} />
       </Field>
     ),
     cloudProvider: (
@@ -305,22 +228,22 @@ function TrackFields({ trackId, config, set, accentColor }) {
     ),
     cloudServices: (
       <Field label="Cloud Services">
-        <MultiSelect options={AWS_SERVICES} selected={config.cloudServices} onChange={v => set('cloudServices', v)} color={accentColor} />
+        <MultiSelect options={AWS_SERVICES} selected={config.cloudServices} onChange={v => set('cloudServices', v)} />
       </Field>
     ),
     securityDomains: (
       <Field label="Security Domains">
-        <MultiSelect options={SECURITY_DOMAINS} selected={config.securityDomains} onChange={v => set('securityDomains', v)} color={accentColor} />
+        <MultiSelect options={SECURITY_DOMAINS} selected={config.securityDomains} onChange={v => set('securityDomains', v)} />
       </Field>
     ),
     qaTools: (
-      <Field label="Testing Tools & Type">
-        <MultiSelect options={QA_TOOLS} selected={config.qaTools} onChange={v => set('qaTools', v)} color={accentColor} />
+      <Field label="Testing Tools">
+        <MultiSelect options={QA_TOOLS} selected={config.qaTools} onChange={v => set('qaTools', v)} />
       </Field>
     ),
     aptitudeTopics: (
       <Field label="Aptitude Topics">
-        <MultiSelect options={APTITUDE_TOPICS} selected={config.aptitudeTopics} onChange={v => set('aptitudeTopics', v)} color={accentColor} />
+        <MultiSelect options={APTITUDE_TOPICS} selected={config.aptitudeTopics} onChange={v => set('aptitudeTopics', v)} />
       </Field>
     ),
     systemToDesign: (
@@ -366,7 +289,7 @@ function TrackFields({ trackId, config, set, accentColor }) {
       </Field>
     ),
     deploymentInfo: (
-      <Field label="Deployment (optional)">
+      <Field label="Deployment">
         <input type="text" style={inputStyle} placeholder="e.g. AWS EC2, Heroku, Docker"
           value={config.deploymentInfo || ''} onChange={e => set('deploymentInfo', e.target.value)} />
       </Field>
@@ -384,21 +307,8 @@ function TrackFields({ trackId, config, set, accentColor }) {
       </Field>
     ),
     gdParticipants: (
-      <Field label="Number of AI Participants">
-        <div style={{ display: 'flex', gap: '7px' }}>
-          {GD_PARTICIPANTS.map(n => {
-            const active = (config.gdParticipants || '3') === n;
-            return (
-              <button key={n} onClick={() => set('gdParticipants', n)} style={{
-                flex: 1, padding: '7px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                border: `1px solid ${active ? accentColor : 'var(--border-color)'}`,
-                backgroundColor: active ? accentColor : '#FFFFFF',
-                color: active ? '#FFFFFF' : 'var(--text-body)',
-                transition: 'all 0.12s ease',
-              }}>{n}</button>
-            );
-          })}
-        </div>
+      <Field label="AI Participants">
+        <PillRow options={GD_PARTICIPANTS} value={config.gdParticipants || '3'} onChange={v => set('gdParticipants', v)} />
       </Field>
     ),
     teamSize: (
@@ -425,132 +335,115 @@ function TrackFields({ trackId, config, set, accentColor }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {fieldNames.map(name => FIELD_RENDERERS[name] ? (
-        <div key={name}>{FIELD_RENDERERS[name]}</div>
-      ) : null)}
+      {fieldNames.map(name => RENDERERS[name] ? <div key={name}>{RENDERERS[name]}</div> : null)}
     </div>
   );
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ConfigurationModule() {
-  const config          = useInterviewStore((s) => s.config) || {};
-  const setConfig       = useInterviewStore((s) => s.setConfig);
+  const config           = useInterviewStore((s) => s.config) || {};
+  const setConfig        = useInterviewStore((s) => s.setConfig);
   const startDeviceCheck = useInterviewStore((s) => s.startDeviceCheck);
   const setPipelineState = useInterviewStore((s) => s.setPipelineState);
-  const [activeTab, setActiveTab] = useState('track'); // 'track' | 'style'
+  const [activeTab, setActiveTab] = useState('track');
 
-  const set = (key, val) => setConfig({ [key]: val });
-
+  const set     = (key, val) => setConfig({ [key]: val });
   const trackId = config.trackId || 'custom';
   const trackMeta = TRACK_FIELDS[trackId] || TRACK_FIELDS['custom'];
-  const accentColor = trackMeta.color;
 
-  const activeBtn = (isActive) => ({
-    padding: '6px 14px', borderRadius: '6px', border: isActive ? `1px solid ${accentColor}` : '1px solid var(--border-color)',
-    backgroundColor: isActive ? accentColor : '#FFFFFF',
-    color: isActive ? '#FFFFFF' : 'var(--text-body)',
-    fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.12s ease', whiteSpace: 'nowrap',
+  const tabStyle = (id) => ({
+    padding: '6px 14px', borderRadius: '5px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+    border: `1px solid ${activeTab === id ? BLACK : BORDER}`,
+    backgroundColor: activeTab === id ? BLACK : '#FFFFFF',
+    color: activeTab === id ? '#FFFFFF' : GREY,
+    transition: 'all 0.1s ease',
   });
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
-      backgroundColor: 'var(--bg-page)', fontFamily: 'var(--font-inter)', overflow: 'hidden'
+      backgroundColor: '#FFFFFF', fontFamily: 'var(--font-inter)', overflow: 'hidden',
     }}>
 
       {/* ── Header ── */}
       <div style={{
-        backgroundColor: '#FFFFFF', borderBottom: '1px solid var(--border-color)',
-        padding: '12px 28px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0
+        backgroundColor: '#FFFFFF', borderBottom: `1px solid ${BORDER}`,
+        padding: '12px 28px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0,
       }}>
-        <button onClick={() => setPipelineState('selection')}
-          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer', fontWeight: 500, padding: 0 }}>
-          ← Back
-        </button>
-        <span style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }}></span>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-          backgroundColor: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}40`
+        <button onClick={() => setPipelineState('selection')} style={{
+          background: 'none', border: 'none', color: GREY, fontSize: '13px', cursor: 'pointer', fontWeight: 500, padding: 0,
         }}>
-          {trackMeta.icon} {trackMeta.label}
+          Back
+        </button>
+        <span style={{ width: '1px', height: '16px', backgroundColor: BORDER }} />
+        <span style={{
+          padding: '2px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+          backgroundColor: '#F3F4F6', color: BLACK, border: `1px solid ${BORDER}`,
+        }}>
+          {trackMeta.label}
         </span>
-        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>Configure Session</span>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: BLACK }}>Configure Session</span>
 
         {/* Tabs */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
-          {[{ id: 'track', label: '📋 Track Settings' }, { id: 'style', label: '🎨 Interview Style' }].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              padding: '6px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              border: activeTab === tab.id ? `1px solid ${accentColor}` : '1px solid var(--border-color)',
-              backgroundColor: activeTab === tab.id ? `${accentColor}15` : '#FFFFFF',
-              color: activeTab === tab.id ? accentColor : 'var(--text-muted)',
-              transition: 'all 0.12s ease',
-            }}>{tab.label}</button>
-          ))}
+          <button style={tabStyle('track')} onClick={() => setActiveTab('track')}>Track Settings</button>
+          <button style={tabStyle('style')} onClick={() => setActiveTab('style')}>Interview Style</button>
         </div>
       </div>
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 0 }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 290px' }}>
 
-        {/* ── LEFT: Dynamic Track Fields ── */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid var(--border-color)' }}>
+        {/* ── LEFT: Dynamic form ── */}
+        <div style={{ padding: '22px 26px', overflowY: 'auto', borderRight: `1px solid ${BORDER}` }}>
+
           {activeTab === 'track' ? (
             <>
-              {/* Accent stripe */}
+              {/* Track header strip */}
               <div style={{
-                padding: '12px 16px', borderRadius: '10px', marginBottom: '16px',
-                background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`,
-                border: `1px solid ${accentColor}30`,
-                display: 'flex', alignItems: 'center', gap: '10px'
+                padding: '10px 14px', borderRadius: '6px', marginBottom: '18px',
+                backgroundColor: BG, border: `1px solid ${BORDER}`,
               }}>
-                <span style={{ fontSize: '22px' }}>{trackMeta.icon}</span>
-                <div>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: accentColor }}>{trackMeta.label} Configuration</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Fill in the details below. The AI will use this to generate highly relevant, personalised questions.
-                  </p>
-                </div>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: BLACK }}>{trackMeta.label}</p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: GREY }}>
+                  Fill in the details below. The AI will use this to generate relevant, personalised questions.
+                </p>
               </div>
-
-              <TrackFields trackId={trackId} config={config} set={set} accentColor={accentColor} />
+              <TrackFields trackId={trackId} config={config} set={set} />
             </>
           ) : (
-            /* ── Style Tab ── */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
               {/* Difficulty */}
-              <div className="saas-card-spec" style={{ padding: '16px 18px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 10px 0' }}>Difficulty Level</p>
-                <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
-                  {DIFFICULTIES.map(d => (
-                    <button key={d} onClick={() => set('difficulty', d)} style={activeBtn((config.difficulty || 'Adaptive AI') === d)}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
+              <div style={{ padding: '16px 18px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: BLACK, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Difficulty Level
+                </p>
+                <PillRow options={DIFFICULTIES} value={config.difficulty || 'Adaptive AI'} onChange={v => set('difficulty', v)} />
               </div>
 
-              {/* Interviewer Personality */}
-              <div className="saas-card-spec" style={{ padding: '16px 18px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 10px 0' }}>Interviewer Personality</p>
+              {/* Personality */}
+              <div style={{ padding: '16px 18px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: BLACK, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Interviewer Personality
+                </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {PERSONALITIES.map(p => {
                     const active = (config.personality || 'professional') === p.id;
                     return (
                       <div key={p.id} onClick={() => set('personality', p.id)} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
-                        border: active ? `1px solid ${accentColor}` : '1px solid var(--border-color)',
-                        backgroundColor: active ? accentColor : '#FAFAFA',
-                        transition: 'all 0.12s ease'
+                        padding: '9px 12px', borderRadius: '6px', cursor: 'pointer',
+                        border: `1px solid ${active ? BLACK : BORDER}`,
+                        backgroundColor: active ? BLACK : '#FAFAFA',
+                        transition: 'all 0.1s ease',
                       }}>
                         <div>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: active ? '#FFFFFF' : 'var(--text-main)' }}>{p.label}</span>
-                          <span style={{ fontSize: '12px', color: active ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', marginLeft: '8px' }}>{p.desc}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: active ? '#FFFFFF' : BLACK }}>{p.label}</span>
+                          <span style={{ fontSize: '12px', color: active ? '#9CA3AF' : GREY, marginLeft: '8px' }}>{p.desc}</span>
                         </div>
-                        {active && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#FFFFFF', flexShrink: 0 }}></div>}
+                        {active && <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#FFFFFF', flexShrink: 0 }} />}
                       </div>
                     );
                   })}
@@ -558,26 +451,38 @@ export default function ConfigurationModule() {
               </div>
 
               {/* Duration */}
-              <div className="saas-card-spec" style={{ padding: '16px 18px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 10px 0' }}>Session Duration</p>
-                <div style={{ display: 'flex', gap: '7px' }}>
-                  {DURATIONS.map(d => (
-                    <button key={d} onClick={() => set('duration', d)} style={{ ...activeBtn((config.duration || '30') === d), flex: 1 }}>
-                      {d}m
-                    </button>
-                  ))}
+              <div style={{ padding: '16px 18px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: BLACK, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Session Duration
+                </p>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {DURATIONS.map(d => {
+                    const active = (config.duration || '30') === d;
+                    return (
+                      <button key={d} onClick={() => set('duration', d)} style={{
+                        flex: 1, padding: '7px 0', borderRadius: '5px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                        border: `1px solid ${active ? BLACK : BORDER}`,
+                        backgroundColor: active ? BLACK : '#FFFFFF',
+                        color: active ? '#FFFFFF' : BLACK,
+                        transition: 'all 0.1s ease',
+                      }}>
+                        {d}m
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
             </div>
           )}
         </div>
 
-        {/* ── RIGHT: Quick Settings + Actions ── */}
-        <div style={{ padding: '20px 18px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: '#FFFFFF' }}>
+        {/* ── RIGHT: Settings panel ── */}
+        <div style={{ padding: '20px 18px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: BG, borderLeft: `1px solid ${BORDER}` }}>
 
           {/* Mode & Language */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
-            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Session Settings</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: GREY, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Session</p>
             <Field label="Mode">
               <select style={selectStyle} value={config.mode || 'voice'} onChange={e => set('mode', e.target.value)}>
                 <option value="voice">Voice + Video</option>
@@ -591,11 +496,11 @@ export default function ConfigurationModule() {
             </Field>
           </div>
 
-          <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+          <div style={{ height: '1px', backgroundColor: BORDER }} />
 
-          {/* Feature Toggles */}
+          {/* Feature toggles */}
           <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 8px 0' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: GREY, textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 8px 0' }}>
               Features
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -603,78 +508,69 @@ export default function ConfigurationModule() {
                 { key: 'enableVideo', label: 'Camera' },
                 { key: 'enableMic',   label: 'Microphone' },
                 { key: 'enableHints', label: 'AI Hints' },
-              ].map(item => {
-                const active = config[item.key] !== false;
-                return (
-                  <div key={item.key} onClick={() => set(item.key, !active)} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 10px', borderRadius: '7px', cursor: 'pointer',
-                    border: '1px solid var(--border-color)', backgroundColor: '#FAFAFA',
-                    transition: 'background-color 0.12s ease'
-                  }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-body)' }}>{item.label}</span>
-                    <div style={{
-                      width: '34px', height: '18px', borderRadius: '9px',
-                      backgroundColor: active ? accentColor : '#D1D5DB',
-                      position: 'relative', transition: 'background-color 0.15s ease'
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: '2px',
-                        left: active ? '16px' : '2px',
-                        width: '14px', height: '14px', borderRadius: '50%',
-                        backgroundColor: '#FFFFFF', transition: 'left 0.15s ease',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                      }}></div>
-                    </div>
-                  </div>
-                );
-              })}
+              ].map(item => (
+                <Toggle
+                  key={item.key}
+                  label={item.label}
+                  active={config[item.key] !== false}
+                  onToggle={() => set(item.key, config[item.key] === false ? true : false)}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Config Summary */}
-          <div style={{ background: `${accentColor}08`, border: `1px solid ${accentColor}25`, borderRadius: '10px', padding: '12px 14px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {trackMeta.icon} {trackMeta.label}
+          <div style={{ height: '1px', backgroundColor: BORDER }} />
+
+          {/* Summary */}
+          <div style={{ backgroundColor: '#FFFFFF', border: `1px solid ${BORDER}`, borderRadius: '7px', padding: '12px 14px' }}>
+            <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: 700, color: BLACK, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Summary
             </p>
             {[
-              { label: 'Difficulty', value: config.difficulty || 'Adaptive AI' },
-              { label: 'Duration', value: `${config.duration || 30} min` },
+              { label: 'Track',       value: trackMeta.label },
+              { label: 'Difficulty',  value: config.difficulty || 'Adaptive AI' },
+              { label: 'Duration',    value: `${config.duration || 30} min` },
               { label: 'Personality', value: PERSONALITIES.find(p => p.id === (config.personality || 'professional'))?.label || 'Professional' },
-              config.role && { label: 'Role', value: config.role },
+              config.role    && { label: 'Role',    value: config.role },
               config.company && { label: 'Company', value: config.company },
-              config.experience && { label: 'Experience', value: config.experience },
             ].filter(Boolean).map(({ label, value }) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{label}</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+                <span style={{ fontSize: '12px', color: GREY }}>{label}</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: BLACK, maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {value}
+                </span>
               </div>
             ))}
           </div>
 
-          <div style={{ flex: 1 }}></div>
+          <div style={{ flex: 1 }} />
 
-          {/* Action Buttons */}
+          {/* Actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <button onClick={startDeviceCheck} style={{
-              width: '100%', padding: '12px', backgroundColor: accentColor, color: '#FFFFFF',
-              border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
-              cursor: 'pointer', transition: 'opacity 0.15s ease',
-            }}
-              onMouseEnter={e => e.target.style.opacity = '0.88'}
-              onMouseLeave={e => e.target.style.opacity = '1'}
+            <button
+              onClick={startDeviceCheck}
+              style={{
+                width: '100%', padding: '12px', backgroundColor: BLACK, color: '#FFFFFF',
+                border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                transition: 'opacity 0.15s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
-              Continue to Device Check →
+              Continue to Device Check
             </button>
-            <button onClick={() => setPipelineState('selection')} style={{
-              width: '100%', padding: '10px', backgroundColor: 'transparent', color: 'var(--text-muted)',
-              border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-            }}>
+            <button
+              onClick={() => setPipelineState('selection')}
+              style={{
+                width: '100%', padding: '10px', backgroundColor: '#FFFFFF', color: GREY,
+                border: `1px solid ${BORDER}`, borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+              }}
+            >
               Back to Selection
             </button>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );

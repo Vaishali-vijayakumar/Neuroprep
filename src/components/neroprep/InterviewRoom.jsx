@@ -489,16 +489,28 @@ export default function InterviewRoom() {
     }
 
     const questionReviews = pairs.map((pair, idx) => {
-      const evalRes = aiEngineRef.current?.evaluateAnswerQuality(pair.q, pair.a, trackId) || {
-        overall: 78,
-        is_correct: true,
-        verdict: 'Correct & Strong',
-        what_was_right: 'Demonstrated direct engagement with the question.',
-        what_was_missing: 'Could include more quantifiable metrics and STAR steps.',
-        feedback: 'Strong response with relevant context.',
-        strengths: ['Direct response', 'Professional communication'],
-        improvements: ['Provide specific metrics'],
-      };
+      const isUnanswered = !pair.a || pair.a.startsWith('(Candidate ended') || pair.a.startsWith('(Interview completed');
+      const evalRes = isUnanswered
+        ? {
+            overall: 0,
+            is_correct: false,
+            verdict: 'Unanswered / Ended Early',
+            what_was_right: 'Question was presented.',
+            what_was_missing: 'No spoken or written response was recorded before ending the interview.',
+            feedback: 'Ensure you provide a structured verbal answer for each question.',
+            strengths: [],
+            improvements: ['Provide a structured verbal answer before moving forward'],
+          }
+        : (aiEngineRef.current?.evaluateAnswerQuality(pair.q, pair.a, trackId) || {
+            overall: 75,
+            is_correct: true,
+            verdict: 'Evaluated Response',
+            what_was_right: 'Direct response provided.',
+            what_was_missing: 'Could include more specific domain metrics.',
+            feedback: 'Structured answer with good clarity.',
+            strengths: ['Direct communication'],
+            improvements: ['Include quantifiable metrics'],
+          });
 
       return {
         question_number: idx + 1,
@@ -506,10 +518,10 @@ export default function InterviewRoom() {
         user_answer: pair.a,
         verdict: evalRes.verdict || (evalRes.overall >= 80 ? 'Correct & Strong' : evalRes.overall >= 55 ? 'Partially Correct' : 'Incorrect / Needs Depth'),
         is_correct: evalRes.is_correct ?? (evalRes.overall >= 75 ? true : evalRes.overall >= 55 ? 'partial' : false),
-        score: evalRes.overall || 75,
+        score: evalRes.overall ?? 0,
         what_was_right: evalRes.what_was_right || 'Clear communication and relevant details provided.',
         what_was_missing: evalRes.what_was_missing || 'Include measurable impact and key results.',
-        ideal_answer: `A comprehensive solution clearly structures the context, specifies individual contributions, and highlights measurable results.`,
+        ideal_answer: `A comprehensive answer structures the situation, specifies individual ownership, and highlights measurable results.`,
         key_takeaway: evalRes.feedback || 'Strengthen with quantifiable outcomes and ownership metrics.',
         strengths: evalRes.strengths || ['Clear tone'],
         improvements: evalRes.improvements || ['Quantifiable outcomes'],
@@ -525,11 +537,10 @@ export default function InterviewRoom() {
       config,
     }) || {};
 
-    const rawScore = engineReport.overall_score ?? (
-      questionReviews.length > 0
-        ? Math.round(questionReviews.reduce((sum, item) => sum + item.score, 0) / questionReviews.length)
-        : 0
-    );
+    const answeredReviews = questionReviews.filter(q => q.score > 0);
+    const rawScore = answeredReviews.length > 0
+      ? Math.round(answeredReviews.reduce((sum, item) => sum + item.score, 0) / answeredReviews.length)
+      : (questionReviews.length > 0 && questionReviews[0].score > 0 ? questionReviews[0].score : 0);
 
     // Dynamic penalty deductions
     const cogPenalty = (stressIndex || 0) > 70 ? 8 : (stressIndex || 0) > 45 ? 4 : 0;
@@ -537,7 +548,7 @@ export default function InterviewRoom() {
     const phonePenalty = (faceTelemetry.phoneAlerts || 0) * 12;
     const totalPenalty = cogPenalty + tabPenalty + phonePenalty;
 
-    const avgScore = Math.max(0, Math.min(100, rawScore - totalPenalty));
+    const avgScore = rawScore > 0 ? Math.max(0, Math.min(100, rawScore - totalPenalty)) : 0;
 
     const localReport = {
       ...engineReport,
@@ -550,7 +561,7 @@ export default function InterviewRoom() {
       tabSwitchViolations: tabSwitchCount,
       phoneUseCount: faceTelemetry.phoneAlerts || 0,
       grade: engineReport.grade || (avgScore >= 92 ? 'A+' : avgScore >= 85 ? 'A' : avgScore >= 78 ? 'B+' : avgScore >= 70 ? 'B' : avgScore >= 60 ? 'C' : 'D'),
-      hire_recommendation: engineReport.hire_recommendation || (avgScore >= 88 ? 'Strong Yes — High Potential' : avgScore >= 75 ? 'Yes — Ready for Next Round' : 'Consider — With Focus on Weak Areas'),
+      hire_recommendation: engineReport.hire_recommendation || (avgScore >= 88 ? 'Strong Yes — High Potential' : avgScore >= 75 ? 'Yes — Ready for Next Round' : avgScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'),
       skillScores: engineReport.skillScores || {},
       evaluationMatrix: engineReport.evaluationMatrix || [],
       technical_score: avgScore,
@@ -576,17 +587,24 @@ export default function InterviewRoom() {
         ...(tabSwitchCount > 0 ? [`Score deducted due to ${tabSwitchCount} tab switch violation(s)`] : []),
         ...(faceTelemetry.phoneAlerts > 0 ? [`Score deducted due to ${faceTelemetry.phoneAlerts} phone distraction alert(s)`] : []),
       ],
-      behavioral_observation: `Candidate answered ${questionReviews.length} question(s). Eye contact was ${faceTelemetry.eyeContact || 92}% with average stress of ${stressIndex || 30}/100. Recorded ${tabSwitchCount} tab switch(es).`,
-      executive_summary: engineReport.executive_summary || `Candidate achieved an evaluation score of ${avgScore}/100 across ${config?.trackName || 'the interview'} (${totalPenalty} penalty points applied for proctoring/stress deviations).`,
+      behavioral_observation: `Candidate completed ${answeredReviews.length} of ${questionReviews.length} question(s) before session conclusion. Recorded ${tabSwitchCount} tab switch(es) and ${faceTelemetry.phoneAlerts || 0} phone distraction(s).`,
+      executive_summary: engineReport.executive_summary || `Candidate achieved an evaluation score of ${avgScore}/100 across ${config?.trackName || 'the interview'} based on ${answeredReviews.length} completed response(s).`,
       question_reviews: questionReviews,
     };
 
-    useInterviewStore.getState().endInterview(localReport);
+    // Immediately stop all hardware and media tracks
+    try {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (_) {}
     try { voiceRef.current?.destroy(); } catch (_) {}
     try { audioRef.current?.destroy(); } catch (_) {}
     try { faceRef.current?.stop(); } catch (_) {}
     try { vocalRef.current?.stop(); } catch (_) {}
-  }, [trackId, currentQ, userAnswerText, stressIndex, faceTelemetry, audioMetrics, vocalAnalysis, config]);
+
+    useInterviewStore.getState().endInterview(localReport);
+  }, [trackId, currentQ, userAnswerText, stressIndex, faceTelemetry, audioMetrics, vocalAnalysis, config, stream]);
 
   // Handle End Interview — instant transition
   const handleEndInterview = useCallback(() => {

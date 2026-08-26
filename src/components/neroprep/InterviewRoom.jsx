@@ -168,9 +168,18 @@ export default function InterviewRoom() {
 
 
 
-  // Helper to safely speak question via TTS and transition to listening
+  const speakingQRef = useRef('');
+
+  // Helper to safely speak question via TTS and transition to listening strictly once
   const speakQuestion = useCallback((text) => {
     if (!text) return;
+    
+    // Prevent duplicate triggers of the exact same question
+    if (speakingQRef.current === text && (aiStatus === 'speaking' || aiStatus === 'listening')) {
+      return;
+    }
+    speakingQRef.current = text;
+
     setAiStatus('speaking');
     setThinkingTime(false);
     setSubmitWarning('');
@@ -186,40 +195,36 @@ export default function InterviewRoom() {
         .then(() => {
           setAiStatus('listening');
           setResponseTimer(0);
-          setUserAnswerText('');
-          setInterimText('');
           try {
-            voiceRef.current?.resetTranscript?.();
             voiceRef.current?.startListening();
           } catch (_) {}
         })
         .catch(() => {
           setAiStatus('listening');
           setResponseTimer(0);
-          setUserAnswerText('');
-          setInterimText('');
           try {
-            voiceRef.current?.resetTranscript?.();
             voiceRef.current?.startListening();
           } catch (_) {}
         });
     } else {
       setAiStatus('listening');
       setResponseTimer(0);
-      setUserAnswerText('');
-      setInterimText('');
       try {
-        voiceRef.current?.resetTranscript?.();
         voiceRef.current?.startListening();
       } catch (_) {}
     }
-  }, []);
+  }, [aiStatus]);
 
   // WebSocket hook — uses cleanupRef so _cleanupAndEnd can be defined after this hook
   const { sendAnswer, sendTelemetry, endInterview: sendEndWs } = useInterviewSocket({
     sessionId,
     onQuestion: (text, qNum) => {
       if (text === '...') { setAiStatus('thinking'); return; }
+      // If the local AIQuestionEngine is actively driving question progression,
+      // prevent backend WebSocket echo from repeating the question and wiping candidate speech
+      if (aiEngineRef.current && currentQ) {
+        return;
+      }
       setCurrentQ(text || '');
       if (qNum) setQuestionNum(qNum);
       if (addTranscriptLine) addTranscriptLine({ role: 'ai', text });

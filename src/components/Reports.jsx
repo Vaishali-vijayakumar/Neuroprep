@@ -192,9 +192,6 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 800, fontSize: '0.75rem' }}>
               Personalized Progress Audit
             </span>
-            <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-              Target: <strong style={{ color: '#111827' }}>{targetCompany}</strong>
-            </span>
           </div>
           <h1 style={{ fontWeight: 800, fontSize: '1.75rem', color: '#111827', letterSpacing: '-0.5px', margin: 0 }}>
             Placement Readiness & Performance Analytics

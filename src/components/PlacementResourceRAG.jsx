@@ -326,9 +326,6 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
               <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
                 {studentLevel} ({solvedCount} Solved)
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#065F46', fontWeight: 600 }}>
-                Target: {profile.targetCompany || 'TCS'} Placement Drive
-              </div>
             </div>
           </div>
         </div>
@@ -747,7 +744,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
           }}>
             <div style={{ marginBottom: '14px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                Handpicked Practice Problems for {profile.targetCompany || 'TCS'}
+                Handpicked Placement Practice Problems
               </span>
               <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
                 Solve these targeted questions to test your algorithmic understanding.

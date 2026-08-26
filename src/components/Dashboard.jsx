@@ -321,9 +321,6 @@ export default function Dashboard({
                 <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 800, fontSize: '11px' }}>
                   Personalized Performance Audit
                 </span>
-                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
-                  Target Company: <strong style={{ color: '#111827' }}>{profile.targetCompany || 'TCS'}</strong>
-                </span>
               </div>
               <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>
                 Personalized Placement Analytics & Progress Report
@@ -450,7 +447,7 @@ export default function Dashboard({
               </div>
 
               <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#B45309', fontWeight: 600 }}>
-                Hiring Threshold: {profile.targetCompany || 'TCS'} requires 65% across all modules
+                Placement Threshold: Requires 65%+ across all modules
               </div>
             </div>
 
@@ -470,11 +467,11 @@ export default function Dashboard({
           }}>
             <div style={{ flex: 1, minWidth: '280px' }}>
               <span style={{ fontSize: '11px', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>
-                AI Suggested Next Step for {profile.targetCompany || 'TCS'}:
+                AI Suggested Next Priority:
               </span>
               <span style={{ fontSize: '13px', color: '#4B5563', lineHeight: 1.4 }}>
                 {(codingState.score || 0) < 60 
-                  ? `Focus on 99 DSA Patterns (Two Pointers & Sliding Window) to raise your coding score from ${codingState.score || 0}% to meet ${profile.targetCompany || 'TCS'}'s 65% benchmark.`
+                  ? `Focus on 99 DSA Patterns (Two Pointers & Sliding Window) to raise your coding score from ${codingState.score || 0}% to meet the 65% interview readiness benchmark.`
                   : (interviewState.lastScore || 0) < 70
                     ? `Take 1 full Technical Mock Interview round to sharpen vocal cadence and system architecture communication.`
                     : `Keep up daily consistency! Solve 1 Featured Problem and log a reflection with NeuroCoach to stay in peak flow.`

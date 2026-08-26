@@ -37,7 +37,7 @@ const CLOUD_GOALS     = ['High Availability & Disaster Recovery', 'Serverless Mi
 // ── Track-specific configuration schema for all 12 tracks ─────────────────────
 const TRACK_FIELDS = {
   hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'hrPracticeTopic', 'hrInterviewTone', 'workPreference', 'joiningTime', 'aboutUser'] },
-  tech:              { label: 'Technical Interview',  fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'jobDescription'] },
+  tech:              { label: 'Technical Interview',  fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'techInterviewFocus', 'techInterviewTone', 'techProjects', 'aboutUser'] },
   dsa:               { label: 'DSA & Coding',         fields: ['codingLang', 'difficulty_dsa', 'timeLimitPerProblem', 'evaluationFocus', 'complexityRequirement', 'proctoringMode'] },
   system_design:     { label: 'System Design & Architecture (HLD & LLD)', fields: ['role', 'codingLang', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech', 'designFocus'] },
   behavioral:        { label: 'Behavioral & Managerial', fields: ['role', 'company', 'experience', 'teamSize', 'leadershipStyle', 'achievements', 'resume', 'jobDescription'] },
@@ -427,6 +427,61 @@ function TrackFields({ trackId, config, set }) {
           ]}
           value={config.joiningTime || 'Immediately (Final Year / Ready)'}
           onChange={v => set('joiningTime', v)}
+        />
+      </Field>
+    ),
+    techSubjects: (
+      <Field label="Core CS & Technical Subjects Focus" helper="Select the computer science topics you want the interview questions to emphasize.">
+        <MultiSelect
+          options={[
+            'OOP & SOLID Principles',
+            'DBMS & SQL Queries',
+            'Data Structures & Algorithms',
+            'Operating Systems & Concurrency',
+            'Computer Networks & Protocols',
+            'System Design & Architecture',
+            'REST APIs & Web Technologies',
+            'Cloud & DevOps Basics'
+          ]}
+          selected={config.techSubjects || ['OOP & SOLID Principles', 'DBMS & SQL Queries', 'Data Structures & Algorithms']}
+          onChange={v => set('techSubjects', v)}
+        />
+      </Field>
+    ),
+    techInterviewFocus: (
+      <Field label="Technical Interview Focus" helper="Choose how you want the AI technical lead to balance theory versus practical applications.">
+        <PillRow
+          options={[
+            'All-Round Technical Drill',
+            'Core CS Theory & Fundamentals',
+            'Practical Coding & Logic',
+            'Project & Resume Deep Dive'
+          ]}
+          value={config.techInterviewFocus || 'All-Round Technical Drill'}
+          onChange={v => set('techInterviewFocus', v)}
+        />
+      </Field>
+    ),
+    techInterviewTone: (
+      <Field label="Technical Interviewer Style" helper="Choose the personality of your AI technical interviewer.">
+        <PillRow
+          options={[
+            'Supportive Tech Mentor',
+            'Standard Technical Lead',
+            'Strict Lead Architect'
+          ]}
+          value={config.techInterviewTone || 'Standard Technical Lead'}
+          onChange={v => set('techInterviewTone', v)}
+        />
+      </Field>
+    ),
+    techProjects: (
+      <Field label="Key Projects & Tech Stack (Optional)" helper="List your major projects and technologies used (e.g. E-commerce in React + Node.js, ML spam filter in Python). The AI will ask technical questions based on your projects!">
+        <textarea
+          style={textareaStyle}
+          placeholder="e.g. 1) Built a full-stack job portal using React, Node.js, and PostgreSQL. 2) Implemented Redis caching for sub-10ms query responses."
+          value={config.techProjects || ''}
+          onChange={e => set('techProjects', e.target.value)}
         />
       </Field>
     ),

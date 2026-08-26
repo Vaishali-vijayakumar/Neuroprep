@@ -101,6 +101,39 @@ export class AIQuestionEngine {
       // Sort prioritized IDs in intended sequence
       prioritizedList.sort((a, b) => prioritizedIds.indexOf(a.id) - prioritizedIds.indexOf(b.id));
       rawBank = [...prioritizedList, ...remainingList];
+    } else if (this.trackId === 'tech' || this.trackId === 'technical') {
+      const selectedSubjects = cfg.techSubjects || ['OOP & SOLID Principles', 'DBMS & SQL Queries', 'Data Structures & Algorithms'];
+      const prioritizedList = [];
+      const remainingList = [];
+
+      rawBank.forEach((q) => {
+        const qLower = (q.question || '').toLowerCase();
+        let matches = false;
+
+        if (selectedSubjects.some(s => s.includes('OOP')) && /\b(oop|class|inheritance|polymorphism|encapsulation|abstraction|solid|interface|abstract)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('DBMS') || s.includes('SQL')) && /\b(dbms|sql|database|index|transaction|acid|normalization|join|nosql|primary key|foreign key)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('Data Structures')) && /\b(data structure|array|tree|graph|hash|complexity|stack|queue|linked list|binary search)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('Operating Systems')) && /\b(process|thread|deadlock|memory|paging|virtual memory|semaphore|mutex|context switch)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('Networks')) && /\b(network|tcp|udp|osi|http|ip|dns|socket|protocol|packet)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('System Design')) && /\b(scale|system design|load balancer|cache|microservice|architecture|sharding)\b/i.test(qLower)) {
+          matches = true;
+        } else if (selectedSubjects.some(s => s.includes('REST') || s.includes('Web')) && /\b(api|rest|http method|jwt|auth|async|event loop|cors)\b/i.test(qLower)) {
+          matches = true;
+        }
+
+        if (matches) {
+          prioritizedList.push(q);
+        } else {
+          remainingList.push(q);
+        }
+      });
+
+      rawBank = [...prioritizedList, ...remainingList];
     }
 
     // Categorize questions by difficulty

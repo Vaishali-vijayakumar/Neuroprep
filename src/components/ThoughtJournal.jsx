@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeThoughtText } from '../services/aiEngine';
 import { dbService } from '../services/db';
+import { CognitiveEmotionalRAGEngine } from './neroprep/engines/CognitiveEmotionalRAGEngine';
 
 // --------------------------------------------------
 // EMOTION WHEEL DATA
@@ -92,6 +93,8 @@ export default function ThoughtJournal({
   const [category, setCategory] = useState('Coding & Technical');
   const [tagsInput, setTagsInput] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [liveRAGInsight, setLiveRAGInsight] = useState(null);
+  const [injectedReframe, setInjectedReframe] = useState(false);
 
   // Reframing state
   const [reframeEvidenceFor, setReframeEvidenceFor] = useState('');
@@ -140,6 +143,20 @@ export default function ThoughtJournal({
     setHopeNotes(dbService.getHopeNotesForUser(userEmail));
     setPositiveMemories(dbService.getPositiveMemoriesForUser(userEmail));
   }, [journalEntries, userEmail]);
+
+  // Live Emotional Booster RAG Analysis as user types in diary
+  useEffect(() => {
+    if (!journalText || journalText.trim().length < 8) {
+      setLiveRAGInsight(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const insight = CognitiveEmotionalRAGEngine.analyzeDiaryEmotion(journalText);
+      setLiveRAGInsight(insight);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [journalText]);
 
   // Breathing timer interval
   useEffect(() => {
@@ -607,6 +624,113 @@ export default function ThoughtJournal({
                     resize: 'vertical'
                   }}
                 />
+
+                {/* Real-Time NeuroCoach Emotional Booster RAG Card */}
+                {liveRAGInsight && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '20px 24px',
+                    borderRadius: '16px',
+                    backgroundColor: '#F0FDF4',
+                    border: '1px solid #BBF7D0',
+                    boxShadow: '0 4px 14px rgba(22, 101, 52, 0.06)',
+                    animation: 'fadeIn 0.3s ease-in-out'
+                  }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', padding: '3px 10px', borderRadius: '6px', backgroundColor: '#DCFCE7', color: '#166534', fontWeight: 800 }}>
+                          NeuroCoach Live RAG Assistant
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#15803D', fontWeight: 600 }}>
+                          {liveRAGInsight.distortionName}
+                        </span>
+                      </div>
+
+                      {/* Stress Shift Meter */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', fontWeight: 700 }}>
+                        <span style={{ color: '#991B1B' }}>Initial Load: {liveRAGInsight.startingStress}%</span>
+                        <span style={{ color: '#166534' }}>➔ Composure: {liveRAGInsight.reframedStress}%</span>
+                        <span style={{ padding: '2px 8px', borderRadius: '6px', backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' }}>
+                          -{liveRAGInsight.stressDelta}% Stress Relief
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Empathy Validation */}
+                    <div style={{ fontSize: '13.5px', color: '#14532D', lineHeight: 1.6, marginBottom: '10px' }}>
+                      <strong style={{ color: '#14532D' }}>Empathetic Insight: </strong>
+                      {liveRAGInsight.empathy}
+                    </div>
+
+                    {/* Cognitive Reframe */}
+                    <div style={{
+                      padding: '12px 16px',
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '10px',
+                      border: '1px solid #BBF7D0',
+                      marginBottom: '12px',
+                      fontSize: '13.5px',
+                      color: '#166534',
+                      lineHeight: 1.6
+                    }}>
+                      <div style={{ fontWeight: 800, color: '#14532D', marginBottom: '4px' }}>
+                        Mind Reframing Perspective:
+                      </div>
+                      {liveRAGInsight.reframe}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ fontSize: '12.5px', color: '#15803D', fontStyle: 'italic' }}>
+                        Affirmation: "{liveRAGInsight.affirmation}"
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {liveRAGInsight.startingStress > 75 && (
+                          <button
+                            type="button"
+                            onClick={() => { setCurrentTab('calm'); setBreathingActive(true); }}
+                            style={{
+                              padding: '7px 14px',
+                              borderRadius: '8px',
+                              backgroundColor: '#E0F2FE',
+                              color: '#0369A1',
+                              border: '1px solid #BAE6FD',
+                              fontSize: '12.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🌿 60s Box Breathing
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!injectedReframe) {
+                              setJournalText(prev => `${prev}\n\n[NeuroCoach Balanced Perspective]: ${liveRAGInsight.balancedTakeaway}`);
+                              setInjectedReframe(true);
+                            }
+                          }}
+                          style={{
+                            padding: '7px 16px',
+                            borderRadius: '8px',
+                            backgroundColor: injectedReframe ? '#F3F4F6' : '#166534',
+                            color: injectedReframe ? '#6B7280' : '#FFFFFF',
+                            border: 'none',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            cursor: injectedReframe ? 'default' : 'pointer'
+                          }}
+                        >
+                          {injectedReframe ? '✓ Added to Diary' : '✨ Insert Balanced Thought to Diary'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Emotion Wheel Sub-Emotions */}

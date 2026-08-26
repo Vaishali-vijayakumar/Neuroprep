@@ -17,6 +17,7 @@ import DailyChallengeArena from './components/DailyChallengeArena';
 import Reports from './components/Reports';
 import PlacementRoadmap from './components/PlacementRoadmap';
 import PuzzlesAndSheets from './components/PuzzlesAndSheets';
+import PlacementResourceRAG from './components/PlacementResourceRAG';
 import { DISTORTIONS } from './services/aiEngine';
 import { dbService } from './services/db';
 import { recordActivity } from './services/gamificationService';
@@ -503,6 +504,16 @@ export default function App() {
             codingState={codingState} 
             aptitudeState={aptitudeState}
             setActiveTab={setActiveTab} 
+          />
+        )}
+
+        {(activeTab === 'placer-rag' || activeTab === 'resources') && (
+          <PlacementResourceRAG 
+            profile={profile}
+            codingState={codingState}
+            interviewState={interviewState}
+            aptitudeState={aptitudeState}
+            setActiveTab={setActiveTab}
           />
         )}
       </main>

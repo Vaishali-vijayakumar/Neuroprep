@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, BookOpen, Video, FileText, CheckCircle2, Trophy, 
   Sparkles, Clock, Target, ArrowRight, ExternalLink, Play, 
-  HelpCircle, Layers, Check, X, ChevronRight, Zap, RefreshCw, BarChart2
+  HelpCircle, Layers, Check, X, ChevronRight, Zap, RefreshCw, BarChart2, ArrowLeft
 } from 'lucide-react';
 
 // Curated Knowledge Database for PLACER-RAG Intelligence
@@ -209,7 +209,7 @@ const KNOWLEDGE_BASE = {
   }
 };
 
-export default function PlacementResourceRAG({ profile = {}, codingState = {}, interviewState = {}, aptitudeState = {} }) {
+export default function PlacementResourceRAG({ profile = {}, codingState = {}, interviewState = {}, aptitudeState = {}, setActiveTab }) {
   const [searchQuery, setSearchQuery] = useState('DBMS Normalization for TCS');
   const [selectedTopicKey, setSelectedTopicKey] = useState('dbms normalization');
   const [explanationLevel, setExplanationLevel] = useState('Beginner'); // 'Very Simple' | 'Beginner' | 'Intermediate' | 'Interview-Ready'
@@ -264,69 +264,82 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
   }, 0);
 
   return (
-    <div style={{
-      backgroundColor: '#FFFFFF',
-      borderRadius: '20px',
-      border: '1px solid #E5E7EB',
-      padding: '28px 32px',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-      marginBottom: '36px',
-      fontFamily: 'var(--font-inter)'
-    }}>
+    <div style={{ padding: '32px 24px', maxWidth: 1060, margin: '0 auto', fontFamily: 'var(--font-inter)' }}>
       
-      {/* Module Title & Architecture Tag */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              padding: '3px 10px',
-              borderRadius: '6px',
-              backgroundColor: '#111827',
-              color: '#FFFFFF',
-              letterSpacing: '0.4px'
-            }}>
-              PLACER-RAG
-            </span>
-            <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-              Adaptive Learning Resource Intelligence
-            </span>
-            <span style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: '4px',
-              backgroundColor: '#DCFCE7',
-              color: '#15803D'
-            }}>
-              Multimodal Search & Reranking Active
-            </span>
+      {/* Top Header Card with Back button */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: '20px',
+        border: '1px solid #E5E7EB',
+        padding: '28px 32px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+        marginBottom: '26px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                padding: '3px 10px',
+                borderRadius: '6px',
+                backgroundColor: '#111827',
+                color: '#FFFFFF',
+                letterSpacing: '0.4px'
+              }}>
+                PLACER-RAG
+              </span>
+              <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
+                Adaptive Learning Resource Intelligence
+              </span>
+              <span style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: '4px',
+                backgroundColor: '#DCFCE7',
+                color: '#15803D'
+              }}>
+                Multimodal Search & Reranking Active
+              </span>
+            </div>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
+              Placement Resource Intelligence & Learning Path RAG
+            </h1>
+            <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0' }}>
+              Searches multi-source content, evaluates quality with multi-factor scoring, and adapts the learning path to your current skill level.
+            </p>
           </div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#111827', margin: 0 }}>
-            Placement Resource Intelligence & Learning Path RAG
-          </h2>
-          <p style={{ fontSize: '0.88rem', color: '#4B5563', margin: '3px 0 0 0' }}>
-            Searches multi-source content, evaluates quality with multi-factor scoring, and adapts the learning path to your current skill level.
-          </p>
-        </div>
 
-        {/* Student Knowledge Profile Snapshot */}
-        <div style={{
-          backgroundColor: '#F9FAFB',
-          border: '1px solid #E5E7EB',
-          borderRadius: '12px',
-          padding: '10px 16px',
-          textAlign: 'right'
-        }}>
-          <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>
-            Student Knowledge State
-          </div>
-          <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
-            {studentLevel} ({solvedCount} Solved)
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#065F46', fontWeight: 600 }}>
-            Target: {profile.targetCompany || 'TCS'} Placement Drive
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+            {setActiveTab && (
+              <button 
+                onClick={() => setActiveTab('dashboard')} 
+                className="btn-secondary-spec"
+                style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <ArrowLeft size={14} /> Back to Dashboard
+              </button>
+            )}
+
+            {/* Student Knowledge Profile Snapshot */}
+            <div style={{
+              backgroundColor: '#F9FAFB',
+              border: '1px solid #E5E7EB',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              textAlign: 'right'
+            }}>
+              <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>
+                Student Knowledge State
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
+                {studentLevel} ({solvedCount} Solved)
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#065F46', fontWeight: 600 }}>
+                Target: {profile.targetCompany || 'TCS'} Placement Drive
+              </div>
+            </div>
           </div>
         </div>
       </div>

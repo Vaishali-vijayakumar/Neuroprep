@@ -494,14 +494,44 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* PLACEMENT RESOURCE INTELLIGENCE + ADAPTIVE RAG SYSTEM (PLACER-RAG) */}
+      {/* PLACEMENT RESOURCE INTELLIGENCE + ADAPTIVE RAG (PLACER-RAG) */}
       <section style={{ marginBottom: '36px' }}>
-        <PlacementResourceRAG 
-          profile={profile}
-          codingState={codingState}
-          interviewState={interviewState}
-          aptitudeState={aptitudeState}
-        />
+        <div className="saas-card-spec" style={{ padding: '26px 30px', backgroundColor: '#FFFFFF', border: '1.5px solid #111827' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  backgroundColor: '#111827',
+                  color: '#FFFFFF',
+                  letterSpacing: '0.4px'
+                }}>
+                  PLACER-RAG
+                </span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
+                  Adaptive Learning Resource Intelligence
+                </span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#111827', margin: '0 0 6px 0' }}>
+                Placement Resource Intelligence & Adaptive RAG Hub
+              </h3>
+              <p style={{ fontSize: '0.88rem', color: '#4B5563', margin: 0, lineHeight: 1.45 }}>
+                Searches the internet, evaluates video & PDF resources with multi-factor quality scoring, understands your skill level, and creates custom 4-step learning paths.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('placer-rag')}
+              className="btn-primary-spec"
+              style={{ padding: '12px 26px', fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
+              Open PLACER-RAG Hub <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
       </section>
 
     </div>

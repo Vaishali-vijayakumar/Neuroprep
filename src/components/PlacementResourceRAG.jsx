@@ -867,34 +867,6 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Quick Follow-up Question Chips */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                  {[
-                    'Give optimal code implementation in Java',
-                    'What are top 3 recruiter interview questions?',
-                    'Explain the time & space complexity tradeoffs'
-                  ].map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => {
-                        setUserQuestion(preset);
-                      }}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #E5E7EB',
-                        backgroundColor: '#F3F4F6',
-                        color: '#374151',
-                        fontSize: '0.74rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-
                 {/* Chat Input Form */}
                 <form onSubmit={handleAskBot} style={{ display: 'flex', gap: '8px' }}>
                   <input 

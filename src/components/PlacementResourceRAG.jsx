@@ -158,7 +158,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'bot',
-      text: "Hello! I'm your PLACER-RAG Bot. Search any technical or placement concept above as a whole topic, and I'll retrieve live information from technical web sources and answer your questions with code and notes!"
+      text: "Hello! Ask anything about the given topic."
     }
   ]);
   const [userQuestion, setUserQuestion] = useState('');
@@ -194,7 +194,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
         ...prev,
         {
           sender: 'bot',
-          text: `I've performed a live semantic RAG search for the whole phrase **"${term}"**! Retrieved ${liveData.webSources.length} technical web sources, university lecture notes, and video masterclasses. Ask me anything about **${term}** (e.g. "Explain the algorithm step-by-step", "Provide code in Java", or "Give top recruiter questions")!`
+          text: `Ask anything about **${term}**.`
         }
       ]);
     }, 750);

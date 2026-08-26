@@ -565,7 +565,8 @@ export class AIQuestionEngine {
       };
     }
 
-    // ── 4. Substantive Answers (16+ words): Deep Analysis ──────────────────────
+    // ── 4. Substantive Answers (16+ words): Deep Web-RAG & Semantic Evaluation ──
+    const ragEval = WebRAGEvaluationEngine.evaluateWithInternetBenchmark(question, text, activeTrack);
     const domainKeywords = {
       hr: ['team', 'ownership', 'collaborat', 'value', 'learn', 'goal', 'culture', 'resolv', 'adapt', 'integrity', 'project', 'skill', 'lead', 'deliver', 'growth', 'feedback', 'achiev', 'priorit', 'deadlin', 'impact'],
       tech: ['oop', 'class', 'database', 'transaction', 'acid', 'thread', 'process', 'memory', 'index', 'network', 'protocol', 'latency', 'api', 'server', 'async'],
@@ -584,13 +585,13 @@ export class AIQuestionEngine {
     const targetKws = domainKeywords[activeTrack] || domainKeywords.hr;
     const matchedCount = targetKws.filter(kw => lower.includes(kw)).length;
 
-    // Structural & Length Grading
+    // Structural & Length Grading combined with Web-RAG concept coverage
     const lengthScore = Math.min(100, Math.max(50, words * 1.6));
     const keywordScore = Math.min(100, (matchedCount / Math.min(4, targetKws.length)) * 100);
     const hasSTAR = /\b(when|situation|task|my role|i built|i implemented|we achieved|improved|learned|result|outcome)\b/i.test(lower);
-    const starBonus = hasSTAR ? 12 : 0;
+    const starBonus = hasSTAR ? 10 : 0;
 
-    const overall = Math.max(52, Math.min(96, Math.round(lengthScore * 0.35 + keywordScore * 0.45 + starBonus + 12)));
+    const overall = Math.max(45, Math.min(96, Math.round((ragEval.score * 0.5) + (lengthScore * 0.2) + (keywordScore * 0.2) + starBonus)));
 
     // Update rolling performance & trigger adaptation
     if (overall >= 78) {
@@ -609,20 +610,24 @@ export class AIQuestionEngine {
     const emotionProfile = InterviewEmotionModel.analyzeEmotion(text, question, activeTrack);
 
     const isCorrect = overall >= 78 ? true : (overall >= 58 ? 'partial' : false);
-    const verdict = overall >= 82 ? 'Correct & Strong' : (overall >= 65 ? 'Good Structure' : 'Needs More Depth');
+    const verdict = ragEval.verdict || (overall >= 82 ? 'Optimal & Accurate' : overall >= 65 ? 'Good Structure' : 'Needs More Depth');
 
     return {
       overall,
       is_correct: isCorrect,
       verdict,
-      what_was_right: `Demonstrated good understanding (${matchedCount > 0 ? matchedCount : 1} key domain concepts identified) with ${emotionProfile.primaryEmotion.toLowerCase()} tone.`,
-      what_was_missing: overall >= 82 ? 'Could add deeper quantitative impact metrics and long-term reflection.' : 'Include specific technical examples, trade-offs, and measurable results.',
+      what_was_right: ragEval.what_was_right || `Demonstrated good understanding (${matchedCount > 0 ? matchedCount : 1} key domain concepts identified) with ${emotionProfile.primaryEmotion.toLowerCase()} tone.`,
+      what_was_missing: ragEval.what_was_missing || (overall >= 82 ? 'Could add deeper quantitative impact metrics and long-term reflection.' : 'Include specific technical examples, trade-offs, and measurable results.'),
       feedback: overall >= 78
-        ? `Strong answer with ${emotionProfile.sentimentLabel.toLowerCase()} delivery, good domain terminology, and authentic structure.`
-        : 'Good effort. Strengthen your response with specific architectural details, concrete examples, and measurable outcomes.',
-      strengths: words >= 25 ? ['Clear explanation', 'Domain terminology', emotionProfile.primaryEmotion] : ['Clear structure'],
-      improvements: overall < 80 ? ['Include quantifiable metrics and results', 'Explain trade-offs and edge cases'] : ['Provide additional production context'],
-      ideal_answer: benchmark,
+        ? `Strong answer with ${emotionProfile.sentimentLabel.toLowerCase()} delivery, accurate benchmark alignment, and authentic structure.`
+        : `Strengthen your response by addressing the missing benchmark concepts and providing concrete project evidence.`,
+      strengths: ragEval.coveredConcepts && ragEval.coveredConcepts.length > 0
+        ? ragEval.coveredConcepts.slice(0, 3)
+        : (words >= 25 ? ['Clear explanation', 'Domain terminology', emotionProfile.primaryEmotion] : ['Clear structure']),
+      improvements: ragEval.missedConcepts && ragEval.missedConcepts.length > 0
+        ? ragEval.missedConcepts.slice(0, 3)
+        : (overall < 80 ? ['Include quantifiable metrics and results', 'Explain trade-offs and edge cases'] : ['Provide additional production context']),
+      ideal_answer: ragEval.ideal_answer || benchmark,
       emotion: emotionProfile,
     };
   }

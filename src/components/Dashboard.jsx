@@ -526,12 +526,9 @@ export default function Dashboard({
             {/* Card 1: Fast-Track Technical Concepts */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Core Technical Concepts
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
-                    Quality 98%
                   </span>
                 </div>
 
@@ -551,12 +548,9 @@ export default function Dashboard({
             {/* Card 2: Step-by-Step Coding Patterns */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Coding & Problem Solving
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
-                    Quality 99%
                   </span>
                 </div>
 
@@ -576,12 +570,9 @@ export default function Dashboard({
             {/* Card 3: Interview Q&A & Communication */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Interview Communication
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
-                    Quality 97%
                   </span>
                 </div>
 

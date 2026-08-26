@@ -46,7 +46,6 @@ function retrieveResourcesForTopic(queryText) {
           title: 'DBMS Normalization in One Shot (1NF, 2NF, 3NF, BCNF with Solved Examples)',
           channel: 'Gate Smashers',
           duration: '18 mins',
-          rating: '98% Quality Score',
           url: `https://www.youtube.com/results?search_query=gate+smashers+dbms+normalization`,
           timestamps: [
             { time: '00:00', label: 'Why Normalization & Insertion/Deletion Anomalies' },
@@ -60,7 +59,6 @@ function retrieveResourcesForTopic(queryText) {
           title: 'SQL Joins & Indexing Performance Optimization Masterclass',
           channel: 'Knowledge Gate',
           duration: '22 mins',
-          rating: '97% Quality Score',
           url: `https://www.youtube.com/results?search_query=knowledge+gate+sql+joins+indexing`,
           timestamps: [
             { time: '00:00', label: 'INNER, LEFT, RIGHT, and FULL OUTER Joins Visualized' },
@@ -157,7 +155,6 @@ function retrieveResourcesForTopic(queryText) {
           title: 'Binary Trees & Traversals Masterclass (Inorder, Preorder, Postorder, BFS)',
           channel: 'Take U Forward (Striver)',
           duration: '24 mins',
-          rating: '99% Quality Score',
           url: `https://www.youtube.com/results?search_query=striver+binary+trees+masterclass`,
           timestamps: [
             { time: '00:00', label: 'TreeNode Pointer Structure & Memory Representation' },
@@ -171,7 +168,6 @@ function retrieveResourcesForTopic(queryText) {
           title: 'Binary Search Tree (BST) Operations: Insertion, Search & Deletion',
           channel: 'NeetCode',
           duration: '19 mins',
-          rating: '98% Quality Score',
           url: `https://www.youtube.com/results?search_query=neetcode+binary+search+tree+operations`,
           timestamps: [
             { time: '00:00', label: 'BST Property: Left < Root < Right' },
@@ -267,7 +263,6 @@ function retrieveResourcesForTopic(queryText) {
         title: `${formattedTitle} Complete Placement Concept & Code Tutorial`,
         channel: 'Top Tech Educators',
         duration: '20 mins',
-        rating: '98% Quality Score',
         url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+tutorial`,
         timestamps: [
           { time: '00:00', label: `Core Introduction & Why ${formattedTitle} is Asked in Interviews` },
@@ -281,7 +276,6 @@ function retrieveResourcesForTopic(queryText) {
         title: `${formattedTitle} Crash Course & Problem Solving Walkthrough`,
         channel: 'Placement Prep Hub',
         duration: '16 mins',
-        rating: '96% Quality Score',
         url: `https://www.youtube.com/results?search_query=${encodedQuery}+crash+course`,
         timestamps: [
           { time: '00:00', label: 'Visual Problem Breakdown' },
@@ -679,12 +673,9 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                       }}
                     >
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '6px' }}>
+                        <div style={{ marginBottom: '6px' }}>
                           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>
                             YouTube Video
-                          </span>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
-                            {vid.rating}
                           </span>
                         </div>
 

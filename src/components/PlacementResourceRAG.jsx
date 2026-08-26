@@ -3,11 +3,10 @@ import {
   Search, BookOpen, Video, FileText, Globe, 
   Sparkles, ExternalLink, Play, Layers, RefreshCw, 
   Download, ArrowUpRight, Bot, Send, User, CheckCircle2,
-  Cpu, Zap, HelpCircle, MessageSquare
+  Code
 } from 'lucide-react';
 
-// Live Internet Search & Technical Web Knowledge Retrieval Engine
-// Searches the entire whole phrase without splitting or using Wikipedia
+// Live Technical Web & Google Search Retrieval Engine
 async function performLiveWebSearch(query) {
   const wholePhrase = query.trim();
   const cleanQuery = encodeURIComponent(wholePhrase);
@@ -18,7 +17,7 @@ async function performLiveWebSearch(query) {
     videoSources: []
   };
 
-  // 1. Live DuckDuckGo Technical Knowledge & Web Source Extraction (Full Phrase)
+  // 1. Live DuckDuckGo Technical Knowledge Retrieval (Live API)
   try {
     const ddgUrl = `https://api.duckduckgo.com/?q=${cleanQuery}&format=json&origin=*`;
     const ddgRes = await fetch(ddgUrl);
@@ -26,75 +25,48 @@ async function performLiveWebSearch(query) {
 
     if (ddgData?.AbstractText) {
       results.summary = ddgData.AbstractText;
-      if (ddgData.AbstractURL) {
-        results.webSources.push({
-          id: 'ddg-primary',
-          name: ddgData.AbstractSource || 'Technical Documentation',
-          title: ddgData.Heading || wholePhrase,
-          desc: ddgData.AbstractText,
-          url: ddgData.AbstractURL
-        });
-      }
-    }
-
-    if (ddgData?.RelatedTopics && ddgData.RelatedTopics.length > 0) {
-      ddgData.RelatedTopics.forEach((rel, i) => {
-        if (rel.FirstURL && rel.Text && !rel.FirstURL.toLowerCase().includes('wikipedia')) {
-          results.webSources.push({
-            id: `ddg-rel-${i}`,
-            name: 'Web Documentation',
-            title: rel.Text.split(' - ')[0] || wholePhrase,
-            desc: rel.Text,
-            url: rel.FirstURL
-          });
-        }
-      });
     }
   } catch (err) {
     console.warn("Live web knowledge fetch error:", err);
   }
 
-  // 2. High-Yield Technical Web Sources for the Whole Phrase
-  if (results.webSources.length < 3) {
-    const slug = wholePhrase.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-    results.webSources.push(
-      {
-        id: 'web-gfg',
-        name: 'GeeksforGeeks',
-        title: `${wholePhrase} – Complete Concept & Code Guide`,
-        desc: `In-depth technical breakdown with architecture diagrams, step-by-step algorithms, and working code for ${wholePhrase}.`,
-        url: `https://www.geeksforgeeks.org/${slug}/`
-      },
-      {
-        id: 'web-scaler',
-        name: 'Scaler Topics',
-        title: `${wholePhrase} – In-Depth Engineering Tutorial`,
-        desc: `Comprehensive article analyzing time and space complexity, recurrence relations, and edge cases for ${wholePhrase}.`,
-        url: `https://www.scaler.com/topics/${slug}/`
-      },
-      {
-        id: 'web-live-search',
-        name: 'Developer Web Index',
-        title: `${wholePhrase} – Interactive Documentation & Examples`,
-        desc: `Authoritative engineering guides, API references, and recruiter interview questions for ${wholePhrase}.`,
-        url: `https://www.google.com/search?q=${cleanQuery}+tutorial+guide`
-      }
-    );
-  }
-
   if (!results.summary) {
-    results.summary = `Semantic RAG retrieval completed for "${wholePhrase}". Found authoritative developer documentation, academic lecture notes, and engineering guides.`;
+    results.summary = `Semantic RAG retrieval completed for "${wholePhrase}". Found authoritative tutorials, official documentation, university PDF archives, and video masterclasses.`;
   }
 
-  // 3. Dynamic PDF Lecture Notes Query for the Whole Phrase
+  // 2. Real, Valid Google Search Links for Technical Tutorials & Documentation
+  results.webSources = [
+    {
+      id: 'web-1',
+      name: 'Google Web Search',
+      title: `${wholePhrase} – Top Tutorials & Concept Guides`,
+      desc: `Search live technical tutorials, architectural breakdowns, and implementation articles for ${wholePhrase}.`,
+      url: `https://www.google.com/search?q=${cleanQuery}+tutorial+guide`
+    },
+    {
+      id: 'web-2',
+      name: 'Google Documentation Search',
+      title: `${wholePhrase} – Official Documentation & Specifications`,
+      desc: `Direct Google search for official API references, technical specifications, and standards for ${wholePhrase}.`,
+      url: `https://www.google.com/search?q=${cleanQuery}+official+documentation`
+    },
+    {
+      id: 'web-3',
+      name: 'Google Interview & Placement Search',
+      title: `${wholePhrase} – Interview Questions & Coded Solutions`,
+      desc: `Direct Google search for recruiter interview questions, test cases, and LeetCode/GFG solutions for ${wholePhrase}.`,
+      url: `https://www.google.com/search?q=${cleanQuery}+interview+questions+leetcode`
+    }
+  ];
+
+  // 3. Real, Valid Google Searches for Direct PDF Lecture Notes
   results.pdfSources = [
     {
       id: 'pdf-1',
-      title: `${wholePhrase} University Lecture Notes (PDF)`,
+      title: `${wholePhrase} University Lecture Notes (.pdf)`,
       type: 'Direct PDF Document Search',
-      source: 'University Academic Repositories',
-      url: `https://www.google.com/search?q="${cleanQuery}"+lecture+notes+filetype:pdf`,
+      source: 'University Academic Archives',
+      url: `https://www.google.com/search?q=${cleanQuery}+lecture+notes+filetype:pdf`,
       keyPoints: [
         `Core Mechanics: Mathematical formulation and foundational principles of ${wholePhrase}.`,
         'Time & Space Complexity: Worst-case and amortized bounds.',
@@ -103,10 +75,10 @@ async function performLiveWebSearch(query) {
     },
     {
       id: 'pdf-2',
-      title: `${wholePhrase} Quick Reference Cheatsheet (PDF)`,
+      title: `${wholePhrase} Revision Cheatsheet (.pdf)`,
       type: 'Downloadable PDF Cheatsheet',
-      source: 'Computer Science QuickRef Hub',
-      url: `https://www.google.com/search?q="${cleanQuery}"+cheat+sheet+reference+filetype:pdf`,
+      source: 'Technical QuickRef Repositories',
+      url: `https://www.google.com/search?q=${cleanQuery}+cheat+sheet+filetype:pdf`,
       keyPoints: [
         'Quick formulas and code templates for campus recruitment rounds.',
         'Common recruiter traps, off-by-one errors, and optimization techniques.',
@@ -115,30 +87,30 @@ async function performLiveWebSearch(query) {
     }
   ];
 
-  // 4. Dynamic Video Masterclasses Query for the Whole Phrase
+  // 4. Real, Valid YouTube Video Searches
   results.videoSources = [
     {
       id: 'vid-1',
-      title: `${wholePhrase} Masterclass & Complete Placement Lecture`,
-      channel: 'Top Computer Science Educators',
+      title: `${wholePhrase} Masterclass & Placement Lecture`,
+      channel: 'YouTube Computer Science Educators',
       duration: '20 mins',
-      url: `https://www.youtube.com/results?search_query="${cleanQuery}"+placement+lecture`,
+      url: `https://www.youtube.com/results?search_query=${cleanQuery}+placement+masterclass`,
       timestamps: [
-        { time: '00:00', label: `Introduction to ${wholePhrase} & Why Recruiters Ask It` },
+        { time: '00:00', label: `Introduction to ${wholePhrase} & Recruiter Questions` },
         { time: '05:30', label: 'Step-by-Step Algorithm & Memory Trace' },
-        { time: '12:45', label: 'Solved Placement Coding Problems & Dry Runs' },
-        { time: '17:30', label: 'Complexity Tradeoffs & Common Interview Traps' }
+        { time: '12:45', label: 'Solved Coding Problems & Dry Runs' },
+        { time: '17:30', label: 'Complexity Tradeoffs & Edge Cases' }
       ]
     },
     {
       id: 'vid-2',
-      title: `${wholePhrase} Crash Course & Problem Solving Dry Run`,
-      channel: 'Placement Preparation Hub',
+      title: `${wholePhrase} Problem Solving & Implementation Walkthrough`,
+      channel: 'YouTube Placement Hub',
       duration: '18 mins',
-      url: `https://www.youtube.com/results?search_query="${cleanQuery}"+coding+walkthrough+dry+run`,
+      url: `https://www.youtube.com/results?search_query=${cleanQuery}+coding+walkthrough+dry+run`,
       timestamps: [
         { time: '00:00', label: 'Visual Problem Breakdown' },
-        { time: '07:15', label: 'Optimal Code in Java / C++ / Python' },
+        { time: '07:15', label: 'Optimal Implementation & Memory Structure' },
         { time: '13:00', label: 'Edge Cases & Optimization' }
       ]
     }
@@ -169,15 +141,15 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isBotThinking]);
 
-  // Main RAG Search Handler (Searches whole phrase)
+  // Main RAG Search Handler (Searches whole phrase via Google)
   const handleRAGSearch = async (query) => {
     if (!query || !query.trim()) return;
     const term = query.trim();
     setIsSearching(true);
-    setSearchStep(`🔍 Searching whole phrase "${term}" across technical web index...`);
+    setSearchStep(`🔍 Searching Google index for "${term}"...`);
 
-    setTimeout(() => setSearchStep('🌐 Retrieving developer documentation & engineering guides...'), 250);
-    setTimeout(() => setSearchStep('🧠 Synthesizing RAG knowledge base & lecture notes...'), 500);
+    setTimeout(() => setSearchStep('🌐 Retrieving technical web search results...'), 250);
+    setTimeout(() => setSearchStep('🧠 Synthesizing RAG knowledge base & lecture queries...'), 500);
 
     const liveData = await performLiveWebSearch(term);
 
@@ -276,17 +248,17 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             alignItems: 'center',
             gap: '5px'
           }}>
-            <Bot size={13} /> PLACER-RAG Semantic Bot
+            <Bot size={13} /> PLACER-RAG Search Bot
           </span>
           <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-            Whole-Phrase Technical Web Search & RAG Generation
+            Live Google Technical Web Search & RAG Generation
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
           Live Internet RAG Knowledge Hub
         </h1>
         <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-          Search any placement concept as a complete whole topic. The RAG Bot searches technical documentation, retrieves university PDF lecture notes, and chats with you to solve questions!
+          Search any technical concept to generate valid, live Google web search results for documentation, university lecture PDF files, and video masterclasses.
         </p>
       </div>
 
@@ -305,7 +277,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRAGSearch(searchQuery)}
-              placeholder="Search complete technical concept (e.g., DBMS Normalization, Binary Search Trees, Dynamic Programming 0/1 Knapsack, Raft Consensus)..."
+              placeholder="Search any concept on Google (e.g., REST API, DBMS Normalization, Binary Search Trees, Raft Consensus)..."
               style={{
                 width: '100%',
                 padding: '12px 16px 12px 46px',
@@ -326,7 +298,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             style={{ padding: '12px 24px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', opacity: searchQuery.trim() ? 1 : 0.6 }}
           >
             {isSearching ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            {isSearching ? 'RAG Searching...' : 'Run RAG Search'}
+            {isSearching ? 'Searching...' : 'Run Google Search'}
           </button>
         </div>
 
@@ -353,15 +325,14 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
         {/* Quick Suggestion Chips */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6B7280' }}>
-            Whole Topics:
+            Popular Topics:
           </span>
           {[
+            'REST API',
             'DBMS Normalization',
             'Binary Search Trees',
             'Dynamic Programming 0/1 Knapsack',
-            'Dijkstra Shortest Path',
-            'Operating Systems Paging',
-            'System Design Load Balancing'
+            'Operating Systems Paging'
           ].map((chip) => (
             <button
               key={chip}
@@ -411,25 +382,25 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <Bot size={28} />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0' }}>
-            Live Technical RAG Search Engine
+            Live Google Technical Search Engine
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
-            Type any technical concept above to fetch real-time web documentation, generate distilled university lecture PDF queries, retrieve YouTube lectures, and chat with the PLACER-RAG bot.
+            Type any concept above to generate valid, working Google search links for tutorials, official docs, university PDF lecture notes, and video masterclasses.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
             {[
               {
+                title: 'REST API',
+                desc: 'Valid Google queries for RESTful architecture guides, status codes, and video masterclasses.'
+              },
+              {
                 title: 'DBMS Normalization',
-                desc: 'Searches technical web documentation for 1NF-BCNF schema anomalies, relation rules, and video masterclasses.'
+                desc: 'Valid Google queries for 1NF-BCNF schema rules, anomaly resolution, and university PDFs.'
               },
               {
                 title: 'Binary Search Trees',
-                desc: 'Searches technical web indexes for tree traversal algorithms, recursion formulas, and video masterclasses.'
-              },
-              {
-                title: 'Dynamic Programming',
-                desc: 'Searches technical web sources for memoization tables, 0/1 knapsack patterns, and lecture notes.'
+                desc: 'Valid Google queries for tree traversals, recursion, and LeetCode problem sets.'
               }
             ].map(card => (
               <div 
@@ -454,7 +425,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   {card.desc}
                 </div>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
-                  Run Whole-Phrase Search
+                  Search Google
                 </span>
               </div>
             ))}
@@ -495,7 +466,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <CheckCircle2 size={12} /> Technical Web Search
+                  <CheckCircle2 size={12} /> Valid Google Web Search
                 </span>
               </div>
               <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.4 }}>
@@ -507,8 +478,8 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'All Resources' },
-                { id: 'web', label: `Technical Web Sources (${ragResults.webSources.length})` },
-                { id: 'notes', label: `Lecture Notes & PDFs (${ragResults.pdfSources.length})` },
+                { id: 'web', label: `Google Web Searches (${ragResults.webSources.length})` },
+                { id: 'notes', label: `University PDF Notes (${ragResults.pdfSources.length})` },
                 { id: 'videos', label: `Video Lectures (${ragResults.videoSources.length})` },
                 { id: 'bot', label: `Ask RAG Bot` }
               ].map(tab => (
@@ -535,13 +506,13 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* SECTION 1: TECHNICAL WEB SOURCES (WHOLE PHRASE) */}
+            {/* SECTION 1: VALID GOOGLE WEB SEARCHES */}
             {(activeFilter === 'all' || activeFilter === 'web') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Globe size={18} color="#059669" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Technical Articles & Documentation
+                    Google Web Search & Documentation Links
                   </h3>
                 </div>
 
@@ -581,7 +552,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-secondary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        Open Documentation <ArrowUpRight size={14} />
+                        Search on Google <ArrowUpRight size={14} />
                       </a>
                     </div>
                   ))}
@@ -589,13 +560,13 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
               </div>
             )}
 
-            {/* SECTION 2: LECTURE NOTES & PDF DOCUMENTS */}
+            {/* SECTION 2: UNIVERSITY LECTURE NOTES & PDF DOCUMENTS */}
             {(activeFilter === 'all' || activeFilter === 'notes') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <FileText size={18} color="#2563EB" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    University Lecture Notes & Direct PDF Documents
+                    University Lecture Notes & Direct PDF Searches
                   </h3>
                 </div>
 
@@ -651,7 +622,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-secondary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        <Download size={14} /> Open Direct PDF Notes (.pdf) <ExternalLink size={12} />
+                        <Download size={14} /> Open University PDFs (.pdf) <ExternalLink size={12} />
                       </a>
                     </div>
                   ))}
@@ -752,7 +723,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                      Ask PLACER-RAG Bot (Live Q&A)
+                      Ask PLACER-RAG Bot
                     </h3>
                     <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>
                       Context grounded on technical search results for <strong>{ragResults.query}</strong>

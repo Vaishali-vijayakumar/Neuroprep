@@ -210,21 +210,17 @@ const KNOWLEDGE_BASE = {
 };
 
 export default function PlacementResourceRAG({ profile = {}, codingState = {}, interviewState = {}, aptitudeState = {}, setActiveTab }) {
-  const [searchQuery, setSearchQuery] = useState('DBMS Normalization for TCS');
-  const [selectedTopicKey, setSelectedTopicKey] = useState('dbms normalization');
-  const [explanationLevel, setExplanationLevel] = useState('Beginner'); // 'Very Simple' | 'Beginner' | 'Intermediate' | 'Interview-Ready'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTopicKey, setSelectedTopicKey] = useState(null); // null by default - no initial searches
+  const [explanationLevel, setExplanationLevel] = useState('Beginner'); // 'Beginner' | 'Intermediate' | 'Interview-Ready'
   const [timeBudget, setTimeBudget] = useState('30 min'); // '15 min' | '30 min' | '45 min'
   const [activeStepTab, setActiveStepTab] = useState('video'); // 'video' | 'notes' | 'practice' | 'quiz'
   const [quizAnswers, setQuizAnswers] = useState({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Student knowledge model state derived from real activity
-  const studentCodingScore = codingState?.score || 0;
-  const solvedCount = codingState?.solvedCount || 0;
-  const studentLevel = studentCodingScore > 65 ? 'Intermediate / Advanced' : 'Beginner / Foundation';
-
   const handleSearch = (queryText) => {
+    if (!queryText || !queryText.trim()) return;
     setIsSearching(true);
     const clean = queryText.toLowerCase();
     
@@ -239,10 +235,11 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
       setIsSearching(false);
       setIsQuizSubmitted(false);
       setQuizAnswers({});
+      setActiveStepTab('video');
     }, 400);
   };
 
-  const currentTopic = KNOWLEDGE_BASE[selectedTopicKey] || KNOWLEDGE_BASE['dbms normalization'];
+  const currentTopic = selectedTopicKey ? KNOWLEDGE_BASE[selectedTopicKey] : null;
 
   const handleSelectQuizOption = (qId, optionIdx) => {
     if (isQuizSubmitted) return;
@@ -254,14 +251,14 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
   };
 
   // Calculate Quiz Score
-  const totalQuizQuestions = currentTopic.quiz.length;
-  const correctQuizCount = currentTopic.quiz.reduce((acc, q) => {
+  const totalQuizQuestions = currentTopic?.quiz?.length || 0;
+  const correctQuizCount = currentTopic?.quiz?.reduce((acc, q) => {
     const selectedIdx = quizAnswers[q.id];
     if (selectedIdx !== undefined && q.options[selectedIdx]?.isCorrect) {
       return acc + 1;
     }
     return acc;
-  }, 0);
+  }, 0) || 0;
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: 1060, margin: '0 auto', fontFamily: 'var(--font-inter)' }}>
@@ -313,8 +310,8 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
       </div>
 
       {/* Interactive Search Bar & Quick Topic Chips */}
-      <div style={{ marginBottom: '22px' }}>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
           <div style={{
             flex: 1,
             position: 'relative',
@@ -343,8 +340,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
           </div>
           <button
             onClick={() => handleSearch(searchQuery)}
+            disabled={!searchQuery.trim()}
             className="btn-primary-spec"
-            style={{ padding: '12px 24px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ padding: '12px 24px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', opacity: searchQuery.trim() ? 1 : 0.6 }}
           >
             {isSearching ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
             Generate Study Path
@@ -357,103 +355,184 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             Popular Topics:
           </span>
           {[
-            'DBMS Normalization for TCS',
-            'Binary Trees & BST',
-            'Dynamic Programming 0/1 Knapsack'
+            { label: 'DBMS Normalization', key: 'dbms normalization' },
+            { label: 'Binary Trees & BST', key: 'binary tree' },
+            { label: 'Dynamic Programming 0/1 Knapsack', key: 'dynamic programming' }
           ].map((chip) => (
             <button
-              key={chip}
+              key={chip.key}
               onClick={() => {
-                setSearchQuery(chip);
-                handleSearch(chip);
+                setSearchQuery(chip.label);
+                handleSearch(chip.label);
               }}
               style={{
-                padding: '4px 12px',
+                padding: '5px 14px',
                 borderRadius: '20px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: '#F3F4F6',
-                color: '#374151',
+                border: selectedTopicKey === chip.key ? '1.5px solid #111827' : '1px solid #E5E7EB',
+                backgroundColor: selectedTopicKey === chip.key ? '#111827' : '#F3F4F6',
+                color: selectedTopicKey === chip.key ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              {chip}
+              {chip.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* RAG Configuration Controls (Explanation Level & Time Budget) */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#F9FAFB',
-        border: '1px solid #E5E7EB',
-        borderRadius: '14px',
-        padding: '12px 18px',
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '14px'
-      }}>
-        {/* Explanation Tone Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827' }}>
-            Explanation Depth:
-          </span>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {['Beginner', 'Intermediate', 'Interview-Ready'].map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => setExplanationLevel(lvl)}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  backgroundColor: explanationLevel === lvl ? '#111827' : '#FFFFFF',
-                  color: explanationLevel === lvl ? '#FFFFFF' : '#4B5563',
-                  boxShadow: explanationLevel === lvl ? '0 2px 6px rgba(0,0,0,0.1)' : 'none'
-                }}
-              >
-                {lvl}
-              </button>
-            ))}
+      {/* When NO search has been run yet - show inviting clean empty state */}
+      {!selectedTopicKey && (
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1.5px dashed #D1D5DB',
+          padding: '44px 28px',
+          textAlign: 'center',
+          marginBottom: '26px'
+        }}>
+          <div style={{
+            width: '54px',
+            height: '54px',
+            borderRadius: '50%',
+            backgroundColor: '#F3F4F6',
+            color: '#111827',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px auto'
+          }}>
+            <BookOpen size={26} />
           </div>
-        </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0' }}>
+            Search Any Placement Topic Above
+          </h3>
+          <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
+            Type a topic or click one of the popular topics to generate your custom 4-step learning roadmap with timestamped video breakdowns, concise notes, practice questions, and a mini-quiz.
+          </p>
 
-        {/* Time Budget Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Clock size={16} color="#6B7280" />
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827' }}>
-            Available Time:
-          </span>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {['15 min', '30 min', '45 min'].map((time) => (
-              <button
-                key={time}
-                onClick={() => setTimeBudget(time)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
+            {[
+              {
+                title: 'DBMS Normalization',
+                desc: '1NF to BCNF rules, eliminating partial and transitive dependencies with clear schema examples.',
+                key: 'dbms normalization'
+              },
+              {
+                title: 'Binary Trees & BST',
+                desc: 'Inorder/Preorder/Postorder traversals, height calculation, and tree validation algorithms.',
+                key: 'binary tree'
+              },
+              {
+                title: 'Dynamic Programming',
+                desc: '0/1 Knapsack pattern, recursion to memoization conversion, and 1D space optimization.',
+                key: 'dynamic programming'
+              }
+            ].map(card => (
+              <div 
+                key={card.key}
+                onClick={() => {
+                  setSearchQuery(card.title);
+                  handleSearch(card.title);
+                }}
                 style={{
-                  padding: '4px 10px',
-                  borderRadius: '6px',
+                  backgroundColor: '#F9FAFB',
                   border: '1px solid #E5E7EB',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
+                  borderRadius: '12px',
+                  padding: '16px 18px',
                   cursor: 'pointer',
-                  backgroundColor: timeBudget === time ? '#111827' : '#FFFFFF',
-                  color: timeBudget === time ? '#FFFFFF' : '#4B5563'
+                  transition: 'all 0.15s ease'
                 }}
               >
-                {time}
-              </button>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
+                  {card.title}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', lineHeight: 1.4, marginBottom: '10px' }}>
+                  {card.desc}
+                </div>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
+                  Load Learning Path
+                </span>
+              </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* When a topic IS selected - render the 4-step path */}
+      {selectedTopicKey && currentTopic && (
+        <div>
+          {/* Controls (Explanation Depth & Time Budget) */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: '#F9FAFB',
+            border: '1px solid #E5E7EB',
+            borderRadius: '14px',
+            padding: '12px 18px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '14px'
+          }}>
+            {/* Explanation Tone Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827' }}>
+                Explanation Depth:
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['Beginner', 'Intermediate', 'Interview-Ready'].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setExplanationLevel(lvl)}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: explanationLevel === lvl ? '#111827' : '#FFFFFF',
+                      color: explanationLevel === lvl ? '#FFFFFF' : '#4B5563',
+                      boxShadow: explanationLevel === lvl ? '0 2px 6px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Budget Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={16} color="#6B7280" />
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827' }}>
+                Available Time:
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['15 min', '30 min', '45 min'].map((time) => (
+                  <button
+                    key={time}
+                    onClick={() => setTimeBudget(time)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: timeBudget === time ? '#111827' : '#FFFFFF',
+                      color: timeBudget === time ? '#FFFFFF' : '#4B5563'
+                    }}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
       {/* Multi-Factor Resource Quality Score (RQS) Header Badge */}
       <div style={{
@@ -581,14 +660,14 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
                 padding: '4px 12px',
                 borderRadius: '8px'
               }}>
-                RQS: {currentTopic.videoRAG.rqsScore}%
+                Quality: {currentTopic.videoRAG.rqsScore}%
               </span>
             </div>
 
-            {/* Timestamp Segmentation RAG Breakdown */}
+            {/* Timestamp Segmentation Breakdown */}
             <div style={{ marginTop: '16px' }}>
               <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '8px' }}>
-                Key Topic Timestamps Extracted by PLACER-RAG:
+                Key Topic Timestamps:
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {currentTopic.videoRAG.chapters.map((ch, idx) => (
@@ -943,6 +1022,8 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
               )}
             </div>
           </div>
+        </div>
+      )}
         </div>
       )}
 

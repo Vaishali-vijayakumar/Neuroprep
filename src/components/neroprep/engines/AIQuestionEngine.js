@@ -286,6 +286,12 @@ export class AIQuestionEngine {
    * Helper: Generate a question-specific AI Benchmark Model Answer
    */
   getBenchmarkModelAnswer(question, trackId = null) {
+    const activeTrack = trackId || this.trackId;
+    const benchmarkData = WebRAGEvaluationEngine.searchAndRetrieveBenchmark(question, activeTrack);
+    if (benchmarkData && benchmarkData.goldStandardSolution) {
+      return benchmarkData.goldStandardSolution;
+    }
+
     const qLower = (question || '').toLowerCase();
     const role = this.config.role || 'Software Engineer';
     const company = this.config.company || 'our organization';
@@ -328,7 +334,7 @@ export class AIQuestionEngine {
   }
 
   /**
-   * Evaluate candidate's individual answer quality with deep semantic & topic-specific analysis
+   * Evaluate candidate's individual answer quality with deep semantic & Web-RAG analysis
    */
   evaluateAnswerQuality(question, answerText, trackId = null) {
     const activeTrack = trackId || this.trackId;
@@ -336,26 +342,42 @@ export class AIQuestionEngine {
     const words = text.split(/\s+/).filter(Boolean).length;
     const lower = text.toLowerCase();
     const qLower = (question || '').toLowerCase();
-    const benchmark = this.getBenchmarkModelAnswer(question, activeTrack);
+
+    // ── 1. Always Run Deep Internet Benchmark Evaluation via WebRAGEvaluationEngine ──
+    const ragEval = WebRAGEvaluationEngine.evaluateWithInternetBenchmark(question, text, activeTrack);
+    const emotionProfile = InterviewEmotionModel.analyzeEmotion(text, question, activeTrack);
+    const benchmark = ragEval.ideal_answer || this.getBenchmarkModelAnswer(question, activeTrack);
 
     // Identify semantic topic of the question
     const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
     const isWhyCompany = /why (this company|join|work with us)|interested in joining/i.test(qLower) || (this.config.company && qLower.includes(this.config.company.toLowerCase()));
     const isMotivation = /what motivated you|what motivates you|why (do you want|apply for|choose) this role|source of motivation/i.test(qLower);
     const isFailure = /failure|mistake|setback|struggle|didn't go as planned/i.test(qLower);
-    const isPrioritize = /prioritize|priority|manage time|deadlines|competing tasks/i.test(qLower);
-    const isLearning = /learn new technology|fast learner|upskill|stay updated/i.test(qLower);
-    const isWeakness = /weakness|area of improvement/i.test(qLower);
-    const isStrengths = /strength|strongest attribute/i.test(qLower);
-    const isTeamConflict = /team|conflict|disagree|collaborat/i.test(qLower);
 
-    // ── 1. Detect Incomplete / Dismissive / Negative Answers ────────────────────
-    const isDismissive = /\b(nothing|none|dont care|don't care|no reason|not interested|not intresetd|nothing motivated|no motivation|nothing encourage|no failure|never failed|idk|whatever)\b/i.test(lower);
+    // ── 2. Detect Incomplete / Dismissive / Negative Answers ────────────────────
+    const isDismissive = /\b(nothing|none|dont care|don't care|no reason|not interested|not intresetd|nothing motivated|no motivation|nothing encourage|no failure|never failed|idk|dont know|don't know|whatever|pls do excuse|excuse me)\b/i.test(lower);
 
     if (isDismissive) {
       this.consecutiveWeak++;
       this.consecutiveStrong = 0;
       this._checkAdaptation();
+
+      if (/\b(dont know|don't know|pls do excuse|excuse me|no idea)\b/i.test(lower)) {
+        return {
+          overall: 10,
+          is_correct: false,
+          verdict: 'Unanswered / Topic Not Known',
+          what_was_right: 'Acknowledged the question directly.',
+          what_was_missing: `Stated lack of knowledge on this question. ${ragEval.what_was_missing || 'Review the core concepts and provide a structured technical explanation.'}`,
+          feedback: `Take time to study the verified internet benchmark solution below and practice structuring your answer.`,
+          strengths: ['Acknowledged prompt'],
+          improvements: ragEval.missedConcepts && ragEval.missedConcepts.length > 0
+            ? ragEval.missedConcepts.slice(0, 3)
+            : ['Study the verified benchmark answer', 'Explain the foundational concepts with examples'],
+          ideal_answer: benchmark,
+          emotion: emotionProfile,
+        };
+      }
 
       if (isFailure && /\b(no failure|never failed|none|nothing)\b/i.test(lower)) {
         return {
@@ -371,6 +393,7 @@ export class AIQuestionEngine {
             'Demonstrate emotional maturity, resilience, and personal accountability'
           ],
           ideal_answer: benchmark,
+          emotion: emotionProfile,
         };
       }
 
@@ -388,6 +411,7 @@ export class AIQuestionEngine {
             'Explain how the company\'s projects match your technical ambitions'
           ],
           ideal_answer: benchmark,
+          emotion: emotionProfile,
         };
       }
 
@@ -405,6 +429,7 @@ export class AIQuestionEngine {
             'Explain what brings you professional fulfillment and satisfaction'
           ],
           ideal_answer: benchmark,
+          emotion: emotionProfile,
         };
       }
 
@@ -418,155 +443,53 @@ export class AIQuestionEngine {
         strengths: ['Prompt response'],
         improvements: ['Express genuine career enthusiasm and positive motivation', 'Connect your aspirations to the company and role'],
         ideal_answer: benchmark,
+        emotion: emotionProfile,
       };
     }
 
-    // ── 2. Detect Name-Only / Bare 1–3 Word Answers ───────────────────────────
-    if (words <= 3) {
-      this.consecutiveWeak++;
-      this.consecutiveStrong = 0;
-      this._checkAdaptation();
-
-      if (isIntro) {
-        return {
-          overall: 16,
-          is_correct: false,
-          verdict: 'Incomplete / Only Name Stated',
-          what_was_right: 'Stated your name clearly.',
-          what_was_missing: 'Missing educational background, core technical skills (programming languages, frameworks), key projects built, and career ambitions as a Software Engineer.',
-          feedback: 'Deliver a structured 60-90 second introduction covering: 1) Education & Degree, 2) Technical Skills & Projects, 3) Enthusiasm for this role.',
-          strengths: ['Clear name statement'],
-          improvements: [
-            'Structure introduction with Education, Technical Projects, and Career Goals',
-            'Elaborate with at least 3-4 structured sentences'
-          ],
-          ideal_answer: benchmark,
-        };
-      }
-
-      if (isPrioritize) {
-        return {
-          overall: 30,
-          is_correct: false,
-          verdict: 'Oversimplified / Needs Practical Framework',
-          what_was_right: 'Identified the basic concept of ranking priorities.',
-          what_was_missing: 'Stating "from high to low" lacks a concrete methodology. You need to explain HOW you determine priority (e.g., deadline urgency, business impact, dependencies) and handle competing demands.',
-          feedback: 'Elaborate on your task management system: milestone tracking, dependency analysis, and communicating timeline adjustments with leads.',
-          strengths: ['Addressed prioritization concept'],
-          improvements: [
-            'Explain the specific criteria used to evaluate urgency vs business impact',
-            'Describe practical tools or frameworks (e.g., Eisenhower Matrix, Jira, milestone sprints)'
-          ],
-          ideal_answer: benchmark,
-        };
-      }
-
-      if (isLearning) {
-        return {
-          overall: 32,
-          is_correct: false,
-          verdict: 'Over-reliant on Peers / Lacks Autonomous Methods',
-          what_was_right: 'Valued collaborative peer learning.',
-          what_was_missing: 'Relying exclusively on peers suggests low self-directed autonomy. Interviewers look for initiative: reading documentation, building proof-of-concept projects, and self-study alongside peer feedback.',
-          feedback: 'Highlight a blended learning approach: independent documentation research + building sample projects + consulting senior peers for best practice reviews.',
-          strengths: ['Valued peer collaboration'],
-          improvements: [
-            'Highlight self-directed learning methods (official documentation, hands-on POCs)',
-            'Combine independent research with peer code reviews'
-          ],
-          ideal_answer: benchmark,
-        };
-      }
-
-      return {
-        overall: 20,
-        is_correct: false,
-        verdict: 'Very Brief / Single Phrase',
-        what_was_right: 'Responded to prompt.',
-        what_was_missing: 'Response is too brief to evaluate domain knowledge, reasoning, or communication skills.',
-        feedback: 'Elaborate your response with specific examples, context, and clear explanations.',
-        strengths: ['Clear statement'],
-        improvements: ['Provide complete explanatory sentences with practical context', 'Elaborate with at least 3-4 structured sentences'],
-        ideal_answer: benchmark,
-      };
-    }
-
-    // ── 3. Detect Short / Brief Answers (4–15 words) ──────────────────────────
+    // ── 3. Partial or Brief Answer (1–15 words): Evaluated via WebRAG Concept Coverage ──
     if (words < 16) {
       this.consecutiveWeak++;
       this.consecutiveStrong = 0;
       this._checkAdaptation();
 
-      if (isPrioritize) {
+      const isBareName = isIntro && words <= 3;
+      if (isBareName) {
         return {
-          overall: 48,
-          is_correct: 'partial',
-          verdict: 'Brief / Needs Prioritization Framework',
-          what_was_right: 'Acknowledged task order and priority management.',
-          what_was_missing: 'Needs a structured framework (e.g., Eisenhower Matrix, impact vs effort matrix) and examples of how you handle shifting deadlines.',
-          feedback: 'Explain your step-by-step workflow: assessing dependencies, daily planning, and communicating trade-offs with stakeholders.',
-          strengths: ['Direct response on prioritization'],
-          improvements: [
-            'Describe how you assess business impact vs deadline urgency',
-            'Explain how you communicate timeline adjustments when overloaded'
-          ],
+          overall: 16,
+          is_correct: false,
+          verdict: 'Incomplete / Only Name Stated',
+          what_was_right: 'Stated your name clearly.',
+          what_was_missing: 'Missing educational background, core technical skills (programming languages, frameworks), key projects built, and career ambitions.',
+          feedback: 'Deliver a structured 60-90 second introduction covering: 1) Education & Degree, 2) Technical Skills & Projects, 3) Enthusiasm for this role.',
+          strengths: ['Clear name statement'],
+          improvements: ['Structure introduction with Education, Technical Projects, and Career Goals', 'Elaborate with at least 3-4 structured sentences'],
           ideal_answer: benchmark,
+          emotion: emotionProfile,
         };
       }
 
-      if (isLearning) {
-        return {
-          overall: 50,
-          is_correct: 'partial',
-          verdict: 'Brief / Needs Structured Learning Roadmap',
-          what_was_right: 'Identified learning resources and support systems.',
-          what_was_missing: 'Explain your end-to-end learning lifecycle: reading documentation, writing proof-of-concept code, and validating skills on real projects.',
-          feedback: 'Demonstrate active self-study: building small test projects to solidify theoretical concepts before production use.',
-          strengths: ['Highlighted learning approach'],
-          improvements: [
-            'Detail your process from reading documentation to building working prototypes',
-            'Mention how you track progress and apply best practices'
-          ],
-          ideal_answer: benchmark,
-        };
-      }
-
-      if (isFailure) {
-        return {
-          overall: 45,
-          is_correct: 'partial',
-          verdict: 'Brief / Needs STAR Resolution Details',
-          what_was_right: 'Referenced a past challenge.',
-          what_was_missing: 'Needs complete STAR framing: what was the specific situation, your personal ownership, and the permanent system improvement you implemented.',
-          feedback: 'Focus on the positive resolution and what systemic checks you added to prevent the issue from recurring.',
-          strengths: ['Willingness to discuss setbacks'],
-          improvements: [
-            'Use the STAR method (Situation, Task, Action, Result) with specific details',
-            'Highlight the long-term learning and preventative mechanisms added'
-          ],
-          ideal_answer: benchmark,
-        };
-      }
+      // Deep Web-RAG comparison for short/partial answers (e.g. 2 of 4 pillars mentioned)
+      const hasCovered = ragEval.coveredConcepts && ragEval.coveredConcepts.length > 0;
+      const partialScore = hasCovered ? Math.max(35, ragEval.score) : Math.max(20, Math.min(48, words * 3));
 
       return {
-        overall: 48,
-        is_correct: 'partial',
-        verdict: 'Brief / Needs Elaboration',
-        what_was_right: 'Directly addressed the question topic.',
-        what_was_missing: isIntro
-          ? 'Could expand on specific engineering projects built, tech stack utilized, and problem-solving examples.'
-          : isWhyCompany
-          ? 'Needs concrete examples of what excites you about the company\'s technology and client impact.'
-          : 'Lacks supporting evidence, practical examples, and depth of explanation.',
-        feedback: 'Good start. Expand your answer with concrete technical details, past project experiences, and measurable outcomes.',
-        strengths: ['Direct response', 'Concise communication'],
-        improvements: ['Elaborate with concrete examples and project context', 'Use the STAR method (Situation, Task, Action, Result)'],
+        overall: partialScore,
+        is_correct: hasCovered ? 'partial' : false,
+        verdict: hasCovered ? `Partial Answer (${ragEval.coveredConcepts.length} Concepts Identified)` : 'Brief / Needs Elaboration',
+        what_was_right: ragEval.what_was_right || 'Directly addressed the question topic.',
+        what_was_missing: ragEval.what_was_missing || 'Lacks supporting evidence, practical examples, and depth of explanation.',
+        feedback: hasCovered
+          ? `Good start mentioning ${ragEval.coveredConcepts.join(', ')}. Strengthen your answer by explaining ${ragEval.missedConcepts.slice(0, 2).join(' and ')} with concrete code examples.`
+          : 'Expand your answer with foundational definitions, architectural details, and practical examples.',
+        strengths: ragEval.coveredConcepts && ragEval.coveredConcepts.length > 0 ? ragEval.coveredConcepts : ['Direct response'],
+        improvements: ragEval.missedConcepts && ragEval.missedConcepts.length > 0 ? ragEval.missedConcepts : ['Elaborate with concrete examples', 'Provide complete explanatory sentences'],
         ideal_answer: benchmark,
+        emotion: emotionProfile,
       };
     }
 
     // ── 4. Substantive Answers (16+ words): Deep Web-RAG & Semantic Evaluation ──
-    const ragEval = WebRAGEvaluationEngine.evaluateWithInternetBenchmark(question, text, activeTrack);
     const domainKeywords = {
       hr: ['team', 'ownership', 'collaborat', 'value', 'learn', 'goal', 'culture', 'resolv', 'adapt', 'integrity', 'project', 'skill', 'lead', 'deliver', 'growth', 'feedback', 'achiev', 'priorit', 'deadlin', 'impact'],
       tech: ['oop', 'class', 'database', 'transaction', 'acid', 'thread', 'process', 'memory', 'index', 'network', 'protocol', 'latency', 'api', 'server', 'async'],
@@ -605,9 +528,6 @@ export class AIQuestionEngine {
       this.consecutiveWeak = 0;
     }
     this._checkAdaptation();
-
-    // Run Deep Emotion & Valence Analysis
-    const emotionProfile = InterviewEmotionModel.analyzeEmotion(text, question, activeTrack);
 
     const isCorrect = overall >= 78 ? true : (overall >= 58 ? 'partial' : false);
     const verdict = ragEval.verdict || (overall >= 82 ? 'Optimal & Accurate' : overall >= 65 ? 'Good Structure' : 'Needs More Depth');

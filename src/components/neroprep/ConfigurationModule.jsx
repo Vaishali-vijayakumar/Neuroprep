@@ -439,9 +439,7 @@ function TrackFields({ trackId, config, set }) {
             'Data Structures & Algorithms',
             'Operating Systems & Concurrency',
             'Computer Networks & Protocols',
-            'System Design & Architecture',
-            'REST APIs & Web Technologies',
-            'Cloud & DevOps Basics'
+            'REST APIs & Web Technologies'
           ]}
           selected={config.techSubjects || ['OOP & SOLID Principles', 'DBMS & SQL Queries', 'Data Structures & Algorithms']}
           onChange={v => set('techSubjects', v)}

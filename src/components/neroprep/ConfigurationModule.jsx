@@ -36,7 +36,7 @@ const CLOUD_GOALS     = ['High Availability & Disaster Recovery', 'Serverless Mi
 
 // ── Track-specific configuration schema for all 12 tracks ─────────────────────
 const TRACK_FIELDS = {
-  hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'careerGoals', 'companyValues', 'workStyle', 'resume', 'jobDescription'] },
+  hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'hrInterviewType', 'hrEvaluationFocus', 'companyValues', 'workStyle', 'candidateAvailability', 'careerGoals', 'resume', 'jobDescription'] },
   tech:              { label: 'Technical Interview',  fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'jobDescription'] },
   dsa:               { label: 'DSA & Coding',         fields: ['codingLang', 'difficulty_dsa', 'timeLimitPerProblem', 'evaluationFocus', 'complexityRequirement', 'proctoringMode'] },
   system_design:     { label: 'System Design & Architecture (HLD & LLD)', fields: ['role', 'codingLang', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech', 'designFocus'] },
@@ -191,10 +191,12 @@ function TrackFields({ trackId, config, set }) {
       </Field>
     ),
     experience: (
-      <Field label="Experience Level">
-        <select style={selectStyle} value={config.experience || 'Fresher'} onChange={e => set('experience', e.target.value)}>
-          {['Fresher', '1-2 years', '3-5 years', '5+ years', '10+ years'].map(e => <option key={e}>{e}</option>)}
-        </select>
+      <Field label="Experience Level" helper="Target career stage for situational difficulty calibration.">
+        <PillRow
+          options={['Campus / Fresher', '1-2 years', '3-5 years', '5+ years']}
+          value={config.experience || 'Campus / Fresher'}
+          onChange={v => set('experience', v)}
+        />
       </Field>
     ),
     codingLang: (
@@ -374,16 +376,51 @@ function TrackFields({ trackId, config, set }) {
           value={config.productIdea || ''} onChange={e => set('productIdea', e.target.value)} />
       </Field>
     ),
+    hrInterviewType: (
+      <Field label="Interview Round Format" helper="Choose the interview structure and screening depth.">
+        <PillRow
+          options={['Campus Placement Final HR', 'Recruiter Screening', 'Culture & Values Fit Round', 'Leadership & Behavioral Round']}
+          value={config.hrInterviewType || 'Campus Placement Final HR'}
+          onChange={v => set('hrInterviewType', v)}
+        />
+      </Field>
+    ),
+    hrEvaluationFocus: (
+      <Field label="HR Assessment Focus Area" helper="Select the primary competency or evaluation dimension to emphasize.">
+        <PillRow
+          options={['Comprehensive HR Round', 'Behavioral & STAR Scenarios', 'Culture Fit & Core Values', 'Career Motivation & Ambition', 'Conflict & Team Collaboration']}
+          value={config.hrEvaluationFocus || 'Comprehensive HR Round'}
+          onChange={v => set('hrEvaluationFocus', v)}
+        />
+      </Field>
+    ),
+    candidateAvailability: (
+      <Field label="Availability & Notice Period" helper="Your joining availability for realistic HR scenario questions.">
+        <PillRow
+          options={['Immediate / Final Year Student', '15 - 30 Days', '1 - 2 Months', 'Exploring Opportunities']}
+          value={config.candidateAvailability || 'Immediate / Final Year Student'}
+          onChange={v => set('candidateAvailability', v)}
+        />
+      </Field>
+    ),
+    careerGoals: (
+      <Field label="Short & Long-Term Career Goals (Optional)" helper="Briefly describe your ambitions (e.g. Lead Engineer in 3 years, Cloud Architect, AI Specialization).">
+        <input type="text" style={inputStyle} placeholder="e.g. Aspiring software engineer targeting scalable cloud applications"
+          value={config.careerGoals || ''} onChange={e => set('careerGoals', e.target.value)} />
+      </Field>
+    ),
     companyValues: (
-      <Field label="Target Company Core Values">
+      <Field label="Target Company Core Values" helper="Select corporate values to calibrate behavioral and scenario questions.">
         <MultiSelect options={COMPANY_VALUES} selected={config.companyValues} onChange={v => set('companyValues', v)} />
       </Field>
     ),
     workStyle: (
-      <Field label="Preferred Work Culture & Style">
-        <select style={selectStyle} value={config.workStyle || WORK_STYLES[0]} onChange={e => set('workStyle', e.target.value)}>
-          {WORK_STYLES.map(w => <option key={w}>{w}</option>)}
-        </select>
+      <Field label="Preferred Work Culture & Style" helper="Select the team dynamic style for situational evaluation.">
+        <PillRow
+          options={['High-Growth Startup', 'Global Enterprise / MNC', 'Product-Driven Tech Team', 'Autonomous Remote / Async']}
+          value={config.workStyle || 'Global Enterprise / MNC'}
+          onChange={v => set('workStyle', v)}
+        />
       </Field>
     ),
     designFocus: (

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   Search, BookOpen, Video, FileText, Globe, 
   Sparkles, ExternalLink, Play, Layers, RefreshCw, 
-  Download, ArrowUpRight
+  Download, ArrowUpRight, Award, Star
 } from 'lucide-react';
 
-// Multi-Source Learning Platforms & Direct Topic-Page Intelligence Engine
+// Best-Ranked Placement Learning Platforms & Topic Article Intelligence Engine
 function retrieveResourcesForTopic(queryText) {
   const clean = (queryText || '').toLowerCase().trim();
   const slug = clean.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -43,12 +43,12 @@ function retrieveResourcesForTopic(queryText) {
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
 
-  // 1. DBMS & SQL Domain (Direct Exact Article Pages)
+  // 1. DBMS & SQL Domain (Best Ranked Placement Sites)
   if (domain === 'dbms') {
     return {
       title: 'DBMS Normalization & SQL Queries',
       category: 'Database Management Systems',
-      summary: 'Direct specific topic pages on GeeksforGeeks, JavaTpoint, Scaler Topics, and W3Schools, plus Stanford CS145 PDF lecture notes.',
+      summary: 'Best-ranked placement materials across GeeksforGeeks (#1), InterviewBit (#2), Scaler Topics (#3), and W3Schools (#4).',
       videos: [
         {
           id: 'v1',
@@ -109,42 +109,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'GeeksforGeeks',
+          rank: 1,
+          rankLabel: '#1 Best Ranked Placement Guide',
+          name: 'GeeksforGeeks Placement Portal',
           title: 'Database Normalization: 1NF, 2NF, 3NF, BCNF Explained',
-          desc: 'Specific topic article detailing insertion/deletion anomalies and schema decompositions.',
+          desc: 'The #1 cited campus interview tutorial explaining database anomalies, dependency preservation, and lossless decomposition.',
           url: 'https://www.geeksforgeeks.org/introduction-of-database-normalization/'
         },
         {
           id: 'w2',
-          name: 'JavaTpoint',
-          title: 'DBMS Normalization Tutorial with Solved Table Examples',
-          desc: 'Specific topic page walking through Step 1 to Step 4 normalization decomposition.',
-          url: 'https://www.javatpoint.com/dbms-normalization'
+          rank: 2,
+          rankLabel: '#2 Ranked Placement Q&A',
+          name: 'InterviewBit',
+          title: 'Top 50 DBMS & SQL Interview Questions with Solutions',
+          desc: 'Ranked #2 for campus placement rounds with step-by-step recruiter questions and test case answers.',
+          url: 'https://www.interviewbit.com/dbms-interview-questions/'
         },
         {
           id: 'w3',
+          rank: 3,
+          rankLabel: '#3 Ranked In-Depth Breakdown',
           name: 'Scaler Topics',
-          title: 'Normalization in DBMS (1NF to BCNF with Solved Questions)',
-          desc: 'Specific topic tutorial covering functional dependencies, candidate keys, and lossless joins.',
+          title: 'Normalization in DBMS (1NF to BCNF with Solved Schemas)',
+          desc: 'Comprehensive engineering article detailing candidate key determination, closure sets, and BCNF.',
           url: 'https://www.scaler.com/topics/dbms/normalization-in-dbms/'
         },
         {
           id: 'w4',
+          rank: 4,
+          rankLabel: '#4 Ranked Interactive SQL',
           name: 'W3Schools',
-          title: 'SQL Joins Specific Guide (INNER, LEFT, RIGHT, FULL OUTER)',
-          desc: 'Specific interactive tutorial page to practice joining relational tables with live SQL runner.',
+          title: 'SQL Joins Complete Reference with Live Editor',
+          desc: 'Top interactive tutorial page to practice INNER, LEFT, RIGHT, and FULL OUTER joins with instant output.',
           url: 'https://www.w3schools.com/sql/sql_join.asp'
         }
       ]
     };
   }
 
-  // 2. Binary Trees & BST Domain (Direct Exact Article Pages)
+  // 2. Binary Trees & BST Domain (Best Ranked Placement Sites)
   if (domain === 'trees') {
     return {
       title: 'Binary Trees & Binary Search Trees (BST)',
       category: 'Data Structures & Algorithms',
-      summary: 'Direct specific topic pages on GeeksforGeeks, Programiz, Scaler Topics, and JavaTpoint, plus MIT 6.006 PDF notes.',
+      summary: 'Best-ranked placement materials across Take U Forward Striver (#1), GeeksforGeeks (#2), Scaler Topics (#3), and Programiz (#4).',
       videos: [
         {
           id: 'v1',
@@ -204,42 +212,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'GeeksforGeeks',
-          title: 'Binary Tree Data Structure Tutorial & Code',
-          desc: 'Specific topic page covering tree properties, node pointers, and recursive traversals.',
-          url: 'https://www.geeksforgeeks.org/binary-tree-data-structure/'
+          rank: 1,
+          rankLabel: '#1 Best Ranked SDE Placement Sheet',
+          name: 'Take U Forward (Striver SDE Sheet)',
+          title: 'Binary Tree Traversals & Complete SDE Roadmap',
+          desc: 'The #1 highest-ranked placement preparation guide in India with optimal C++/Java code and video dry runs.',
+          url: 'https://takeuforward.org/data-structure/tree-traversals-inorder-preorder-postorder/'
         },
         {
           id: 'w2',
-          name: 'Programiz',
-          title: 'Binary Tree Explained with Diagrams & Code',
-          desc: 'Specific topic tutorial with illustrated memory models and working implementations.',
-          url: 'https://www.programiz.com/dsa/binary-tree'
+          rank: 2,
+          rankLabel: '#2 Ranked Comprehensive Hub',
+          name: 'GeeksforGeeks',
+          title: 'Binary Tree Data Structure Tutorial & Implementations',
+          desc: 'Standard campus interview tutorial covering tree properties, node pointers, and recursive traversals.',
+          url: 'https://www.geeksforgeeks.org/binary-tree-data-structure/'
         },
         {
           id: 'w3',
+          rank: 3,
+          rankLabel: '#3 Ranked Memory & Complexity Guide',
           name: 'Scaler Topics',
-          title: 'Binary Tree in Data Structure (Types & Operations)',
-          desc: 'Specific topic article analyzing complete binary trees, full trees, and time complexities.',
+          title: 'Binary Tree in Data Structure (Types, Traversals & Operations)',
+          desc: 'Detailed engineering analysis of complete trees, full trees, and time complexity proofs.',
           url: 'https://www.scaler.com/topics/data-structures/binary-tree-in-data-structure/'
         },
         {
           id: 'w4',
-          name: 'JavaTpoint',
-          title: 'Binary Tree Data Structure Tutorial',
-          desc: 'Specific topic page on tree terminologies, insertion, and traversal algorithms.',
-          url: 'https://www.javatpoint.com/binary-tree'
+          rank: 4,
+          rankLabel: '#4 Ranked Visual Tutorial',
+          name: 'Programiz',
+          title: 'Binary Tree Explained with Diagrams & Code',
+          desc: 'Visual tutorial with clean diagrams and implementations in C++, Java, and Python.',
+          url: 'https://www.programiz.com/dsa/binary-tree'
         }
       ]
     };
   }
 
-  // 3. Dynamic Programming Domain (Direct Exact Article Pages)
+  // 3. Dynamic Programming Domain (Best Ranked Placement Sites)
   if (domain === 'dp') {
     return {
       title: 'Dynamic Programming & 0/1 Knapsack Patterns',
       category: 'Algorithms',
-      summary: 'Direct specific topic pages on GeeksforGeeks, Scaler Topics, Programiz, and JavaTpoint, plus MIT 6.006 PDF notes.',
+      summary: 'Best-ranked placement materials across Take U Forward Striver (#1), GeeksforGeeks (#2), Scaler Topics (#3), and InterviewBit (#4).',
       videos: [
         {
           id: 'v1',
@@ -299,42 +315,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'GeeksforGeeks',
-          title: '0/1 Knapsack Problem (DP-10) Complete Guide',
-          desc: 'Specific topic page covering recursive formulation, memoization tables, and DP array solutions.',
-          url: 'https://www.geeksforgeeks.org/0-1-knapsack-problem-dp-10/'
+          rank: 1,
+          rankLabel: '#1 Best Ranked DP Master Track',
+          name: 'Take U Forward (Striver DP Series)',
+          title: 'Complete Dynamic Programming Placement Guide',
+          desc: 'The #1 rated placement curriculum covering 1D DP, 2D Grid DP, Knapsack, and MCM with state transitions.',
+          url: 'https://takeuforward.org/data-structure/dynamic-programming-introduction/'
         },
         {
           id: 'w2',
-          name: 'Scaler Topics',
-          title: '0-1 Knapsack Problem Tutorial with State Matrix Tables',
-          desc: 'Specific topic tutorial with choice diagrams, complexity derivations, and working code.',
-          url: 'https://www.scaler.com/topics/data-structures/0-1-knapsack-problem/'
+          rank: 2,
+          rankLabel: '#2 Ranked Problem Benchmark',
+          name: 'GeeksforGeeks',
+          title: '0/1 Knapsack Problem (DP-10) Complete Guide',
+          desc: 'The most referenced campus recruitment problem tutorial covering recursion, memoization, and DP arrays.',
+          url: 'https://www.geeksforgeeks.org/0-1-knapsack-problem-dp-10/'
         },
         {
           id: 'w3',
-          name: 'JavaTpoint',
-          title: '0/1 Knapsack Problem using Dynamic Programming',
-          desc: 'Specific topic page showing numerical table-filling walkthrough with trace diagrams.',
-          url: 'https://www.javatpoint.com/0-1-knapsack-problem'
+          rank: 3,
+          rankLabel: '#3 Ranked State Matrix Analysis',
+          name: 'Scaler Topics',
+          title: '0-1 Knapsack Problem Tutorial with State Matrix Tables',
+          desc: 'In-depth tutorial with choice diagrams, complexity derivations, and working code in C++, Java, Python.',
+          url: 'https://www.scaler.com/topics/data-structures/0-1-knapsack-problem/'
         },
         {
           id: 'w4',
-          name: 'Programiz',
-          title: '0-1 Knapsack Problem Algorithm Explained',
-          desc: 'Specific topic tutorial with step-by-step table construction in C++, Java, Python.',
-          url: 'https://www.programiz.com/dsa/0-1-knapsack-problem'
+          rank: 4,
+          rankLabel: '#4 Ranked Placement Q&A',
+          name: 'InterviewBit',
+          title: 'InterviewBit Dynamic Programming Placement Track',
+          desc: 'Company-tagged DP test problems with test case runners and editorial solutions.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/dynamic-programming/'
         }
       ]
     };
   }
 
-  // 4. Graphs Domain (Direct Exact Article Pages)
+  // 4. Graphs Domain (Best Ranked Placement Sites)
   if (domain === 'graphs') {
     return {
       title: 'Graph Algorithms (BFS, DFS, Dijkstra, Topo Sort)',
       category: 'Data Structures & Algorithms',
-      summary: 'Direct specific topic pages on GeeksforGeeks, Programiz, Scaler Topics, and JavaTpoint, plus Stanford CS161 PDF notes.',
+      summary: 'Best-ranked placement materials across Take U Forward Striver (#1), CP-Algorithms (#2), GeeksforGeeks (#3), and Scaler Topics (#4).',
       videos: [
         {
           id: 'v1',
@@ -394,42 +418,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'GeeksforGeeks',
-          title: 'Breadth First Search or BFS for a Graph Tutorial',
-          desc: 'Specific topic article on adjacency lists, queue processing, and level-order graph traversals.',
-          url: 'https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/'
+          rank: 1,
+          rankLabel: '#1 Best Ranked Graph Placement Track',
+          name: 'Take U Forward (Striver Graph Series)',
+          title: 'Breadth First Search (BFS) & Graph Traversal Guide',
+          desc: 'The #1 rated graph placement series with cycle detection patterns, Dijkstra, and Topological Sort.',
+          url: 'https://takeuforward.org/graph/breadth-first-search-bfs-level-order-traversal/'
         },
         {
           id: 'w2',
-          name: 'Programiz',
-          title: 'Graph BFS Algorithm with Step-by-Step Diagrams',
-          desc: 'Specific topic page showing visited array states and FIFO queue transitions.',
-          url: 'https://www.programiz.com/dsa/graph-bfs'
+          rank: 2,
+          rankLabel: '#2 Ranked Competitive Authority',
+          name: 'CP-Algorithms',
+          title: 'Breadth First Search & Shortest Path in Graphs',
+          desc: 'Gold-standard algorithmic breakdown for tier-1 product companies and advanced placement assessments.',
+          url: 'https://cp-algorithms.com/graph/breadth-first-search.html'
         },
         {
           id: 'w3',
-          name: 'Scaler Topics',
-          title: 'BFS Traversal of Graph with Solved Code Examples',
-          desc: 'Specific topic tutorial detailing time/space complexity and shortest path on unweighted graphs.',
-          url: 'https://www.scaler.com/topics/data-structures/bfs-traversal-of-graph/'
+          rank: 3,
+          rankLabel: '#3 Ranked Interview Tutorial',
+          name: 'GeeksforGeeks',
+          title: 'Breadth First Search or BFS for a Graph Tutorial',
+          desc: 'Standard campus interview tutorial covering adjacency lists, queue processing, and disconnected graphs.',
+          url: 'https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/'
         },
         {
           id: 'w4',
-          name: 'JavaTpoint',
-          title: 'Breadth-First Search (BFS) Algorithm Guide',
-          desc: 'Specific topic page with pseudocode, graph dry runs, and edge cases.',
-          url: 'https://www.javatpoint.com/breadth-first-search-algorithm'
+          rank: 4,
+          rankLabel: '#4 Ranked Code & Complexity Guide',
+          name: 'Scaler Topics',
+          title: 'BFS Traversal of Graph with Solved Code Examples',
+          desc: 'Comprehensive engineering article detailing time/space complexity and shortest path applications.',
+          url: 'https://www.scaler.com/topics/data-structures/bfs-traversal-of-graph/'
         }
       ]
     };
   }
 
-  // 5. Sliding Window Domain (Direct Exact Article Pages)
+  // 5. Sliding Window Domain (Best Ranked Placement Sites)
   if (domain === 'sliding_window') {
     return {
       title: 'Sliding Window & Two Pointer Patterns',
       category: 'Data Structures & Algorithms',
-      summary: 'Direct specific topic pages on GeeksforGeeks, Scaler Topics, and JavaTpoint, plus UC Berkeley CS61B PDF discussion notes.',
+      summary: 'Best-ranked placement materials across Take U Forward Striver (#1), GeeksforGeeks (#2), Scaler Topics (#3), and InterviewBit (#4).',
       videos: [
         {
           id: 'v1',
@@ -486,35 +518,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
+          rank: 1,
+          rankLabel: '#1 Best Ranked Patterns Track',
+          name: 'Take U Forward (Striver SDE Sheet)',
+          title: 'Two Pointer Approach & Sliding Window Problems',
+          desc: 'The #1 rated placement guide for mastering fixed and variable sliding window patterns.',
+          url: 'https://takeuforward.org/data-structure/two-pointer-approach-problems/'
+        },
+        {
+          id: 'w2',
+          rank: 2,
+          rankLabel: '#2 Ranked Concept Guide',
           name: 'GeeksforGeeks',
           title: 'Window Sliding Technique Explained with Code',
           desc: 'Specific topic page explaining constant vs dynamic window techniques with complexity proof.',
           url: 'https://www.geeksforgeeks.org/window-sliding-technique/'
         },
         {
-          id: 'w2',
+          id: 'w3',
+          rank: 3,
+          rankLabel: '#3 Ranked Solved Problems',
           name: 'Scaler Topics',
           title: 'Sliding Window Algorithm with Solved Interview Problems',
-          desc: 'Specific topic tutorial on fixed window subarrays and longest substring frequency hash maps.',
+          desc: 'Comprehensive tutorial on fixed window subarrays and longest substring frequency hash maps.',
           url: 'https://www.scaler.com/topics/sliding-window-algorithm/'
         },
         {
-          id: 'w3',
-          name: 'JavaTpoint',
-          title: 'Sliding Window Algorithm in Data Structures',
-          desc: 'Specific topic guide with step-by-step pointer traces and interview problems.',
-          url: 'https://www.javatpoint.com/sliding-window-algorithm'
+          id: 'w4',
+          rank: 4,
+          rankLabel: '#4 Ranked Placement Q&A',
+          name: 'InterviewBit',
+          title: 'Two Pointers Technique Placement Track',
+          desc: 'Curated technical interview questions covering 3 Sum, Container with Most Water, and subarray sums.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/two-pointers/'
         }
       ]
     };
   }
 
-  // 6. Operating Systems (Direct Exact Article Pages)
+  // 6. Operating Systems (Best Ranked Placement Sites)
   if (domain === 'os') {
     return {
       title: 'Operating Systems (Paging, Deadlocks, Process Scheduling)',
       category: 'Core Computer Science',
-      summary: 'Direct specific topic pages on GeeksforGeeks, JavaTpoint, Scaler Topics, and Programiz, plus Gate Smashers video lectures.',
+      summary: 'Best-ranked placement materials across GeeksforGeeks (#1), Gate Vidyalay (#2), Scaler Topics (#3), and JavaTpoint (#4).',
       videos: [
         {
           id: 'v1',
@@ -571,35 +618,50 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
+          rank: 1,
+          rankLabel: '#1 Best Ranked Core CS Guide',
           name: 'GeeksforGeeks',
           title: 'Paging in Operating System Tutorial',
-          desc: 'Specific topic page on memory management, address translation, and page tables.',
+          desc: 'The #1 rated core CS placement guide on memory management, address translation, and page tables.',
           url: 'https://www.geeksforgeeks.org/paging-in-operating-system/'
         },
         {
           id: 'w2',
-          name: 'JavaTpoint',
-          title: 'OS Paging Tutorial with Numerical Examples',
-          desc: 'Specific topic page explaining page size calculations and offset bits.',
-          url: 'https://www.javatpoint.com/os-paging'
+          rank: 2,
+          rankLabel: '#2 Ranked Exam & Gate Notes',
+          name: 'Gate Vidyalay',
+          title: 'Paging in OS: Logical Address to Physical Address',
+          desc: 'Detailed numerical notes on page table entries, frame calculations, and TLB hit ratios.',
+          url: 'https://www.gatevidyalay.com/paging-operating-system/'
         },
         {
           id: 'w3',
+          rank: 3,
+          rankLabel: '#3 Ranked Hardware Architecture Guide',
           name: 'Scaler Topics',
           title: 'Paging in OS: Architecture, Hardware & Page Replacement',
-          desc: 'Specific topic tutorial detailing FIFO, LRU, and Optimal page replacement algorithms.',
+          desc: 'Detailed breakdown of FIFO, LRU, and Optimal page replacement algorithms.',
           url: 'https://www.scaler.com/topics/operating-system/paging-in-os/'
+        },
+        {
+          id: 'w4',
+          rank: 4,
+          rankLabel: '#4 Ranked Numerical Walkthroughs',
+          name: 'JavaTpoint',
+          title: 'OS Paging Tutorial with Solved Numerical Problems',
+          desc: 'Step-by-step tutorial page explaining page size calculations and offset bits.',
+          url: 'https://www.javatpoint.com/os-paging'
         }
       ]
     };
   }
 
-  // 7. Object-Oriented Programming (Direct Exact Article Pages)
+  // 7. Object-Oriented Programming (Best Ranked Placement Sites)
   if (domain === 'oop') {
     return {
       title: 'Object-Oriented Programming & Design Concepts',
       category: 'Core Computer Science',
-      summary: 'Direct specific topic pages on GeeksforGeeks, JavaTpoint, Scaler Topics, and W3Schools.',
+      summary: 'Best-ranked placement materials across GeeksforGeeks (#1), InterviewBit (#2), Scaler Topics (#3), and W3Schools (#4).',
       videos: [
         {
           id: 'v1',
@@ -658,20 +720,26 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
+          rank: 1,
+          rankLabel: '#1 Best Ranked OOPs Guide',
           name: 'GeeksforGeeks',
           title: 'Object-Oriented Programming (OOPs) Concepts in Java',
-          desc: 'Specific topic page covering classes, inheritance, polymorphism, and abstraction with code.',
+          desc: 'The #1 cited guide on classes, inheritance, polymorphism, and abstraction with interview questions.',
           url: 'https://www.geeksforgeeks.org/object-oriented-programming-oops-concept-in-java/'
         },
         {
           id: 'w2',
-          name: 'JavaTpoint',
-          title: 'Java OOPs Concepts Tutorial with Real-Life Examples',
-          desc: 'Specific topic tutorial explaining method overloading, overriding, and interfaces.',
-          url: 'https://www.javatpoint.com/java-oops-concepts'
+          rank: 2,
+          rankLabel: '#2 Ranked Recruiter Q&A',
+          name: 'InterviewBit',
+          title: 'Top 50 Java OOPs Interview Questions with Code',
+          desc: 'Ranked #2 for placement technical interviews with method overloading, overriding, and interface tests.',
+          url: 'https://www.interviewbit.com/java-interview-questions/'
         },
         {
           id: 'w3',
+          rank: 3,
+          rankLabel: '#3 Ranked SOLID Principles Hub',
           name: 'Scaler Topics',
           title: 'OOPs Concepts in Java: 4 Pillars & Best Practices',
           desc: 'Specific topic guide detailing memory allocation, constructors, and encapsulation.',
@@ -679,9 +747,11 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'w4',
+          rank: 4,
+          rankLabel: '#4 Ranked Interactive Editor',
           name: 'W3Schools',
-          title: 'Java OOP Specific Tutorial (Classes, Objects, Inheritance)',
-          desc: 'Specific interactive tutorial page with live code examples for practicing Java OOP.',
+          title: 'Java OOP Interactive Tutorial & Exercises',
+          desc: 'Specific tutorial page with live code editor for practicing Java classes and inheritance.',
           url: 'https://www.w3schools.com/java/java_oop.asp'
         }
       ]
@@ -692,7 +762,7 @@ function retrieveResourcesForTopic(queryText) {
   return {
     title: formattedTitle,
     category: 'Computer Science Technical Concept',
-    summary: `Direct specific article pages on GeeksforGeeks, JavaTpoint, Scaler Topics, and Programiz for ${formattedTitle}.`,
+    summary: `Best-ranked placement materials for ${formattedTitle} across Take U Forward (#1), GeeksforGeeks (#2), Scaler Topics (#3), and InterviewBit (#4).`,
     videos: [
       {
         id: 'v1',
@@ -752,31 +822,39 @@ function retrieveResourcesForTopic(queryText) {
     websites: [
       {
         id: 'w1',
+        rank: 1,
+        rankLabel: '#1 Best Ranked Placement Roadmap',
+        name: 'Take U Forward (Striver SDE Platform)',
+        title: `Take U Forward: ${formattedTitle} Placement Guide`,
+        desc: `Top-ranked SDE preparation sheet with step-by-step algorithms and complexity analysis.`,
+        url: `https://takeuforward.org/?s=${encodedQuery}`
+      },
+      {
+        id: 'w2',
+        rank: 2,
+        rankLabel: '#2 Ranked Tutorial Article',
         name: 'GeeksforGeeks',
-        title: `GeeksforGeeks: ${formattedTitle} Tutorial Article`,
+        title: `GeeksforGeeks: ${formattedTitle} Complete Guide`,
         desc: `Specific concept article page with diagrams, algorithm steps, and code implementations in C++, Java, and Python.`,
         url: `https://www.geeksforgeeks.org/${slug}/`
       },
       {
-        id: 'w2',
-        name: 'JavaTpoint',
-        title: `JavaTpoint: ${formattedTitle} Specific Topic Page`,
-        desc: `Specific educational page covering step-by-step theory, working examples, and interview questions.`,
-        url: `https://www.javatpoint.com/${slug}`
-      },
-      {
         id: 'w3',
+        rank: 3,
+        rankLabel: '#3 Ranked Engineering Breakdown',
         name: 'Scaler Topics',
-        title: `Scaler Topics: ${formattedTitle} Article & Walkthrough`,
+        title: `Scaler Topics: ${formattedTitle} In-Depth Tutorial`,
         desc: `Specific in-depth engineering article with visual architectural diagrams and implementation templates.`,
         url: `https://www.scaler.com/topics/${slug}/`
       },
       {
         id: 'w4',
-        name: 'Programiz',
-        title: `Programiz: ${formattedTitle} Visual Guide`,
-        desc: `Specific illustrated tutorial page explaining core data structures and algorithm mechanisms.`,
-        url: `https://www.programiz.com/dsa/${slug}`
+        rank: 4,
+        rankLabel: '#4 Ranked Placement Q&A',
+        name: 'InterviewBit',
+        title: `InterviewBit: ${formattedTitle} Interview Series`,
+        desc: `Curated placement questions with automated test case evaluation and solutions.`,
+        url: `https://www.interviewbit.com/${slug}/`
       }
     ]
   };
@@ -838,14 +916,14 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             Placement Learning Hub
           </span>
           <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-            Direct Topic Pages & PDF Documents
+            Best-Ranked Placement Websites & Direct PDF Documents
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
           Placement Learning Resources Search
         </h1>
         <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-          Search any placement concept to open direct tutorial article pages on GeeksforGeeks, JavaTpoint, Scaler Topics, and Programiz, along with direct PDF lecture notes and video masterclasses.
+          Search any placement concept to retrieve the top-ranked websites for placement material (Take U Forward, GeeksforGeeks, Scaler Topics, InterviewBit), direct PDF lecture notes, and video masterclasses.
         </p>
       </div>
 
@@ -954,22 +1032,22 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             Search Any Placement Concept Above
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
-            Type any concept above to open specific tutorial article pages from GeeksforGeeks, JavaTpoint, Scaler Topics, and Programiz, along with direct PDF lecture notes and video masterclasses.
+            Type any concept above to find the best-ranked placement websites (Take U Forward, GeeksforGeeks, Scaler Topics, InterviewBit), direct PDF lecture notes, and verified video masterclasses.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
             {[
               {
                 title: 'DBMS Normalization',
-                desc: 'Direct GeeksforGeeks article, JavaTpoint guide, Scaler Topics tutorial, and Stanford CS145 PDF.'
+                desc: 'Rank #1 GeeksforGeeks guide, Rank #2 InterviewBit Q&A, Rank #3 Scaler Topics tutorial, and Stanford CS145 PDF.'
               },
               {
                 title: 'Binary Trees & BST',
-                desc: 'Direct GeeksforGeeks tutorial, Programiz visual guide, Scaler Topics article, and MIT 6.006 PDF.'
+                desc: 'Rank #1 Take U Forward SDE Sheet, Rank #2 GeeksforGeeks hub, Rank #3 Scaler Topics, and MIT 6.006 PDF.'
               },
               {
                 title: 'Dynamic Programming',
-                desc: 'Direct 0/1 Knapsack GeeksforGeeks page, Scaler Topics tutorial, and UIUC CS225 PDF.'
+                desc: 'Rank #1 Take U Forward DP Track, Rank #2 GeeksforGeeks 0/1 Knapsack, Rank #3 Scaler, and UIUC CS225 PDF.'
               }
             ].map(card => (
               <div 
@@ -1043,9 +1121,9 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'All Resources' },
-                { id: 'videos', label: `Video Masterclasses (${currentResources.videos.length})` },
+                { id: 'websites', label: `Best Ranked Websites (${currentResources.websites.length})` },
                 { id: 'notes', label: `Direct PDF Notes (${currentResources.notes.length})` },
-                { id: 'websites', label: `Learning Platforms & Articles (${currentResources.websites.length})` }
+                { id: 'videos', label: `Video Masterclasses (${currentResources.videos.length})` }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -1070,68 +1148,69 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* SECTION 1: YOUTUBE VIDEOS WITH DIRECT CHANNEL LINKS */}
-            {(activeFilter === 'all' || activeFilter === 'videos') && (
+            {/* SECTION 1: TOP RANKED WEBSITES FOR PLACEMENT PREP */}
+            {(activeFilter === 'all' || activeFilter === 'websites') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <Video size={18} color="#DC2626" />
+                  <Award size={18} color="#D97706" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Video Masterclasses & Timestamps
+                    Best-Ranked Websites for Placement Material
                   </h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                  {currentResources.videos.map(vid => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  {currentResources.websites.map(site => (
                     <div 
-                      key={vid.id}
+                      key={site.id}
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #E5E7EB',
+                        border: site.rank === 1 ? '1.5px solid #F59E0B' : '1px solid #E5E7EB',
                         borderRadius: '14px',
                         padding: '18px 20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        boxShadow: site.rank === 1 ? '0 4px 12px rgba(245, 158, 11, 0.08)' : 'none'
                       }}
                     >
                       <div>
-                        <div style={{ marginBottom: '6px' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>
-                            Video Lecture
+                        {/* Rank Badge */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            color: site.rank === 1 ? '#B45309' : '#374151',
+                            backgroundColor: site.rank === 1 ? '#FEF3C7' : '#F3F4F6',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            {site.rank === 1 && <Star size={11} fill="#F59E0B" color="#F59E0B" />}
+                            {site.rankLabel || `Rank #${site.rank}`}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>
+                            {site.name}
                           </span>
                         </div>
 
-                        <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#111827', margin: '0 0 4px 0', lineHeight: 1.35 }}>
-                          {vid.title}
+                        <h4 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0', lineHeight: 1.35 }}>
+                          {site.title}
                         </h4>
-                        <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '0 0 12px 0' }}>
-                          Channel: <strong>{vid.channel}</strong> • Duration: {vid.duration}
+                        <p style={{ fontSize: '0.82rem', color: '#4B5563', margin: '0 0 14px 0', lineHeight: 1.4 }}>
+                          {site.desc}
                         </p>
-
-                        {/* Timestamps Breakdown */}
-                        <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px' }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                            Key Concepts Covered:
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {vid.timestamps.map((ts, idx) => (
-                              <div key={idx} style={{ fontSize: '0.78rem', color: '#4B5563', display: 'flex', gap: '8px' }}>
-                                <span style={{ fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>{ts.time}</span>
-                                <span>{ts.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
                       </div>
 
                       <a 
-                        href={vid.url} 
+                        href={site.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="btn-primary-spec"
+                        className={site.rank === 1 ? "btn-primary-spec" : "btn-secondary-spec"}
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        <Play size={14} /> Watch on {vid.channel.split(' ')[0]} YouTube <ExternalLink size={12} />
+                        Open on {site.name.split(' ')[0]} <ArrowUpRight size={14} />
                       </a>
                     </div>
                   ))}
@@ -1209,20 +1288,20 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
               </div>
             )}
 
-            {/* SECTION 3: TOP LEARNING PLATFORMS (DIRECT TOPIC ARTICLE PAGES) */}
-            {(activeFilter === 'all' || activeFilter === 'websites') && (
+            {/* SECTION 3: YOUTUBE VIDEOS WITH DIRECT CHANNEL LINKS */}
+            {(activeFilter === 'all' || activeFilter === 'videos') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <Globe size={18} color="#059669" />
+                  <Video size={18} color="#DC2626" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Learning Platforms & Topic-Specific Articles
+                    Video Masterclasses & Timestamps
                   </h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-                  {currentResources.websites.map(site => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                  {currentResources.videos.map(vid => (
                     <div 
-                      key={site.id}
+                      key={vid.id}
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1px solid #E5E7EB',
@@ -1234,25 +1313,43 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                       }}
                     >
                       <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                          {site.name}
-                        </span>
-                        <h4 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0', lineHeight: 1.35 }}>
-                          {site.title}
+                        <div style={{ marginBottom: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>
+                            Video Lecture
+                          </span>
+                        </div>
+
+                        <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#111827', margin: '0 0 4px 0', lineHeight: 1.35 }}>
+                          {vid.title}
                         </h4>
-                        <p style={{ fontSize: '0.82rem', color: '#4B5563', margin: '0 0 14px 0', lineHeight: 1.4 }}>
-                          {site.desc}
+                        <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '0 0 12px 0' }}>
+                          Channel: <strong>{vid.channel}</strong> • Duration: {vid.duration}
                         </p>
+
+                        {/* Timestamps Breakdown */}
+                        <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                            Key Concepts Covered:
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {vid.timestamps.map((ts, idx) => (
+                              <div key={idx} style={{ fontSize: '0.78rem', color: '#4B5563', display: 'flex', gap: '8px' }}>
+                                <span style={{ fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>{ts.time}</span>
+                                <span>{ts.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       <a 
-                        href={site.url} 
+                        href={vid.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="btn-secondary-spec"
+                        className="btn-primary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        Read Specific Article on {site.name} <ArrowUpRight size={14} />
+                        <Play size={14} /> Watch on {vid.channel.split(' ')[0]} YouTube <ExternalLink size={12} />
                       </a>
                     </div>
                   ))}

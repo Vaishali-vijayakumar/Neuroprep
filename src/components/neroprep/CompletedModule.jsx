@@ -527,7 +527,7 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                           </div>
                         )}
 
-                        {/* Benchmark Model Answer (Pastel Amber / Cream) */}
+                        {/* Verified Internet Benchmark Solution (Pastel Amber / Cream) */}
                         {rev.ideal_answer && (
                           <div style={{
                             fontSize: '13.5px',
@@ -538,7 +538,7 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                             border: '1px solid #FDE68A',
                             lineHeight: 1.55,
                           }}>
-                            <strong style={{ color: '#78350F' }}>Benchmark Model Answer: </strong>
+                            <strong style={{ color: '#78350F' }}>Verified Internet Benchmark Solution: </strong>
                             {rev.ideal_answer}
                           </div>
                         )}

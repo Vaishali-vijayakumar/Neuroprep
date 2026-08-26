@@ -8,6 +8,7 @@ import QUESTION_BANK from '../../../data/adaptiveQuestionBank1400.json';
 import { getTrackConfig, INTERVIEW_TRACKS } from '../../../data/interviewTracksData';
 import { DSA_CATEGORIES } from '../../../data/dsaPatternsData';
 import { InterviewEmotionModel } from './InterviewEmotionModel';
+import { WebRAGEvaluationEngine } from './WebRAGEvaluationEngine';
 
 export class AIQuestionEngine {
   constructor(config = {}, { onQuestion, onAdaptation } = {}) {

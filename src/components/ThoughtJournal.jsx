@@ -1103,18 +1103,7 @@ export default function ThoughtJournal({
  </div>
  )}
 
- <div style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
- <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', marginBottom: '12px' }}>
- Saved Hope Notes ({hopeNotes.length}):
- </h3>
- <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
- {hopeNotes.map(n => (
- <div key={n.id} style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', fontSize: '0.88rem', color: '#374151' }}>
- "{n.text}"
- </div>
- ))}
- </div>
- </div>
+ 
  </div>
  )}
 

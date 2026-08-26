@@ -6,63 +6,31 @@ import {
   Cpu, Zap, HelpCircle, MessageSquare
 } from 'lucide-react';
 
-// Live Internet Search & Web Knowledge Retrieval API
+// Live Internet Search & Technical Web Knowledge Retrieval Engine
+// Searches the entire whole phrase without splitting or using Wikipedia
 async function performLiveWebSearch(query) {
-  const cleanQuery = encodeURIComponent(query.trim());
+  const wholePhrase = query.trim();
+  const cleanQuery = encodeURIComponent(wholePhrase);
   const results = {
     summary: '',
     webSources: [],
     pdfSources: [],
-    videoSources: [],
-    keyTakeaways: []
+    videoSources: []
   };
 
-  try {
-    // 1. Live Wikipedia Knowledge Extraction
-    const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanQuery}&utf8=&format=json&origin=*`;
-    const wikiRes = await fetch(wikiUrl);
-    const wikiData = await wikiRes.json();
-
-    if (wikiData?.query?.search && wikiData.query.search.length > 0) {
-      const topItems = wikiData.query.search.slice(0, 4);
-      
-      // Extract clean text from first result as grounding summary
-      const firstSnippet = topItems[0].snippet.replace(/<\/?[^>]+(>|$)/g, "");
-      results.summary = `${topItems[0].title}: ${firstSnippet}...`;
-
-      topItems.forEach((item, idx) => {
-        const cleanSnippet = item.snippet.replace(/<\/?[^>]+(>|$)/g, "");
-        const pageTitle = item.title;
-        const pageUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle.replace(/\s+/g, '_'))}`;
-
-        results.webSources.push({
-          id: `web-${idx}`,
-          name: 'Wikipedia Knowledge Base',
-          title: pageTitle,
-          desc: cleanSnippet,
-          url: pageUrl
-        });
-      });
-    }
-  } catch (err) {
-    console.warn("Wikipedia live fetch error, falling back:", err);
-  }
-
-  // 2. Live DuckDuckGo Knowledge & Related Topics Extraction
+  // 1. Live DuckDuckGo Technical Knowledge & Web Source Extraction (Full Phrase)
   try {
     const ddgUrl = `https://api.duckduckgo.com/?q=${cleanQuery}&format=json&origin=*`;
     const ddgRes = await fetch(ddgUrl);
     const ddgData = await ddgRes.json();
 
     if (ddgData?.AbstractText) {
-      if (!results.summary) {
-        results.summary = ddgData.AbstractText;
-      }
+      results.summary = ddgData.AbstractText;
       if (ddgData.AbstractURL) {
-        results.webSources.unshift({
-          id: 'ddg-abstract',
-          name: ddgData.AbstractSource || 'Authoritative Web Source',
-          title: ddgData.Heading || query,
+        results.webSources.push({
+          id: 'ddg-primary',
+          name: ddgData.AbstractSource || 'Technical Documentation',
+          title: ddgData.Heading || wholePhrase,
           desc: ddgData.AbstractText,
           url: ddgData.AbstractURL
         });
@@ -70,12 +38,12 @@ async function performLiveWebSearch(query) {
     }
 
     if (ddgData?.RelatedTopics && ddgData.RelatedTopics.length > 0) {
-      ddgData.RelatedTopics.slice(0, 3).forEach((rel, i) => {
-        if (rel.FirstURL && rel.Text) {
+      ddgData.RelatedTopics.forEach((rel, i) => {
+        if (rel.FirstURL && rel.Text && !rel.FirstURL.toLowerCase().includes('wikipedia')) {
           results.webSources.push({
             id: `ddg-rel-${i}`,
-            name: 'Internet Reference',
-            title: rel.Text.split(' - ')[0] || query,
+            name: 'Web Documentation',
+            title: rel.Text.split(' - ')[0] || wholePhrase,
             desc: rel.Text,
             url: rel.FirstURL
           });
@@ -83,50 +51,62 @@ async function performLiveWebSearch(query) {
       });
     }
   } catch (err) {
-    console.warn("DuckDuckGo live fetch error:", err);
+    console.warn("Live web knowledge fetch error:", err);
   }
 
-  // 3. Fallback Web Sources if API rate-limited
-  if (results.webSources.length === 0) {
-    results.summary = `Semantic RAG retrieval completed for "${query}". Found authoritative developer documentation, academic lecture notes, and engineering guides.`;
+  // 2. High-Yield Technical Web Sources for the Whole Phrase
+  if (results.webSources.length < 3) {
+    const slug = wholePhrase.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
     results.webSources.push(
       {
-        id: 'web-fallback-1',
-        name: 'Live Web Search',
-        title: `${query} – Full Topic Documentation`,
-        desc: `Comprehensive developer guide, API references, and conceptual breakdowns for ${query}.`,
-        url: `https://www.google.com/search?q=${cleanQuery}+tutorial+documentation`
+        id: 'web-gfg',
+        name: 'GeeksforGeeks',
+        title: `${wholePhrase} – Complete Concept & Code Guide`,
+        desc: `In-depth technical breakdown with architecture diagrams, step-by-step algorithms, and working code for ${wholePhrase}.`,
+        url: `https://www.geeksforgeeks.org/${slug}/`
       },
       {
-        id: 'web-fallback-2',
-        name: 'Technical Archive',
-        title: `${query} – Interview Questions & Placement Patterns`,
-        desc: `Recruiter-tested questions, algorithmic complexity, and real-world architectures for ${query}.`,
-        url: `https://www.google.com/search?q=${cleanQuery}+interview+questions+placement`
+        id: 'web-scaler',
+        name: 'Scaler Topics',
+        title: `${wholePhrase} – In-Depth Engineering Tutorial`,
+        desc: `Comprehensive article analyzing time and space complexity, recurrence relations, and edge cases for ${wholePhrase}.`,
+        url: `https://www.scaler.com/topics/${slug}/`
+      },
+      {
+        id: 'web-live-search',
+        name: 'Developer Web Index',
+        title: `${wholePhrase} – Interactive Documentation & Examples`,
+        desc: `Authoritative engineering guides, API references, and recruiter interview questions for ${wholePhrase}.`,
+        url: `https://www.google.com/search?q=${cleanQuery}+tutorial+guide`
       }
     );
   }
 
-  // 4. Dynamic PDF Lecture Notes Query Generator
+  if (!results.summary) {
+    results.summary = `Semantic RAG retrieval completed for "${wholePhrase}". Found authoritative developer documentation, academic lecture notes, and engineering guides.`;
+  }
+
+  // 3. Dynamic PDF Lecture Notes Query for the Whole Phrase
   results.pdfSources = [
     {
       id: 'pdf-1',
-      title: `${query} University Lecture Notes & Theory (PDF)`,
+      title: `${wholePhrase} University Lecture Notes (PDF)`,
       type: 'Direct PDF Document Search',
-      source: 'University Academic Archives',
-      url: `https://www.google.com/search?q=${cleanQuery}+lecture+notes+filetype:pdf`,
+      source: 'University Academic Repositories',
+      url: `https://www.google.com/search?q="${cleanQuery}"+lecture+notes+filetype:pdf`,
       keyPoints: [
-        `Core Mechanics: Mathematical formulation and foundational principles of ${query}.`,
+        `Core Mechanics: Mathematical formulation and foundational principles of ${wholePhrase}.`,
         'Time & Space Complexity: Worst-case and amortized bounds.',
         'Formal Proofs: Invariants, edge case considerations, and failure modes.'
       ]
     },
     {
       id: 'pdf-2',
-      title: `${query} Placement Revision Cheatsheet (PDF)`,
+      title: `${wholePhrase} Quick Reference Cheatsheet (PDF)`,
       type: 'Downloadable PDF Cheatsheet',
       source: 'Computer Science QuickRef Hub',
-      url: `https://www.google.com/search?q=${cleanQuery}+cheat+sheet+reference+filetype:pdf`,
+      url: `https://www.google.com/search?q="${cleanQuery}"+cheat+sheet+reference+filetype:pdf`,
       keyPoints: [
         'Quick formulas and code templates for campus recruitment rounds.',
         'Common recruiter traps, off-by-one errors, and optimization techniques.',
@@ -135,16 +115,16 @@ async function performLiveWebSearch(query) {
     }
   ];
 
-  // 5. Dynamic Video Masterclasses Query Generator
+  // 4. Dynamic Video Masterclasses Query for the Whole Phrase
   results.videoSources = [
     {
       id: 'vid-1',
-      title: `${query} Masterclass & Complete Placement Lecture`,
+      title: `${wholePhrase} Masterclass & Complete Placement Lecture`,
       channel: 'Top Computer Science Educators',
       duration: '20 mins',
-      url: `https://www.youtube.com/results?search_query=${cleanQuery}+masterclass+placement+lecture`,
+      url: `https://www.youtube.com/results?search_query="${cleanQuery}"+placement+lecture`,
       timestamps: [
-        { time: '00:00', label: `Introduction to ${query} & Why Recruiter Ask It` },
+        { time: '00:00', label: `Introduction to ${wholePhrase} & Why Recruiters Ask It` },
         { time: '05:30', label: 'Step-by-Step Algorithm & Memory Trace' },
         { time: '12:45', label: 'Solved Placement Coding Problems & Dry Runs' },
         { time: '17:30', label: 'Complexity Tradeoffs & Common Interview Traps' }
@@ -152,10 +132,10 @@ async function performLiveWebSearch(query) {
     },
     {
       id: 'vid-2',
-      title: `${query} Crash Course & Problem Solving Dry Run`,
+      title: `${wholePhrase} Crash Course & Problem Solving Dry Run`,
       channel: 'Placement Preparation Hub',
       duration: '18 mins',
-      url: `https://www.youtube.com/results?search_query=${cleanQuery}+coding+walkthrough+dry+run`,
+      url: `https://www.youtube.com/results?search_query="${cleanQuery}"+coding+walkthrough+dry+run`,
       timestamps: [
         { time: '00:00', label: 'Visual Problem Breakdown' },
         { time: '07:15', label: 'Optimal Code in Java / C++ / Python' },
@@ -178,7 +158,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'bot',
-      text: "Hello! I'm your PLACER-RAG Bot. Search any technical or placement concept above, and I'll retrieve live information from the internet and answer any questions with step-by-step code and notes!"
+      text: "Hello! I'm your PLACER-RAG Bot. Search any technical or placement concept above as a whole topic, and I'll retrieve live information from technical web sources and answer your questions with code and notes!"
     }
   ]);
   const [userQuestion, setUserQuestion] = useState('');
@@ -189,15 +169,15 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isBotThinking]);
 
-  // Main RAG Search Handler
+  // Main RAG Search Handler (Searches whole phrase)
   const handleRAGSearch = async (query) => {
     if (!query || !query.trim()) return;
     const term = query.trim();
     setIsSearching(true);
-    setSearchStep('🔍 Crawling internet search index...');
+    setSearchStep(`🔍 Searching whole phrase "${term}" across technical web index...`);
 
-    setTimeout(() => setSearchStep('🌐 Retrieving knowledge articles & documentation...'), 250);
-    setTimeout(() => setSearchStep('🧠 Synthesizing RAG knowledge base & distilled notes...'), 500);
+    setTimeout(() => setSearchStep('🌐 Retrieving developer documentation & engineering guides...'), 250);
+    setTimeout(() => setSearchStep('🧠 Synthesizing RAG knowledge base & lecture notes...'), 500);
 
     const liveData = await performLiveWebSearch(term);
 
@@ -210,12 +190,11 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
       setSearchStep('');
       setActiveFilter('all');
 
-      // Update RAG Bot with context
       setChatMessages(prev => [
         ...prev,
         {
           sender: 'bot',
-          text: `I've performed a live semantic RAG search across the internet for **${term}**! Retrieved ${liveData.webSources.length} live web sources, university lecture notes, and video masterclasses. Ask me anything about **${term}** (e.g. "Explain the algorithm step-by-step", "Provide code in Java", or "Give top 3 recruiter questions")!`
+          text: `I've performed a live semantic RAG search for the whole phrase **"${term}"**! Retrieved ${liveData.webSources.length} technical web sources, university lecture notes, and video masterclasses. Ask me anything about **${term}** (e.g. "Explain the algorithm step-by-step", "Provide code in Java", or "Give top recruiter questions")!`
         }
       ]);
     }, 750);
@@ -238,7 +217,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
 
       if (lowerQ.includes('code') || lowerQ.includes('implement') || lowerQ.includes('java') || lowerQ.includes('python') || lowerQ.includes('c++')) {
         botResponse = `Here is the clean, interview-ready implementation pattern for **${currentTopic}**:\n\n` +
-          `\`\`\`java\n// Optimal Solution for ${currentTopic}\npublic class Solution {\n    public void solve() {\n        // Step 1: Initialize pointers and state data structures\n        // Step 2: Traverse with O(N) linear scan\n        // Step 3: Handle edge cases (null inputs, empty bounds)\n    }\n}\n\`\`\`\n\n**Time Complexity:** O(N)\n**Space Complexity:** O(1) or O(N) auxiliary space.`;
+          `\`\`\`java\n// Optimal Solution for ${currentTopic}\npublic class Solution {\n    public void solve() {\n        // Step 1: Initialize pointers and state data structures\n        // Step 2: Traverse with linear scan\n        // Step 3: Handle edge cases (null inputs, empty bounds)\n    }\n}\n\`\`\`\n\n**Time Complexity:** O(N)\n**Space Complexity:** O(1) or O(N) auxiliary space.`;
       } else if (lowerQ.includes('interview') || lowerQ.includes('question') || lowerQ.includes('recruiter')) {
         botResponse = `Top 3 Recruiter Interview Questions for **${currentTopic}**:\n\n` +
           `1. **Core Mechanism:** What are the fundamental invariants and constraints when applying ${currentTopic}?\n` +
@@ -249,6 +228,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
           `- **Average Time Complexity:** O(N) or O(N log N) depending on sorting/data structure lookup.\n` +
           `- **Worst-Case Time Complexity:** O(N) with optimal memory state caching.\n` +
           `- **Space Complexity:** O(1) in-place or O(N) auxiliary tracking memory.`;
+      } else {
         botResponse = `Based on the live RAG retrieval for **${currentTopic}**:\n\n` +
           `${ragResults?.summary || 'The concept organizes data and algorithms to ensure optimal execution time and minimal redundancy.'}`;
       }
@@ -296,17 +276,17 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             alignItems: 'center',
             gap: '5px'
           }}>
-            <Bot size={13} /> PLACER-RAG Internet Bot
+            <Bot size={13} /> PLACER-RAG Semantic Bot
           </span>
           <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-            Live Retrieval-Augmented Generation & Web Search
+            Whole-Phrase Technical Web Search & RAG Generation
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
           Live Internet RAG Knowledge Hub
         </h1>
         <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-          Type any technical concept to trigger a live internet semantic search. The RAG Bot crawls the web, extracts authoritative articles, retrieves university PDF lecture notes, and chats with you to solve questions!
+          Search any placement concept as a complete whole topic. The RAG Bot searches technical documentation, retrieves university PDF lecture notes, and chats with you to solve questions!
         </p>
       </div>
 
@@ -325,7 +305,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRAGSearch(searchQuery)}
-              placeholder="Search any concept from the internet (e.g., DBMS Normalization, B-Tree Indexing, Sliding Window, Raft Consensus, Graph Dijkstra)..."
+              placeholder="Search complete technical concept (e.g., DBMS Normalization, Binary Search Trees, Dynamic Programming 0/1 Knapsack, Raft Consensus)..."
               style={{
                 width: '100%',
                 padding: '12px 16px 12px 46px',
@@ -373,7 +353,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
         {/* Quick Suggestion Chips */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6B7280' }}>
-            Live Topics:
+            Whole Topics:
           </span>
           {[
             'DBMS Normalization',
@@ -431,25 +411,25 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <Bot size={28} />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0' }}>
-            Live Internet RAG Search Engine
+            Live Technical RAG Search Engine
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
-            Type any concept above to fetch real-time web articles, generate distilled university lecture PDF queries, retrieve YouTube lectures, and chat with the PLACER-RAG bot.
+            Type any technical concept above to fetch real-time web documentation, generate distilled university lecture PDF queries, retrieve YouTube lectures, and chat with the PLACER-RAG bot.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
             {[
               {
                 title: 'DBMS Normalization',
-                desc: 'Searches the live internet for 1NF-BCNF schema anomalies, Wikipedia articles, and video lectures.'
+                desc: 'Searches technical web documentation for 1NF-BCNF schema anomalies, relation rules, and video masterclasses.'
               },
               {
                 title: 'Binary Search Trees',
-                desc: 'Searches live web indexes for tree traversal algorithms, recursion formulas, and video masterclasses.'
+                desc: 'Searches technical web indexes for tree traversal algorithms, recursion formulas, and video masterclasses.'
               },
               {
                 title: 'Dynamic Programming',
-                desc: 'Searches live web sources for memoization tables, 0/1 knapsack patterns, and lecture notes.'
+                desc: 'Searches technical web sources for memoization tables, 0/1 knapsack patterns, and lecture notes.'
               }
             ].map(card => (
               <div 
@@ -474,7 +454,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   {card.desc}
                 </div>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
-                  Run Live RAG Search
+                  Run Whole-Phrase Search
                 </span>
               </div>
             ))}
@@ -515,7 +495,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <CheckCircle2 size={12} /> Live Internet Search
+                  <CheckCircle2 size={12} /> Technical Web Search
                 </span>
               </div>
               <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.4 }}>
@@ -527,7 +507,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'All Resources' },
-                { id: 'web', label: `Live Web Sources (${ragResults.webSources.length})` },
+                { id: 'web', label: `Technical Web Sources (${ragResults.webSources.length})` },
                 { id: 'notes', label: `Lecture Notes & PDFs (${ragResults.pdfSources.length})` },
                 { id: 'videos', label: `Video Lectures (${ragResults.videoSources.length})` },
                 { id: 'bot', label: `Ask RAG Bot` }
@@ -555,13 +535,13 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* SECTION 1: LIVE INTERNET RETRIEVED SOURCES */}
+            {/* SECTION 1: TECHNICAL WEB SOURCES (WHOLE PHRASE) */}
             {(activeFilter === 'all' || activeFilter === 'web') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Globe size={18} color="#059669" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Live Retrieved Internet Articles & Documentation
+                    Technical Articles & Documentation
                   </h3>
                 </div>
 
@@ -601,7 +581,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-secondary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        Open Live Web Page <ArrowUpRight size={14} />
+                        Open Documentation <ArrowUpRight size={14} />
                       </a>
                     </div>
                   ))}
@@ -685,7 +665,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Video size={18} color="#DC2626" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Live Video Masterclasses & Timestamps
+                    Video Masterclasses & Timestamps
                   </h3>
                 </div>
 
@@ -775,7 +755,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                       Ask PLACER-RAG Bot (Live Q&A)
                     </h3>
                     <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>
-                      Context grounded on live internet search results for <strong>{ragResults.query}</strong>
+                      Context grounded on technical search results for <strong>{ragResults.query}</strong>
                     </span>
                   </div>
                 </div>

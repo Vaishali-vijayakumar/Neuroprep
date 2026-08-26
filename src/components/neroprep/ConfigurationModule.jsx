@@ -36,7 +36,7 @@ const CLOUD_GOALS     = ['High Availability & Disaster Recovery', 'Serverless Mi
 
 // ── Track-specific configuration schema for all 12 tracks ─────────────────────
 const TRACK_FIELDS = {
-  hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'hrInterviewType', 'hrEvaluationFocus', 'companyValues', 'workStyle', 'candidateAvailability', 'careerGoals', 'resume', 'jobDescription'] },
+  hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'hrPracticeTopic', 'hrInterviewTone', 'workPreference', 'joiningTime', 'aboutUser'] },
   tech:              { label: 'Technical Interview',  fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'jobDescription'] },
   dsa:               { label: 'DSA & Coding',         fields: ['codingLang', 'difficulty_dsa', 'timeLimitPerProblem', 'evaluationFocus', 'complexityRequirement', 'proctoringMode'] },
   system_design:     { label: 'System Design & Architecture (HLD & LLD)', fields: ['role', 'codingLang', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech', 'designFocus'] },
@@ -179,22 +179,22 @@ function TrackFields({ trackId, config, set }) {
 
   const RENDERERS = {
     role: (
-      <Field label="Target Role" helper="Specify the role you are targeting for tailored questions.">
-        <input type="text" style={inputStyle} placeholder="e.g. SDE-1, Full Stack Engineer, Backend Developer"
+      <Field label="Job Role You Are Applying For" helper="Enter the job position you are interviewing for.">
+        <input type="text" style={inputStyle} placeholder="e.g. Software Engineer, Graduate Trainee, Business Analyst"
           value={config.role || ''} onChange={e => set('role', e.target.value)} />
       </Field>
     ),
     company: (
-      <Field label="Target Company (Optional)" helper="Simulate assessment style calibrated for your target company.">
-        <input type="text" style={inputStyle} placeholder="e.g. Amazon, Google, TCS, Microsoft, Startup"
+      <Field label="Company Name (Optional)" helper="Enter your target company to customize questions.">
+        <input type="text" style={inputStyle} placeholder="e.g. TCS, Infosys, Amazon, Zoho, Startup"
           value={config.company || ''} onChange={e => set('company', e.target.value)} />
       </Field>
     ),
     experience: (
-      <Field label="Experience Level" helper="Target career stage for situational difficulty calibration.">
+      <Field label="Your Experience Level" helper="Choose your current career stage.">
         <PillRow
-          options={['Campus / Fresher', '1-2 years', '3-5 years', '5+ years']}
-          value={config.experience || 'Campus / Fresher'}
+          options={['College Student / Fresher', '1 - 2 Years', '3+ Years']}
+          value={config.experience || 'College Student / Fresher'}
           onChange={v => set('experience', v)}
         />
       </Field>
@@ -376,50 +376,67 @@ function TrackFields({ trackId, config, set }) {
           value={config.productIdea || ''} onChange={e => set('productIdea', e.target.value)} />
       </Field>
     ),
-    hrInterviewType: (
-      <Field label="Interview Round Format" helper="Choose the interview structure and screening depth.">
+    hrPracticeTopic: (
+      <Field label="What type of HR questions do you want to practice?" helper="Select the main focus for your HR interview.">
         <PillRow
-          options={['Campus Placement Final HR', 'Recruiter Screening', 'Culture & Values Fit Round', 'Leadership & Behavioral Round']}
-          value={config.hrInterviewType || 'Campus Placement Final HR'}
-          onChange={v => set('hrInterviewType', v)}
+          options={[
+            'All-Round HR Practice',
+            'Self Introduction & Background',
+            'Strengths & Weaknesses',
+            'Teamwork & Situations',
+            'Why Should We Hire You?'
+          ]}
+          value={config.hrPracticeTopic || 'All-Round HR Practice'}
+          onChange={v => set('hrPracticeTopic', v)}
         />
       </Field>
     ),
-    hrEvaluationFocus: (
-      <Field label="HR Assessment Focus Area" helper="Select the primary competency or evaluation dimension to emphasize.">
+    hrInterviewTone: (
+      <Field label="Interviewer Style & Tone" helper="How would you like the interviewer to ask questions?">
         <PillRow
-          options={['Comprehensive HR Round', 'Behavioral & STAR Scenarios', 'Culture Fit & Core Values', 'Career Motivation & Ambition', 'Conflict & Team Collaboration']}
-          value={config.hrEvaluationFocus || 'Comprehensive HR Round'}
-          onChange={v => set('hrEvaluationFocus', v)}
+          options={[
+            'Friendly & Encouraging',
+            'Standard & Professional',
+            'Challenging & Fast-Paced'
+          ]}
+          value={config.hrInterviewTone || 'Friendly & Encouraging'}
+          onChange={v => set('hrInterviewTone', v)}
         />
       </Field>
     ),
-    candidateAvailability: (
-      <Field label="Availability & Notice Period" helper="Your joining availability for realistic HR scenario questions.">
+    workPreference: (
+      <Field label="Work & Location Preference" helper="Choose your preferred work mode.">
         <PillRow
-          options={['Immediate / Final Year Student', '15 - 30 Days', '1 - 2 Months', 'Exploring Opportunities']}
-          value={config.candidateAvailability || 'Immediate / Final Year Student'}
-          onChange={v => set('candidateAvailability', v)}
+          options={[
+            'Work from Office',
+            'Hybrid / Work from Home',
+            'Ready to Relocate Anywhere'
+          ]}
+          value={config.workPreference || 'Work from Office'}
+          onChange={v => set('workPreference', v)}
         />
       </Field>
     ),
-    careerGoals: (
-      <Field label="Short & Long-Term Career Goals (Optional)" helper="Briefly describe your ambitions (e.g. Lead Engineer in 3 years, Cloud Architect, AI Specialization).">
-        <input type="text" style={inputStyle} placeholder="e.g. Aspiring software engineer targeting scalable cloud applications"
-          value={config.careerGoals || ''} onChange={e => set('careerGoals', e.target.value)} />
-      </Field>
-    ),
-    companyValues: (
-      <Field label="Target Company Core Values" helper="Select corporate values to calibrate behavioral and scenario questions.">
-        <MultiSelect options={COMPANY_VALUES} selected={config.companyValues} onChange={v => set('companyValues', v)} />
-      </Field>
-    ),
-    workStyle: (
-      <Field label="Preferred Work Culture & Style" helper="Select the team dynamic style for situational evaluation.">
+    joiningTime: (
+      <Field label="When can you join?" helper="Your joining availability.">
         <PillRow
-          options={['High-Growth Startup', 'Global Enterprise / MNC', 'Product-Driven Tech Team', 'Autonomous Remote / Async']}
-          value={config.workStyle || 'Global Enterprise / MNC'}
-          onChange={v => set('workStyle', v)}
+          options={[
+            'Immediately (Final Year / Ready)',
+            'Within 1 Month',
+            '1 - 2 Months'
+          ]}
+          value={config.joiningTime || 'Immediately (Final Year / Ready)'}
+          onChange={v => set('joiningTime', v)}
+        />
+      </Field>
+    ),
+    aboutUser: (
+      <Field label="About Yourself / Key Highlights (Optional)" helper="Write a short note about your background, projects, or degree to personalize your questions.">
+        <textarea
+          style={textareaStyle}
+          placeholder="e.g. Final year Computer Science student. Good at teamwork and communication. Completed project on college management system."
+          value={config.aboutUser || ''}
+          onChange={e => set('aboutUser', e.target.value)}
         />
       </Field>
     ),

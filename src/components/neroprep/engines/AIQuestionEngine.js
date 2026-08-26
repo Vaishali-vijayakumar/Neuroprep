@@ -691,8 +691,31 @@ export class AIQuestionEngine {
       skillScores[metric.id] = dimensionScore;
     });
 
-    const grade = avgScore >= 92 ? 'A+' : (avgScore >= 85 ? 'A' : (avgScore >= 78 ? 'B+' : (avgScore >= 70 ? 'B' : (avgScore >= 60 ? 'C' : 'D'))));
-    const hire = avgScore >= 88 ? 'Strong Yes — High Potential' : (avgScore >= 75 ? 'Yes — Ready for Next Round' : (avgScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'));
+    // ── CALIBRATED TRI-MODAL SCORING FORMULA ────────────────────────────────────
+    // 1. Question Audit Score (50% weight)
+    const questionAuditScore = avgScore;
+
+    // 2. Evaluation Rubrics Average (30% weight)
+    const rubricValues = matrix.map(m => skillScores[m.id] || skillScores[m.label] || avgScore);
+    const rubricAvgScore = rubricValues.length > 0
+      ? Math.round(rubricValues.reduce((a, b) => a + b, 0) / rubricValues.length)
+      : avgScore;
+
+    // 3. Real-time Biometrics & Telemetry Performance (20% weight)
+    const vocalScore = Math.round((paceScore * 0.6) + (fillerScore * 0.4));
+    const biometricsScore = Math.min(100, Math.max(10, Math.round((eyeContactScore * 0.35) + (vocalScore * 0.35) + ((100 - stressIdx) * 0.30))));
+
+    // 4. Base & Final Calibrated Overall Score
+    const baseScore = Math.round((questionAuditScore * 0.50) + (rubricAvgScore * 0.30) + (biometricsScore * 0.20));
+    const cogPenalty = stressIdx > 70 ? 8 : (stressIdx > 45 ? 4 : 0);
+    const tabPenalty = (faceTelemetry.tabSwitches || 0) * 10;
+    const phonePenalty = (faceTelemetry.phoneAlerts || 0) * 12;
+    const totalPenalties = cogPenalty + tabPenalty + phonePenalty;
+    const finalScore = Math.max(0, Math.min(100, baseScore - totalPenalties));
+
+    const grade = finalScore >= 92 ? 'A+' : (finalScore >= 85 ? 'A' : (finalScore >= 78 ? 'B+' : (finalScore >= 70 ? 'B' : (finalScore >= 60 ? 'C' : 'D'))));
+    const hire = finalScore >= 88 ? 'Strong Yes — High Potential' : (finalScore >= 75 ? 'Yes — Ready for Next Round' : (finalScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'));
+    const confidenceScore = Math.max(20, Math.min(100, Math.round((eyeContactScore * 0.5) + ((100 - stressIdx) * 0.5))));
 
     const uniqueStrengths = Array.from(new Set(questionReviews.flatMap(q => q.strengths || []))).filter(Boolean).slice(0, 4);
     const uniqueWeaknesses = Array.from(new Set(questionReviews.flatMap(q => q.improvements || []))).filter(Boolean).slice(0, 3);
@@ -700,7 +723,15 @@ export class AIQuestionEngine {
     return {
       trackId: this.trackId,
       trackName: trackDef.name,
-      overall_score: avgScore,
+      overall_score: finalScore,
+      question_audit_score: questionAuditScore,
+      rubric_avg_score: rubricAvgScore,
+      biometrics_score: biometricsScore,
+      base_score: baseScore,
+      cognitive_penalty: cogPenalty,
+      tab_switch_penalty: tabPenalty,
+      phone_penalty: phonePenalty,
+      total_penalties: totalPenalties,
       grade,
       hire_recommendation: hire,
       skillScores,
@@ -713,7 +744,7 @@ export class AIQuestionEngine {
       cognitive_load_label: stressIndex < 40 ? 'Optimal Flow State' : (stressIndex < 65 ? 'Moderate Focus Load' : 'High Pressure'),
       proctor_flags: 0,
       question_reviews: questionReviews,
-      executive_summary: `Candidate completed ${answeredReviews.length} evaluated question(s) for ${trackDef.name} (${config.role || 'Candidate'}). Achieved an overall competency score of ${avgScore}/100.`,
+      executive_summary: `Candidate completed ${answeredReviews.length} evaluated question(s) for ${trackDef.name} (${config.role || 'Candidate'}). Achieved a calibrated composite score of ${finalScore}/100 [Question Audit: ${questionAuditScore} (50%) · Rubrics: ${rubricAvgScore} (30%) · Biometrics: ${biometricsScore} (20%)].`,
       strengths: uniqueStrengths.length > 0 ? uniqueStrengths : ['Responded to interview questions'],
       weak_areas: uniqueWeaknesses.length > 0 ? uniqueWeaknesses : ['Provide structured elaboration on project details and technical steps'],
     };

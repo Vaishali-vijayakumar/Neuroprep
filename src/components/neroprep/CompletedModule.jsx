@@ -325,8 +325,20 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                       value: currentReport.hrv_ms ? `${currentReport.hrv_ms} ms` : '48 ms',
                     },
                     {
-                      label: 'Base Performance Evaluation',
-                      value: `${currentReport.code_score ?? currentReport.technical_score ?? displayScore ?? 0}/100`,
+                      label: 'Question Performance Audit (50% Weight)',
+                      value: `${currentReport.question_audit_score ?? currentReport.code_score ?? displayScore ?? 0}/100`,
+                    },
+                    {
+                      label: 'Evaluation Rubrics Average (30% Weight)',
+                      value: `${currentReport.rubric_avg_score ?? currentReport.code_score ?? displayScore ?? 0}/100`,
+                    },
+                    {
+                      label: 'Biometrics & Telemetry (20% Weight)',
+                      value: `${currentReport.biometrics_score ?? 85}/100`,
+                    },
+                    {
+                      label: 'Base Composite Score',
+                      value: `${currentReport.base_score ?? displayScore ?? 0}/100`,
                     },
                     {
                       label: 'Cognitive Stress Deduction',
@@ -345,13 +357,13 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                       value: currentReport.total_penalties ? `-${currentReport.total_penalties} pts` : '0 pts (Clean Session)',
                     },
                     {
-                      label: 'Final Calibrated Score',
+                      label: 'Final Calibrated Overall Score',
                       value: `${displayScore ?? 0}/100`,
                     },
                   ].map((m, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F3F4F6', fontSize: '13px' }}>
                       <span style={{ color: 'var(--text-body)' }}>{m.label}</span>
-                      <span style={{ fontWeight: 700, color: m.warn ? '#111827' : 'var(--text-main)' }}>{m.value}</span>
+                      <span style={{ fontWeight: 700, color: m.label.includes('Final') ? '#1D4ED8' : m.warn ? '#111827' : 'var(--text-main)' }}>{m.value}</span>
                     </div>
                   ))}
                 </div>

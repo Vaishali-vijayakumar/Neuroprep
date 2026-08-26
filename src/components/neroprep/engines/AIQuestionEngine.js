@@ -72,12 +72,35 @@ export class AIQuestionEngine {
 
     const trackKey = this.trackId;
     const bankEntry = QUESTION_BANK[trackKey] || QUESTION_BANK['hr'] || { questions: [] };
-    const rawBank = bankEntry.questions || [];
+    let rawBank = [...(bankEntry.questions || [])];
 
-    // Filter or prioritize questions based on configured user inputs
-    const role = (cfg.role || '').toLowerCase();
-    const company = (cfg.company || '').toLowerCase();
-    const lang = (cfg.codingLang || '').toLowerCase();
+    // Filter & prioritize HR questions based on user's chosen HR practice topic
+    if (this.trackId === 'hr') {
+      const topic = cfg.hrPracticeTopic || 'All-Round HR Practice';
+      const topicMap = {
+        'Self Introduction & Background': ['HR -001', 'HR -005', 'HR -020', 'HR -016', 'HR -024', 'HR -025', 'HR -030', 'HR -035'],
+        'Strengths & Weaknesses': ['HR -006', 'HR -007', 'HR -008', 'HR -009', 'HR -013', 'HR -019', 'HR -040', 'HR -045'],
+        'Why Should We Hire You?': ['HR -002', 'HR -003', 'HR -004', 'HR -021', 'HR -022', 'HR -050', 'HR -055', 'HR -060'],
+        'Teamwork & Situations': ['HR -010', 'HR -011', 'HR -014', 'HR -015', 'HR -017', 'HR -018', 'HR -023', 'HR -065'],
+        'All-Round HR Practice': ['HR -001', 'HR -002', 'HR -004', 'HR -006', 'HR -007', 'HR -010', 'HR -003', 'HR -011'],
+      };
+
+      const prioritizedIds = topicMap[topic] || topicMap['All-Round HR Practice'];
+      const prioritizedList = [];
+      const remainingList = [];
+
+      rawBank.forEach((q) => {
+        if (prioritizedIds.includes(q.id)) {
+          prioritizedList.push(q);
+        } else {
+          remainingList.push(q);
+        }
+      });
+
+      // Sort prioritized IDs in intended sequence
+      prioritizedList.sort((a, b) => prioritizedIds.indexOf(a.id) - prioritizedIds.indexOf(b.id));
+      rawBank = [...prioritizedList, ...remainingList];
+    }
 
     // Categorize questions by difficulty
     const easyQs = rawBank.filter(q => q.difficulty === 'Easy' || q.difficulty === 'Beginner');
@@ -144,24 +167,53 @@ export class AIQuestionEngine {
       return formattedQ;
     }
 
-    const fallback = `Walk me through a significant technical or leadership challenge you encountered in your ${this.config.role || 'domain'} preparation.`;
+    const fallback = `Walk me through a significant challenge or project experience in your preparation for the ${this.config.role || 'position'}.`;
     this.currentQ = fallback;
     return fallback;
   }
 
   /**
-   * Personalize question text with candidate context (Role, Company, Systems, Tech Stack)
+   * Personalize question text with candidate context (Role, Company, Experience, Highlights)
    */
   _personalizeQuestion(qText, cfg) {
     if (!qText) return '';
     let result = qText;
 
-    if (cfg.company && (result.includes('your company') || result.includes('this company') || result.includes('our team'))) {
-      result = result.replace(/\b(your company|this company|our team)\b/gi, cfg.company);
+    const roleName = cfg.role ? cfg.role.trim() : 'this position';
+    const companyName = cfg.company ? cfg.company.trim() : '';
+    const isFresher = cfg.experience === 'College Student / Fresher' || !cfg.experience || cfg.experience.toLowerCase().includes('fresher');
+
+    // 1. Personalize Company references
+    if (companyName) {
+      if (result.toLowerCase() === 'why this company?' || result.toLowerCase() === 'why this company') {
+        result = `What made you interested in joining ${companyName}, and what excites you about working with us?`;
+      } else if (result.toLowerCase() === 'why should we hire you?' || result.toLowerCase() === 'why should we hire you') {
+        result = `Why should ${companyName} hire you over other candidates for the ${roleName} role?`;
+      } else {
+        result = result.replace(/\b(your company|this company|our company|our team)\b/gi, companyName);
+      }
     }
-    if (cfg.codingLang && result.includes('programming language')) {
-      result = result.replace(/\bprogramming language\b/gi, cfg.codingLang);
+
+    // 2. Personalize Role references
+    if (cfg.role) {
+      if (result.toLowerCase() === 'why do you want this role?' || result.toLowerCase() === 'why do you want this role') {
+        result = `What motivated you to apply for the ${roleName} role${companyName ? ' at ' + companyName : ''}?`;
+      } else if (result.toLowerCase() === 'tell me about yourself.' || result.toLowerCase() === 'tell me about yourself') {
+        result = `Please tell me about yourself and your background as an aspiring ${roleName}.`;
+      } else if (result.toLowerCase() === 'what are your strengths?' || result.toLowerCase() === 'what are your strengths') {
+        result = `What do you consider your greatest strengths that make you well-suited for a ${roleName}?`;
+      } else {
+        result = result.replace(/\b(this role|the role|this job|the position)\b/gi, `the ${roleName} role`);
+      }
     }
+
+    // 3. Adapt for College Students / Freshers
+    if (isFresher) {
+      result = result
+        .replace(/\b(at your previous job|in your previous company|at your last job|in your past workplace)\b/gi, 'in your college projects or academic teams')
+        .replace(/\b(with previous colleagues|with your team at work)\b/gi, 'with your project teammates or classmates');
+    }
+
     return result;
   }
 

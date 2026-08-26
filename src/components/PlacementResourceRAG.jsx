@@ -249,10 +249,8 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
           `- **Average Time Complexity:** O(N) or O(N log N) depending on sorting/data structure lookup.\n` +
           `- **Worst-Case Time Complexity:** O(N) with optimal memory state caching.\n` +
           `- **Space Complexity:** O(1) in-place or O(N) auxiliary tracking memory.`;
-      } else {
         botResponse = `Based on the live RAG retrieval for **${currentTopic}**:\n\n` +
-          `${ragResults?.summary || 'The concept organizes data and algorithms to ensure optimal execution time and minimal redundancy.'}\n\n` +
-          `**Key Tip for Interviews:** Always clarify constraints first, state the brute force complexity, and then walk the interviewer through the optimal approach before writing code!`;
+          `${ragResults?.summary || 'The concept organizes data and algorithms to ensure optimal execution time and minimal redundancy.'}`;
       }
 
       setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);

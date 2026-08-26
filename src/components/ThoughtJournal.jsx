@@ -110,6 +110,21 @@ export default function ThoughtJournal({
   const [tomorrowGoals, setTomorrowGoals] = useState(['Solve 2 coding problems']);
   const [customGoal, setCustomGoal] = useState('');
 
+  // Conversational AI Diary Chatbot State
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      sender: 'bot',
+      text: "Hey friend! I'm NeuroCoach, your personal placement diary companion. How did your preparation go today? Tell me what's on your mind — any wins, tough coding problems, or interview jitters?",
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [chatbotSaved, setChatbotSaved] = useState(false);
+  const [chatbotEntryTitle, setChatbotEntryTitle] = useState('');
+  const [chatbotCategory, setChatbotCategory] = useState('Coding & Technical');
+
   // Auxiliary Hub Data
   const [hopeNotes, setHopeNotes] = useState(() => dbService.getHopeNotesForUser(userEmail));
   const [drawnHopeNote, setDrawnHopeNote] = useState(null);
@@ -269,7 +284,110 @@ export default function ThoughtJournal({
     setSelectedWins(['Didn\'t give up']);
     setGratitudeText('');
     setTomorrowGoals(['Solve 2 coding problems']);
-    setCurrentTab('wizard');
+  };
+
+  // Conversational Chatbot Message Handler
+  const handleSendChatMessage = (textToSend) => {
+    const message = (textToSend || chatInput || '').trim();
+    if (!message) return;
+
+    const userMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text: message,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    const updatedMessages = [...chatMessages, userMsg];
+    setChatMessages(updatedMessages);
+    setChatInput('');
+    setIsBotTyping(true);
+
+    // AI Cognitive Analysis using CognitiveEmotionalRAGEngine
+    setTimeout(() => {
+      const allUserText = updatedMessages
+        .filter(m => m.sender === 'user')
+        .map(m => m.text)
+        .join(' ');
+
+      const insight = CognitiveEmotionalRAGEngine.analyzeDiaryEmotion(allUserText);
+
+      let botResponseText = '';
+      if (insight) {
+        botResponseText = `${insight.empathy}\n\n💡 Mind Reframing Perspective:\n${insight.reframe}\n\n🎯 Recommended Micro-Action:\n${insight.microStep}`;
+      } else {
+        botResponseText = "Thank you for sharing your thoughts with me. Writing your feelings down brings mental clarity. Would you like to save this reflection to your Placement Diary?";
+      }
+
+      const botMsg = {
+        id: Date.now() + 1,
+        sender: 'bot',
+        text: botResponseText,
+        insight: insight,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setChatMessages([...updatedMessages, botMsg]);
+      setIsBotTyping(false);
+    }, 500);
+  };
+
+  // Save Chatbot Generated Journal Entry
+  const handleSaveChatbotJournal = () => {
+    const userTexts = chatMessages.filter(m => m.sender === 'user').map(m => m.text);
+    if (userTexts.length === 0) return;
+
+    const fullContent = userTexts.join('\n\n');
+    const lastBotWithInsight = [...chatMessages].reverse().find(m => m.insight);
+    const insight = lastBotWithInsight?.insight || CognitiveEmotionalRAGEngine.analyzeDiaryEmotion(fullContent);
+
+    const title = chatbotEntryTitle.trim() || (insight?.detectedKeywords?.[0] ? `${insight.detectedKeywords[0].toUpperCase()} Reflection` : `Placement Diary - ${new Date().toLocaleDateString()}`);
+
+    const entryData = {
+      id: Date.now(),
+      title: title,
+      content: fullContent,
+      moods: [insight?.startingStress > 60 ? '😟 Stressed' : '😌 Calm'],
+      energy: 'Medium',
+      emotions: insight?.detectedKeywords || ['Reflective'],
+      category: chatbotCategory,
+      tags: ['AI Chatbot Diary', chatbotCategory],
+      wins: ['Shared honest thoughts with NeuroCoach', 'Applied cognitive reframing'],
+      gratitude: "Grateful for today's learning and resilience.",
+      tomorrowGoals: [insight?.microStep || 'Review today\'s key concepts for 20 minutes'],
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      analysis: {
+        thinkingPattern: { name: insight?.distortionName || 'Balanced Growth' },
+        positiveConclusion: {
+          whatYouDidToday: "Externalized placement thoughts and reframed stress with NeuroCoach.",
+          whatYouMightTryTomorrow: insight?.microStep || "Take one small step toward technical preparation.",
+          gentleReminder: insight?.affirmation || "Progress comes with steady daily consistency."
+        }
+      },
+      reframing: {
+        balancedThought: insight?.reframe || "I am making steady progress step by step."
+      }
+    };
+
+    if (onSaveEntry) {
+      onSaveEntry(entryData);
+    }
+    setChatbotSaved(true);
+    setTimeout(() => setChatbotSaved(false), 4000);
+  };
+
+  const handleResetChatbot = () => {
+    setChatMessages([
+      {
+        id: Date.now(),
+        sender: 'bot',
+        text: "Hey friend! I'm NeuroCoach, your personal placement diary companion. How did your preparation go today? Tell me what's on your mind — any wins, tough coding problems, or interview jitters?",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    setChatInput('');
+    setChatbotSaved(false);
   };
 
   // Draw a Note of Hope from Hope Jar
@@ -332,7 +450,7 @@ export default function ThoughtJournal({
         borderBottom: '1px solid #E5E7EB' 
       }}>
         {[
-          { id: 'wizard', label: 'New Entry Flow' },
+          { id: 'wizard', label: 'AI Diary Chatbot' },
           { id: 'history', label: 'Journal History' },
           { id: 'progress', label: 'Your Journey' },
           { id: 'garden', label: 'Achievement Garden' },
@@ -362,905 +480,356 @@ export default function ThoughtJournal({
         ))}
       </div>
 
-      {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          TAB 1: GUIDED JOURNAL WRITING WIZARD (STEPS 1-9)
-         â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ─────────────────────────────────────────────
+          TAB 1: CONVERSATIONAL AI DIARY CHATBOT FLOW
+         ───────────────────────────────────────────── */}
       {currentTab === 'wizard' && (
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '24px', alignItems: 'start' }}>
           
-          {/* Wizard Progress Bar */}
-          <div style={{ marginBottom: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Step {wizardStep} of 9
-              </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111827' }}>
-                {[
-                  'Mood & Energy Check-in',
-                  'Gentle Prompts',
-                  'Journal & Emotion Selection',
-                  'AI Reflection',
-                  'Thought Reframing',
-                  'Strengths & Wins',
-                  'Gratitude Corner',
-                  'Tomorrow\'s Small Plan',
-                  'Entry Completed'
-                ][wizardStep - 1]}
-              </span>
-            </div>
-            <div style={{ height: '6px', backgroundColor: '#E5E7EB', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ 
-                height: '100%', 
-                width: `${(wizardStep / 9) * 100}%`, 
-                backgroundColor: '#111827', 
-                transition: 'width 0.3s ease' 
-              }} />
-            </div>
-          </div>
-
-          {/* STEP 1: WELCOME PAGE (MOOD & ENERGY CHECK-IN) */}
-          {wizardStep === 1 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                How are you feeling today?
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '20px' }}>
-                Selecting your emotions helps you feel understood before writing. (Select all that apply)
-              </p>
-
-              {/* ALL FEELINGS IN A SINGLE HORIZONTAL LINE */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'row',
-                gap: '10px', 
-                overflowX: 'auto', 
-                paddingBottom: '12px', 
-                marginBottom: '28px',
-                scrollbarWidth: 'thin'
-              }}>
-                {MOOD_OPTIONS.map(m => {
-                  const isSelected = selectedMoods.includes(`${m.emoji} ${m.label}`);
-                  return (
-                    <button
-                      key={m.label}
-                      type="button"
-                      onClick={() => toggleMood(`${m.emoji} ${m.label}`)}
-                      style={{
-                        flex: '0 0 auto',
-                        padding: '12px 18px',
-                        borderRadius: '12px',
-                        border: isSelected ? '2px solid #111827' : '1px solid #E5E7EB',
-                        backgroundColor: isSelected ? '#F9FAFB' : '#FFFFFF',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        transition: 'all 0.15s ease',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <span style={{ fontSize: '1.4rem' }}>{m.emoji}</span>
-                      <span style={{ fontSize: '0.88rem', fontWeight: isSelected ? 700 : 500, color: '#111827' }}>
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Energy Level Selection */}
-              <div style={{ marginBottom: '32px' }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
-                  What is your Energy Level right now?
-                </label>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'High', desc: 'Feeling energetic & ready' },
-                    { label: 'Medium', desc: 'Balanced pace' },
-                    { label: 'Low', desc: 'Tired or drained' }
-                  ].map(e => (
-                    <button
-                      key={e.label}
-                      type="button"
-                      onClick={() => setEnergyLevel(e.label)}
-                      style={{
-                        flex: 1,
-                        minWidth: '140px',
-                        padding: '14px 16px',
-                        borderRadius: '12px',
-                        border: energyLevel === e.label ? '2px solid #111827' : '1px solid #E5E7EB',
-                        backgroundColor: energyLevel === e.label ? '#F3F4F6' : '#FFFFFF',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>{e.label}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '2px' }}>{e.desc}</div>
-                    </button>
-                  ))}
+          {/* LEFT COLUMN: INTERACTIVE CHAT WITH NEUROCOACH */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            border: '1px solid #E5E7EB',
+            padding: '24px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '620px'
+          }}>
+            
+            {/* Chatbot Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid #F3F4F6', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: '#111827',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px',
+                  fontWeight: 800
+                }}>
+                  🧠
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                    NeuroCoach AI Companion
+                  </h3>
+                  <span style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 600 }}>
+                    ● Real-Time Emotion & Cognitive Reappraisal Active
+                  </span>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => setWizardStep(2)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Continue to Prompts
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleResetChatbot}
+                className="btn-secondary-spec"
+                style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 600 }}
+              >
+                Reset Chat
+              </button>
             </div>
-          )}
 
-          {/* STEP 2: GENTLE PROMPTS PAGE */}
-          {wizardStep === 2 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Need help getting started?
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '24px' }}>
-                Click any prompt below to add it directly to your entry. You can write as much or as little as you like.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                {GENTLE_PROMPTS.map((prompt, idx) => (
+            {/* Quick Action Prompt Chips */}
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: '8px' }}>
+                Quick Prompts to Start:
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {[
+                  { text: '🚀 Solved a tricky DSA problem today!', label: 'Coding Win' },
+                  { text: '😟 Feeling anxious about upcoming placement rounds', label: 'Exam Jitters' },
+                  { text: '💡 Struggled with a technical interview concept and felt stuck', label: 'Technical Block' },
+                  { text: '👥 Comparing myself with batchmates who got offers', label: 'Peer Comparison' },
+                  { text: '🌿 Feeling exhausted from preparation, need to reset', label: 'Burnout & Rest' }
+                ].map((chip, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => handleSelectPrompt(prompt)}
+                    onClick={() => handleSendChatMessage(chip.text)}
                     style={{
-                      padding: '16px 20px',
-                      borderRadius: '12px',
+                      padding: '6px 12px',
+                      borderRadius: '999px',
                       backgroundColor: '#F9FAFB',
                       border: '1px solid #E5E7EB',
-                      textAlign: 'left',
-                      fontSize: '0.92rem',
+                      fontSize: '0.8rem',
                       fontWeight: 600,
-                      color: '#111827',
+                      color: '#374151',
                       cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.15s ease'
                     }}
                   >
-                    <span>{prompt}</span>
-                    <span style={{ fontSize: '0.8rem', color: '#111827', fontWeight: 700 }}>+ Add Prompt</span>
+                    {chip.text}
                   </button>
                 ))}
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(1)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setWizardStep(3)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Start Writing
-                </button>
-              </div>
             </div>
-          )}
 
-          {/* STEP 3: JOURNAL WRITING PAGE & EMOTION WHEEL */}
-          {wizardStep === 3 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Express Your Thoughts
-              </h2>
-              <p style={{ fontSize: '0.88rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '20px' }}>
-                "Don't worry about grammar or perfect sentences. Write as if you're talking to yourself."
-              </p>
-
-              {/* Title & Category */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Tough Binary Tree Problem / Mock Interview Reflection"
-                    value={journalTitle}
-                    onChange={(e) => setJournalTitle(e.target.value)}
+            {/* Messages Scroll Area */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              maxHeight: '420px',
+              paddingRight: '6px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              marginBottom: '16px'
+            }}>
+              {chatMessages.map((msg) => {
+                const isBot = msg.sender === 'bot';
+                return (
+                  <div
+                    key={msg.id}
                     style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #D1D5DB',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #D1D5DB',
-                      fontSize: '0.9rem',
-                      backgroundColor: '#FFFFFF'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: isBot ? 'flex-start' : 'flex-end'
                     }}
                   >
-                    <option value="Coding & Technical">Coding & Technical</option>
-                    <option value="Mock Interview">Mock Interview</option>
-                    <option value="Aptitude Practice">Aptitude Practice</option>
-                    <option value="Peer & Placement Pressure">Peer & Placement Pressure</option>
-                    <option value="Daily Academic Life">Daily Academic Life</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Journal Main Textarea */}
-              <div style={{ marginBottom: '24px' }}>
-                <textarea
-                  rows={6}
-                  placeholder="Write freely here... Mention what happened today, how you felt, or what's on your mind."
-                  value={journalText}
-                  onChange={(e) => setJournalText(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    border: '1px solid #D1D5DB',
-                    fontSize: '0.95rem',
-                    lineHeight: 1.6,
-                    outline: 'none',
-                    fontFamily: 'inherit',
-                    resize: 'vertical'
-                  }}
-                />
-
-                {/* Real-Time NeuroCoach Emotional Booster RAG Card */}
-                {liveRAGInsight && (
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '20px 24px',
-                    borderRadius: '16px',
-                    backgroundColor: '#F0FDF4',
-                    border: '1px solid #BBF7D0',
-                    boxShadow: '0 4px 14px rgba(22, 101, 52, 0.06)',
-                    animation: 'fadeIn 0.3s ease-in-out'
-                  }}>
-                    {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '13px', padding: '3px 10px', borderRadius: '6px', backgroundColor: '#DCFCE7', color: '#166534', fontWeight: 800 }}>
-                          NeuroCoach Live RAG Assistant
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#15803D', fontWeight: 600 }}>
-                          {liveRAGInsight.distortionName}
-                        </span>
-                      </div>
-
-                      {/* Stress Shift Meter */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', fontWeight: 700 }}>
-                        <span style={{ color: '#991B1B' }}>Initial Load: {liveRAGInsight.startingStress}%</span>
-                        <span style={{ color: '#166534' }}>➔ Composure: {liveRAGInsight.reframedStress}%</span>
-                        <span style={{ padding: '2px 8px', borderRadius: '6px', backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' }}>
-                          -{liveRAGInsight.stressDelta}% Stress Relief
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Empathy Validation */}
-                    <div style={{ fontSize: '13.5px', color: '#14532D', lineHeight: 1.6, marginBottom: '10px' }}>
-                      <strong style={{ color: '#14532D' }}>Empathetic Insight: </strong>
-                      {liveRAGInsight.empathy}
-                    </div>
-
-                    {/* Cognitive Reframe */}
                     <div style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: '10px',
-                      border: '1px solid #BBF7D0',
-                      marginBottom: '12px',
-                      fontSize: '13.5px',
-                      color: '#166534',
-                      lineHeight: 1.6
+                      maxWidth: '88%',
+                      padding: '14px 18px',
+                      borderRadius: isBot ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                      backgroundColor: isBot ? '#F8FAFC' : '#111827',
+                      color: isBot ? '#1E293B' : '#FFFFFF',
+                      border: isBot ? '1px solid #E2E8F0' : 'none',
+                      fontSize: '0.9rem',
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap'
                     }}>
-                      <div style={{ fontWeight: 800, color: '#14532D', marginBottom: '4px' }}>
-                        Mind Reframing Perspective:
-                      </div>
-                      {liveRAGInsight.reframe}
+                      {msg.text}
+
+                      {/* Insight Card if attached */}
+                      {msg.insight && (
+                        <div style={{
+                          marginTop: '12px',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          backgroundColor: '#F0FDF4',
+                          border: '1px solid #BBF7D0',
+                          fontSize: '0.82rem',
+                          color: '#166534'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontWeight: 800 }}>{msg.insight.distortionName}</span>
+                            <span style={{ fontWeight: 700, color: '#047857' }}>
+                              -{msg.insight.stressDelta}% Stress Relief
+                            </span>
+                          </div>
+                          <div style={{ fontStyle: 'italic', color: '#15803D' }}>
+                            "{msg.insight.affirmation}"
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Action Buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ fontSize: '12.5px', color: '#15803D', fontStyle: 'italic' }}>
-                        Affirmation: "{liveRAGInsight.affirmation}"
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {liveRAGInsight.startingStress > 75 && (
-                          <button
-                            type="button"
-                            onClick={() => { setCurrentTab('calm'); setBreathingActive(true); }}
-                            style={{
-                              padding: '7px 14px',
-                              borderRadius: '8px',
-                              backgroundColor: '#E0F2FE',
-                              color: '#0369A1',
-                              border: '1px solid #BAE6FD',
-                              fontSize: '12.5px',
-                              fontWeight: 700,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🌿 60s Box Breathing
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!injectedReframe) {
-                              setJournalText(prev => `${prev}\n\n[NeuroCoach Balanced Perspective]: ${liveRAGInsight.balancedTakeaway}`);
-                              setInjectedReframe(true);
-                            }
-                          }}
-                          style={{
-                            padding: '7px 16px',
-                            borderRadius: '8px',
-                            backgroundColor: injectedReframe ? '#F3F4F6' : '#166534',
-                            color: injectedReframe ? '#6B7280' : '#FFFFFF',
-                            border: 'none',
-                            fontSize: '12.5px',
-                            fontWeight: 700,
-                            cursor: injectedReframe ? 'default' : 'pointer'
-                          }}
-                        >
-                          {injectedReframe ? '✓ Added to Diary' : '✨ Insert Balanced Thought to Diary'}
-                        </button>
-                      </div>
-                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '4px', marginInline: '6px' }}>
+                      {isBot ? 'NeuroCoach' : 'You'} • {msg.time}
+                    </span>
                   </div>
+                );
+              })}
+
+              {isBotTyping && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 16px', backgroundColor: '#F8FAFC', borderRadius: '12px', width: 'fit-content' }}>
+                  <span style={{ fontSize: '0.82rem', color: '#64748B', fontWeight: 600 }}>NeuroCoach is reflecting on your thoughts...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendChatMessage();
+              }}
+              style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}
+            >
+              <input
+                type="text"
+                placeholder="Type how you feel, what you solved, or what happened today..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '0.92rem',
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="submit"
+                className="btn-primary-spec"
+                style={{ padding: '12px 22px', fontSize: '0.9rem', borderRadius: '12px', whiteSpace: 'nowrap' }}
+              >
+                Send & Reflect
+              </button>
+            </form>
+
+          </div>
+
+          {/* RIGHT COLUMN: LIVE AUTO-GENERATED DIARY SUMMARY CARD */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            border: '1px solid #E5E7EB',
+            padding: '24px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Live Placement Diary Card
+                </span>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                  Structured Entry Preview
+                </h3>
+              </div>
+              <span className="pill-tag" style={{ fontSize: '0.75rem' }}>
+                {new Date().toLocaleDateString()}
+              </span>
+            </div>
+
+            {/* Title & Category Config */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>
+                Diary Entry Title
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Tough Tree Problem / Pre-Interview Reflection"
+                value={chatbotEntryTitle}
+                onChange={(e) => setChatbotEntryTitle(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '0.88rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>
+                Category
+              </label>
+              <select
+                value={chatbotCategory}
+                onChange={(e) => setChatbotCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '0.88rem',
+                  backgroundColor: '#FFFFFF'
+                }}
+              >
+                <option value="Coding & Technical">Coding & Technical</option>
+                <option value="Mock Interview">Mock Interview</option>
+                <option value="Aptitude Practice">Aptitude Practice</option>
+                <option value="Peer & Placement Pressure">Peer & Placement Pressure</option>
+                <option value="Daily Academic Life">Daily Academic Life</option>
+              </select>
+            </div>
+
+            {/* Conversation Synthesis Preview */}
+            <div style={{
+              backgroundColor: '#F9FAFB',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              padding: '16px',
+              marginBottom: '20px',
+              flex: 1
+            }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Your Thoughts
+              </div>
+              <div style={{ fontSize: '0.88rem', color: '#1F2937', lineHeight: 1.5, maxHeight: '110px', overflowY: 'auto', marginBottom: '14px' }}>
+                {chatMessages.filter(m => m.sender === 'user').length > 0 ? (
+                  chatMessages.filter(m => m.sender === 'user').map(m => m.text).join(' • ')
+                ) : (
+                  <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+                    Your thoughts will automatically compile here as you chat with NeuroCoach...
+                  </span>
                 )}
               </div>
 
-              {/* Emotion Wheel Sub-Emotions */}
-              <div style={{ marginBottom: '28px' }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
-                  Emotion Wheel — Identify specific feelings:
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {EMOTION_WHEEL.map(cat => (
-                    <div key={cat.category} style={{
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      backgroundColor: cat.color,
-                      border: `1px solid ${cat.borderColor}`
-                    }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: cat.textColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        {cat.category}
-                      </span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                        {cat.subEmotions.map(sub => {
-                          const isSel = selectedEmotions.includes(sub);
-                          return (
-                            <button
-                              key={sub}
-                              type="button"
-                              onClick={() => toggleSubEmotion(sub)}
-                              style={{
-                                padding: '5px 12px',
-                                borderRadius: '999px',
-                                fontSize: '0.8rem',
-                                fontWeight: isSel ? 700 : 500,
-                                backgroundColor: isSel ? cat.textColor : '#FFFFFF',
-                                color: isSel ? '#FFFFFF' : cat.textColor,
-                                border: `1px solid ${cat.borderColor}`,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {sub}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803D', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Balanced Perspective & Takeaway
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(2)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  disabled={!journalText.trim()}
-                  onClick={handleProceedToAnalysis}
-                  className="btn-primary-spec"
-                  style={{ 
-                    padding: '12px 28px', 
-                    fontSize: '0.9rem', 
-                    borderRadius: '10px',
-                    opacity: journalText.trim() ? 1 : 0.5 
-                  }}
-                >
-                  Analyze & Reflect
-                </button>
+              <div style={{ fontSize: '0.86rem', color: '#166534', lineHeight: 1.5, maxHeight: '90px', overflowY: 'auto' }}>
+                {chatMessages.filter(m => m.insight).length > 0 ? (
+                  [...chatMessages].reverse().find(m => m.insight)?.insight?.reframe
+                ) : (
+                  <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+                    Evidence-based cognitive reframe will appear here.
+                  </span>
+                )}
               </div>
             </div>
-          )}
 
-          {/* STEP 4: AI REFLECTION PAGE */}
-          {wizardStep === 4 && analysisResult && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', border: '1px solid #E5E7EB' }}>
-                  Supportive Reflection
-                </span>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>
-                  Emotional Balance: {analysisResult.emotionalBalance}
-                </span>
-              </div>
-
-              {/* Here's What I Noticed (Validates Effort First) */}
+            {/* Save Button */}
+            {chatbotSaved ? (
               <div style={{
-                padding: '24px',
-                borderRadius: '16px',
-                backgroundColor: '#F9FAFB',
-                border: '1px solid #E5E7EB',
-                marginBottom: '24px'
+                padding: '14px',
+                borderRadius: '12px',
+                backgroundColor: '#DCFCE7',
+                border: '1px solid #86EFAC',
+                color: '#166534',
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: '0.9rem'
               }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginTop: 0, marginBottom: '10px' }}>
-                  Here's what I noticed
-                </h3>
-                <p style={{ fontSize: '0.95rem', color: '#374151', lineHeight: 1.6, margin: 0 }}>
-                  {analysisResult.validation}
-                </p>
+                ✓ Diary Entry Saved Successfully! Garden Growing 🌱
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSaveChatbotJournal}
+                disabled={chatMessages.filter(m => m.sender === 'user').length === 0}
+                className="btn-primary-spec"
+                style={{
+                  width: '100%',
+                  padding: '13px 20px',
+                  fontSize: '0.92rem',
+                  borderRadius: '12px',
+                  opacity: chatMessages.filter(m => m.sender === 'user').length === 0 ? 0.6 : 1,
+                  cursor: chatMessages.filter(m => m.sender === 'user').length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ✨ Save to My Placement Diary
+              </button>
+            )}
 
-              {/* Gentle Thinking Pattern Summary */}
-              {analysisResult.thinkingPattern && (
-                <div style={{
-                  padding: '20px',
-                  borderRadius: '14px',
-                  backgroundColor: '#F3F4F6',
-                  border: '1px solid #111827',
-                  marginBottom: '24px'
-                }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                    Thinking Pattern You Might Explore
-                  </span>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', marginTop: '4px', marginBottom: '6px' }}>
-                    {analysisResult.thinkingPattern.name}
-                  </h4>
-                  <p style={{ fontSize: '0.88rem', color: '#111827', margin: 0 }}>
-                    {analysisResult.thinkingPattern.explanation}
-                  </p>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(3)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Edit Journal Text
-                </button>
-                <button
-                  onClick={() => setWizardStep(5)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Explore Reframe
-                </button>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px' }}>
+              <button
+                type="button"
+                onClick={() => setCurrentTab('history')}
+                style={{ background: 'none', border: 'none', color: '#4B5563', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                View History ({journalEntries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentTab('garden')}
+                style={{ background: 'none', border: 'none', color: '#4B5563', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Achievement Garden
+              </button>
             </div>
-          )}
 
-          {/* STEP 5: THOUGHT REFRAMING PAGE */}
-          {wizardStep === 5 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Reframe Thoughts
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '24px' }}>
-                Would you like to look at this thought differently? Answering these 4 gentle questions helps build a balanced perspective.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '28px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    1. What evidence supports this worry?
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. I struggled on the last test case..."
-                    value={reframeEvidenceFor}
-                    onChange={(e) => setReframeEvidenceFor(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    2. What evidence goes against it?
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. I have solved 40+ LeetCode questions before..."
-                    value={reframeEvidenceAgainst}
-                    onChange={(e) => setReframeEvidenceAgainst(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    3. What would you tell your best friend?
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Don't be too hard on yourself, one bad round is just practice."
-                    value={reframeBestFriend}
-                    onChange={(e) => setReframeBestFriend(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
-                    4. Can there be another explanation?
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. I was just tired today after late-night study."
-                    value={reframeAlternative}
-                    onChange={(e) => setReframeAlternative(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                  />
-                </div>
-
-                {/* Final Balanced Thought */}
-                <div style={{ marginTop: '10px', padding: '16px', borderRadius: '12px', backgroundColor: '#F3F4F6', border: '1px solid #111827' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                    Your Balanced Perspective
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={customBalancedThought}
-                    onChange={(e) => setCustomBalancedThought(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '0.9rem', outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(4)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setWizardStep(6)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Select Strengths & Wins
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 6: STRENGTH FINDER (TINY WINS) */}
-          {wizardStep === 6 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Things You Did Well Today
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '24px' }}>
-                Even tiny wins matter during placement preparation. Select everything you accomplished:
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                {DEFAULT_WINS.map(win => {
-                  const isChecked = selectedWins.includes(win);
-                  return (
-<button
-                      key={win}
-                      type="button"
-                      onClick={() => {
-                        if (isChecked) setSelectedWins(selectedWins.filter(w => w !== win));
-                        else setSelectedWins([...selectedWins, win]);
-                      }}
-                      style={{
-                        padding: '14px 16px',
-                        borderRadius: '12px',
-                        border: isChecked ? '2px solid #111827' : '1px solid #E5E7EB',
-                        backgroundColor: isChecked ? '#F3F4F6' : '#FFFFFF',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        fontSize: '0.9rem',
-                        fontWeight: isChecked ? 700 : 500,
-                        color: isChecked ? '#111827' : '#374151'
-                      }}
-                    >
-                      <span>{win}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-                <input
-                  type="text"
-                  placeholder="Add another tiny win..."
-                  value={customWin}
-                  onChange={(e) => setCustomWin(e.target.value)}
-                  style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (customWin.trim()) {
-                      setSelectedWins([...selectedWins, customWin.trim()]);
-                      setCustomWin('');
-                    }
-                  }}
-                  className="btn-secondary-spec"
-                  style={{ padding: '10px 18px', fontSize: '0.85rem' }}
-                >
-                  + Add Win
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(5)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setWizardStep(7)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Gratitude Corner
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 7: GRATITUDE CORNER */}
-          {wizardStep === 7 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Gratitude Corner
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '24px' }}>
-                Optional: Take a quiet moment to write down one thing you are grateful for today.
-              </p>
-
-              <div style={{ marginBottom: '32px' }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>
-                  Today I'm thankful for...
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="e.g. My study partner, supportive family, a warm cup of coffee, or a clear afternoon."
-                  value={gratitudeText}
-                  onChange={(e) => setGratitudeText(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: '12px',
-                    border: '1px solid #D1D5DB',
-                    fontSize: '0.95rem',
-                    lineHeight: 1.5,
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(6)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setWizardStep(8)}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
-                >
-                  Tomorrow's Action Plan
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 8: TOMORROW'S SMALL PLAN */}
-          {wizardStep === 8 && (
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>
-                Tomorrow's Action Plan
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '24px' }}>
-                Keep your journal action-oriented with 1-2 small focus items for tomorrow:
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                {DEFAULT_TOMORROW_GOALS.map(goal => {
-                  const isSel = tomorrowGoals.includes(goal);
-                  return (
-                    <button
-                      key={goal}
-                      type="button"
-                      onClick={() => {
-                        if (isSel) setTomorrowGoals(tomorrowGoals.filter(g => g !== goal));
-                        else setTomorrowGoals([...tomorrowGoals, goal]);
-                      }}
-                      style={{
-                        padding: '14px 16px',
-                        borderRadius: '12px',
-                        border: isSel ? '2px solid #111827' : '1px solid #E5E7EB',
-                        backgroundColor: isSel ? '#F3F4F6' : '#FFFFFF',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        fontSize: '0.9rem',
-                        fontWeight: isSel ? 700 : 500,
-                        color: isSel ? '#111827' : '#374151'
-                      }}
-                    >
-                      <span>{goal}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom Goal Input */}
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-                <input
-                  type="text"
-                  placeholder="Add custom goal for tomorrow..."
-                  value={customGoal}
-                  onChange={(e) => setCustomGoal(e.target.value)}
-                  style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.9rem' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (customGoal.trim()) {
-                      setTomorrowGoals([...tomorrowGoals, customGoal.trim()]);
-                      setCustomGoal('');
-                    }
-                  }}
-                  className="btn-secondary-spec"
-                  style={{ padding: '10px 18px', fontSize: '0.85rem' }}
-                >
-                  + Add Goal
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => setWizardStep(7)}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleSaveCompleteJournal}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 32px', fontSize: '0.95rem', borderRadius: '10px', backgroundColor: '#475569', color: '#FFFFFF', border: 'none' }}
-                >
-                  Save Journal Entry
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 9: END EVERY JOURNAL POSITIVELY (3-PART SUMMARY) */}
-          {wizardStep === 9 && (
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>
-                Journal Entry Saved!
-              </h2>
-              <p style={{ fontSize: '0.95rem', color: '#4B5563', marginBottom: '28px' }}>
-                You have grown your virtual garden and taken an important step toward mental clarity.
-              </p>
-
-              {/* 3-Part Summary Card */}
-              <div style={{
-                maxWidth: '680px',
-                margin: '0 auto 32px auto',
-                padding: '24px',
-                borderRadius: '16px',
-                backgroundColor: '#F9FAFB',
-                border: '1px solid #E5E7EB',
-                textAlign: 'left'
-              }}>
-                {/* 1. What you did today */}
-                <div style={{ marginBottom: '18px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                    1. What You Did Today
-                  </span>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#111827', marginTop: '4px', margin: 0 }}>
-                    {analysisResult?.positiveConclusion?.whatYouDidToday || "You checked in with yourself and completed your daily journal reflection."}
-                  </p>
-                </div>
-
-                {/* 2. What you might try tomorrow */}
-                <div style={{ marginBottom: '18px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                    2. What You Might Try Tomorrow
-                  </span>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#111827', marginTop: '4px', margin: 0 }}>
-                    {analysisResult?.positiveConclusion?.whatYouMightTryTomorrow || "Spend 20 minutes reviewing interview questions with a relaxed mindset."}
-                  </p>
-                </div>
-
-                {/* 3. A gentle reminder */}
-                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                    3. A Gentle Reminder
-                  </span>
-                  <p style={{ fontSize: '0.92rem', color: '#111827', fontStyle: 'italic', marginTop: '4px', margin: 0 }}>
-                    "{analysisResult?.positiveConclusion?.gentleReminder || "Progress during placement preparation is built through many small efforts. Today's entry is one of them."}"
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setCurrentTab('history')}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  View Journal History
-                </button>
-                <button
-                  onClick={() => setCurrentTab('garden')}
-                  className="btn-secondary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Visit Achievement Garden
-                </button>
-                <button
-                  onClick={handleStartNewJournal}
-                  className="btn-primary-spec"
-                  style={{ padding: '12px 24px', fontSize: '0.9rem' }}
-                >
-                  Write Another Entry
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
 
         </div>
       )}

@@ -266,7 +266,20 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
   return (
     <div style={{ padding: '32px 24px', maxWidth: 1060, margin: '0 auto', fontFamily: 'var(--font-inter)' }}>
       
-      {/* Top Header Card with Back button */}
+      {/* Top Back Navigation outside card */}
+      {setActiveTab && (
+        <div style={{ marginBottom: '18px' }}>
+          <button 
+            onClick={() => setActiveTab('dashboard')} 
+            className="btn-secondary-spec"
+            style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center' }}
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      )}
+
+      {/* Top Header Card */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '20px',
@@ -275,60 +288,28 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
         marginBottom: '26px'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                padding: '3px 10px',
-                borderRadius: '6px',
-                backgroundColor: '#111827',
-                color: '#FFFFFF',
-                letterSpacing: '0.4px'
-              }}>
-                Smart Study Hub
-              </span>
-              <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-                Curated Placement Learning Paths
-              </span>
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
-              Placement Learning Resources & Guided Study Paths
-            </h1>
-            <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-              Search any placement topic to get a structured 4-step learning roadmap: a top-rated video explanation with key timestamps, concise revision notes, targeted practice problems, and a quick quiz to test your understanding.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
-            {setActiveTab && (
-              <button 
-                onClick={() => setActiveTab('dashboard')} 
-                className="btn-secondary-spec"
-                style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}
-              >
-                Back to Dashboard
-              </button>
-            )}
-
-            {/* Student Knowledge Profile Snapshot */}
-            <div style={{
-              backgroundColor: '#F9FAFB',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              textAlign: 'right'
-            }}>
-              <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>
-                Current Preparation Level
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
-                {studentLevel} ({solvedCount} Solved)
-              </div>
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            padding: '3px 10px',
+            borderRadius: '6px',
+            backgroundColor: '#111827',
+            color: '#FFFFFF',
+            letterSpacing: '0.4px'
+          }}>
+            Smart Study Hub
+          </span>
+          <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
+            Curated Placement Learning Paths
+          </span>
         </div>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
+          Placement Learning Resources & Guided Study Paths
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
+          Search any placement topic to get a structured 4-step learning roadmap: a top-rated video explanation with key timestamps, concise revision notes, targeted practice problems, and a quick quiz to test your understanding.
+        </p>
       </div>
 
       {/* Interactive Search Bar & Quick Topic Chips */}

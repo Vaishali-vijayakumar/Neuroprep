@@ -7,7 +7,7 @@ const DAILY_SCENARIOS = [
   {
     id: 'day_1',
     step1: {
-      tag: 'Step 1: Interview Question',
+      tag: 'Interview Question',
       question: 'What is the best thing to do if you get stuck on a coding problem during an interview?',
       options: [
         {
@@ -31,7 +31,7 @@ const DAILY_SCENARIOS = [
       ]
     },
     step2: {
-      tag: 'Step 2: Spot the Right Approach',
+      tag: 'Spot the Right Approach',
       question: 'You need to find a target number in a sorted array of 1,000,000 numbers in less than 1 millisecond. Which approach is best?',
       options: [
         {
@@ -55,7 +55,7 @@ const DAILY_SCENARIOS = [
       ]
     },
     step3: {
-      tag: 'Step 3: Spot the Bug',
+      tag: 'Spot the Bug',
       question: 'Look at this Binary Search code. Which line fixes the integer overflow issue?',
       codeSnippet: `int binarySearch(int[] arr, int target) {\n    int low = 0, high = arr.length - 1;\n    while (low <= high) {\n        int mid = (low + high) / 2; // <-- Where the bug can happen\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}`,
       options: [
@@ -83,7 +83,7 @@ const DAILY_SCENARIOS = [
   {
     id: 'day_2',
     step1: {
-      tag: 'Step 1: Interview Question',
+      tag: 'Interview Question',
       question: 'When an interviewer asks: "Tell me about a technical project you built", how should you start your answer?',
       options: [
         {
@@ -107,7 +107,7 @@ const DAILY_SCENARIOS = [
       ]
     },
     step2: {
-      tag: 'Step 2: Spot the Right Approach',
+      tag: 'Spot the Right Approach',
       question: 'You need to check if a word has duplicate letters in fast O(N) time. What is the simplest helper tool?',
       options: [
         {
@@ -131,7 +131,7 @@ const DAILY_SCENARIOS = [
       ]
     },
     step3: {
-      tag: 'Step 3: Spot the Bug',
+      tag: 'Spot the Bug',
       question: 'This loop is supposed to print all elements in an array, but throws an ArrayIndexOutOfBounds error. How do you fix it?',
       codeSnippet: `int[] numbers = {10, 20, 30, 40};\nfor (int i = 0; i <= numbers.length; i++) {\n    System.out.println(numbers[i]);\n}`,
       options: [
@@ -250,7 +250,7 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory,
           </h3>
         </div>
 
-        {/* Simple Step 1-2-3 Indicator */}
+        {/* Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {[
             { num: 1, label: 'Interview' },
@@ -356,7 +356,7 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory,
             </p>
           </div>
 
-          {/* Optional Code Snippet for Step 3 */}
+          {/* Optional Code Snippet */}
           {activeStepData.codeSnippet && (
             <div style={{
               backgroundColor: '#111827',

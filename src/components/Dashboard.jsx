@@ -494,43 +494,145 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* PLACEMENT RESOURCE INTELLIGENCE & STUDY HUB */}
+      {/* STEP 6: PLACEMENT LEARNING RESOURCES & STUDY HUB */}
       <section style={{ marginBottom: '36px' }}>
-        <div className="saas-card-spec" style={{ padding: '26px 32px', backgroundColor: '#FFFFFF', border: '1.5px solid #111827' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '18px' }}>
-            <div style={{ flex: 1, minWidth: '280px' }}>
+        <div className="saas-card-spec" style={{ padding: '32px' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+            <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  padding: '3px 10px',
-                  borderRadius: '6px',
-                  backgroundColor: '#111827',
-                  color: '#FFFFFF',
-                  letterSpacing: '0.4px'
-                }}>
+                <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 800, fontSize: '11px' }}>
                   Smart Study Hub
                 </span>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
+                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
                   Personalized Learning Roadmaps
                 </span>
               </div>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#111827', margin: '0 0 6px 0' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>
                 Placement Learning Resources & Study Hub
               </h3>
-              <p style={{ fontSize: '0.88rem', color: '#4B5563', margin: 0, lineHeight: 1.5 }}>
-                Get structured study paths tailored to your skill level. We curate the best video explanations, summarize key concepts into quick revision notes, provide targeted practice problems, and test your understanding so you can master topics without searching through dozens of websites.
-              </p>
+            </div>
+
+            <button 
+              onClick={() => setActiveTab('placer-rag')} 
+              className="btn-primary-spec" 
+              style={{ fontSize: '13px', padding: '9px 20px', display: 'flex', alignItems: 'center' }}
+            >
+              Open Full Study Hub
+            </button>
+          </div>
+
+          {/* 3 Resource Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+            
+            {/* Card 1: Core Technical & CS Fundamentals */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    DBMS & CS Fundamentals
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
+                    Quality 95%
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
+                  Normalization & SQL Queries
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
+                  1NF to BCNF rules, indexing strategies, ACID properties, and relational schema optimization.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#065F46', fontWeight: 600 }}>
+                Includes: 18 min Video • 5 min Notes • Mini-Quiz
+              </div>
+            </div>
+
+            {/* Card 2: 99 DSA Patterns & Algorithms */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Data Structures & Algorithms
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
+                    Quality 96%
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
+                  Binary Trees & Dynamic Programming
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
+                  Traversals BFS/DFS, Binary Search Tree properties, Memoization tables, and 0/1 Knapsack.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#1E40AF', fontWeight: 600 }}>
+                Includes: Timestamped Chapters • Handpicked Problems
+              </div>
+            </div>
+
+            {/* Card 3: OOP, System Design & Architecture */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    OOP & System Thinking
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
+                    Quality 97%
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
+                  Object-Oriented Design & Java
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
+                  Inheritance vs Composition, Polymorphism, Solid principles, and Thread safety.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#B45309', fontWeight: 600 }}>
+                Includes: Quick Cheatsheet • Top Recruiter Q&A
+              </div>
+            </div>
+
+          </div>
+
+          {/* Bottom Action Strip */}
+          <div style={{
+            padding: '16px 20px',
+            borderRadius: '12px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '14px'
+          }}>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>
+                4-Step Learning Roadmap Architecture:
+              </span>
+              <span style={{ fontSize: '13px', color: '#4B5563', lineHeight: 1.4 }}>
+                1. Watch top video with timestamps • 2. Read distilled notes • 3. Solve 3 practice problems • 4. Test understanding with a mini-quiz.
+              </span>
             </div>
 
             <button
               onClick={() => setActiveTab('placer-rag')}
-              className="btn-primary-spec"
-              style={{ padding: '12px 26px', fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
+              className="btn-secondary-spec"
+              style={{ fontSize: '12px', padding: '8px 16px', fontWeight: 700, whiteSpace: 'nowrap' }}
             >
-              Open Placement Study Hub
+              Explore All Study Paths
             </button>
           </div>
+
         </div>
       </section>
 

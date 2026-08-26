@@ -478,37 +478,98 @@ export class AIQuestionEngine {
     const fillerCount = vocalAnalysis.fillerCount || 0;
     const fillerScore = Math.max(55, Math.min(98, 95 - fillerCount * 6));
 
-    const eyeContact = faceTelemetry.eyeContact || 88;
-    const confidenceScore = Math.min(98, Math.max(30, Math.round(eyeContact * 0.4 + (100 - stressIndex) * 0.4 + (avgScore * 0.2))));
+    // ── TRUE MULTI-SIGNAL BEHAVIORAL & TEXT EVALUATION ACROSS ALL 8 DIMENSIONS ──
+    const allAnswerText = questionReviews.map(q => q.user_answer || '').join(' ');
+    const allLower = allAnswerText.toLowerCase();
+    const totalWords = allAnswerText.split(/\s+/).filter(Boolean).length;
+    const avgWordsPerQ = questionReviews.length > 0 ? totalWords / questionReviews.length : 0;
 
-    // Differentiate each of the 8 domain rubric criteria with candidate text evidence
+    // Check specific behavioral markers in transcripts
+    const isDisengagedAnywhere = /\b(nothing|none|dont care|don't care|no reason|not interested|nothing motivated|no motivation)\b/i.test(allLower);
+    const hasGrowthMindset = /\b(learn|growth|feedback|curious|improved|adapted|opportunity|upskill|challenge)\b/i.test(allLower);
+    const hasOwnership = /\b(i built|i designed|my role|i implemented|my responsibility|i led|i created|i solved)\b/i.test(allLower);
+    const hasCompanyFit = /\b(culture|values|collaborate|team|innovat|client|global|reputation|scale|align)\b/i.test(allLower);
+    const hasCareerGoals = /\b(career|aspiration|5 years|senior|architect|lead|master|engineer|future|goal)\b/i.test(allLower);
+
+    // Telemetry signals
+    const eyeContact = faceTelemetry.eyeContact != null ? faceTelemetry.eyeContact : 88;
+    const eyeContactScore = Math.min(100, Math.max(15, Math.round(eyeContact)));
+    const stressIdx = stressIndex || 30;
+
+    // Compute independent scores for each of the 8 dimensions based on real candidate behaviors:
     const skillScores = {};
-    matrix.forEach((metric, index) => {
-      let metricScore = avgScore;
 
-      if (avgScore === 0) {
-        metricScore = 0;
-      } else {
-        if (index === 0) { // Cultural & Company Fit / Core Fundamentals
-          metricScore = Math.min(100, Math.max(10, avgScore + 2));
-        } else if (index === 1) { // Communication & Structural Clarity
-          metricScore = Math.min(100, Math.max(10, Math.round((avgScore * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2))));
-        } else if (index === 2) { // Emotional Intelligence (EQ) / Depth
-          metricScore = Math.min(100, Math.max(10, avgScore - 3));
-        } else if (index === 3) { // Growth Mindset / Problem Solving
-          metricScore = Math.min(100, Math.max(10, avgScore + 1));
-        } else if (index === 4) { // Career Motivation / Pacing
-          metricScore = Math.min(100, Math.max(10, avgScore - 2));
-        } else if (index === 5) { // Professional Demeanor / Confidence
-          metricScore = Math.min(100, Math.max(10, confidenceScore));
-        } else if (index === 6) { // Authenticity / Trade-offs
-          metricScore = Math.min(100, Math.max(10, avgScore + 3));
-        } else { // Ethics & Value Alignment / Synthesis
-          metricScore = Math.min(100, Math.max(10, avgScore));
+    matrix.forEach((metric) => {
+      let dimensionScore = 50;
+      const mId = metric.id;
+
+      if (mId === 'culture_fit') {
+        if (isDisengagedAnywhere) {
+          dimensionScore = 15;
+        } else if (hasCompanyFit && totalWords > 20) {
+          dimensionScore = Math.min(95, Math.max(60, Math.round(avgScore + 15)));
+        } else if (totalWords < 10) {
+          dimensionScore = 28;
+        } else {
+          dimensionScore = Math.min(85, Math.max(40, avgScore));
         }
+      } else if (mId === 'communication') {
+        if (avgWordsPerQ <= 3) {
+          dimensionScore = 22; // Single-word / bare name response
+        } else if (avgWordsPerQ < 12) {
+          dimensionScore = 48; // Brief response
+        } else {
+          const fluencyBonus = isOptimalPace ? 12 : 0;
+          dimensionScore = Math.min(96, Math.max(45, Math.round((Math.min(100, totalWords * 1.5) * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2) + fluencyBonus)));
+        }
+      } else if (mId === 'eq') {
+        if (isDisengagedAnywhere) {
+          dimensionScore = 18;
+        } else {
+          const avgMaturity = questionReviews.reduce((sum, q) => sum + (q.emotion?.emotionalMaturity || 70), 0) / Math.max(1, questionReviews.length);
+          dimensionScore = Math.min(96, Math.max(25, Math.round(avgMaturity)));
+        }
+      } else if (mId === 'growth_mindset') {
+        if (hasGrowthMindset && totalWords > 15) {
+          dimensionScore = Math.min(95, Math.max(65, Math.round(avgScore + 18)));
+        } else if (isDisengagedAnywhere || totalWords < 8) {
+          dimensionScore = 25;
+        } else {
+          dimensionScore = Math.min(80, Math.max(40, Math.round(avgScore - 5)));
+        }
+      } else if (mId === 'career_goals') {
+        if (isDisengagedAnywhere) {
+          dimensionScore = 8; // Disengaged / "nothing motivated me"
+        } else if (hasCareerGoals && totalWords > 15) {
+          dimensionScore = Math.min(95, Math.max(65, Math.round(avgScore + 14)));
+        } else if (totalWords < 8) {
+          dimensionScore = 30;
+        } else {
+          dimensionScore = Math.min(85, Math.max(45, avgScore));
+        }
+      } else if (mId === 'demeanor') {
+        // Tied directly to real-time eye-gaze tracking + facial calmness
+        dimensionScore = Math.min(96, Math.max(20, Math.round((eyeContactScore * 0.6) + ((100 - stressIdx) * 0.4))));
+      } else if (mId === 'authenticity') {
+        if (hasOwnership && totalWords > 15) {
+          dimensionScore = Math.min(96, Math.max(60, Math.round(avgScore + 10)));
+        } else if (totalWords <= 4) {
+          dimensionScore = 35;
+        } else {
+          dimensionScore = Math.min(85, Math.max(40, avgScore));
+        }
+      } else if (mId === 'ethics') {
+        // Evaluates integrity + compliance (proctoring infractions)
+        const infractionPenalty = (faceTelemetry.phoneAlerts || 0) * 20;
+        dimensionScore = Math.max(30, 95 - infractionPenalty);
+      } else {
+        // General / Technical domain metrics
+        dimensionScore = Math.min(95, Math.max(20, avgScore));
       }
 
-      skillScores[metric.label] = metricScore;
+      // Store by BOTH label and id to guarantee frontend lookup
+      skillScores[metric.label] = dimensionScore;
+      skillScores[metric.id] = dimensionScore;
     });
 
     const grade = avgScore >= 92 ? 'A+' : (avgScore >= 85 ? 'A' : (avgScore >= 78 ? 'B+' : (avgScore >= 70 ? 'B' : (avgScore >= 60 ? 'C' : 'D'))));

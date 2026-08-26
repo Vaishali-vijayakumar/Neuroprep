@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../services/aiEngine';
 import { getGamificationData } from '../services/gamificationService';
 import { dbService } from '../services/db';
+import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import { Flame, Trophy, Zap, Target, Code2, Award, CheckCircle2, Check, X, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
 export default function Dashboard({ 
@@ -299,284 +300,92 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* STEP 4: DAILY CHALLENGES & ADAPTIVE STREAK TRACKER */}
+      {/* STEP 4: PLACEMENT FLASH GAUNTLET & DAILY CONFIDENCE FORGE */}
       <section style={{ marginBottom: '36px' }}>
-        <div className="saas-card-spec" style={{ padding: '28px', backgroundColor: '#F8F9FA' }}>
-          
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span className="pill-tag" style={{ backgroundColor: '#111827', color: '#FFFFFF', fontWeight: 800, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Zap size={13} color="#FFFFFF" /> 5-Minute Confidence Forge
+              </span>
+              <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>
+                Career Rank: <strong style={{ color: '#111827' }}>{gamification.currentTier.name}</strong> ({gamification.currentTier.badge})
+              </span>
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#111827', margin: 0 }}>
+              Daily Placement Flash Gauntlet
+            </h3>
+            <p style={{ fontSize: '13px', color: '#4B5563', margin: '2px 0 0 0' }}>
+              Play today's 3-stage placement duel (HR Pitch ➔ Pattern Spotter ➔ 1-Line Bug Slayer) to forge interview reflexes & unshakable confidence!
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={() => setActiveTab('gamification')} 
+              className="btn-primary-spec" 
+              style={{ fontSize: '13px', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Trophy size={14} /> Trophy Hall & Streaks
+            </button>
+          </div>
+        </div>
+
+        {/* Live Interactive Flash Gauntlet Arena */}
+        <PlacementFlashGauntlet 
+          userEmail={profile?.email || 'guest'} 
+          targetCompany={profile?.targetCompany || 'TCS'} 
+          onVictory={() => setGamificationTick(prev => prev + 1)}
+        />
+
+        {/* Quick Streak & Momentum Strip */}
+        <div style={{
+          marginTop: '16px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1px solid #E5E7EB',
+          padding: '16px 22px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Flame size={22} color={gamification.activeStreak > 0 ? '#111827' : '#9CA3AF'} />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Zap size={13} color="#111827" /> Adaptive Cognitive Momentum
-                </span>
-                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
-                  Rank: <strong style={{ color: gamification.currentTier.color }}>{gamification.currentTier.name}</strong> ({gamification.currentTier.badge})
-                </span>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>
+                {gamification.activeStreak} Day Placement Streak Active
               </div>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>
-                Daily Challenges & Streak Tracker
-              </h3>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => setActiveTab('gamification')} 
-                className="btn-primary-spec" 
-                style={{ fontSize: '13px', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Trophy size={14} /> Full Achievements & Leaderboard
-              </button>
+              <div style={{ fontSize: '11px', color: '#6B7280' }}>
+                Consistency multiplier: Level {gamification.level} ({gamification.totalXp} Total Career XP)
+              </div>
             </div>
           </div>
 
-          {/* Adaptive Cognitive Motivation & State Banner */}
-          {gamification.adaptiveCognitiveState && (
-            <div style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
-              padding: '16px 20px',
-              marginBottom: '20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '14px'
-            }}>
-              <div style={{ flex: 1, minWidth: '280px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.4px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    backgroundColor: gamification.adaptiveCognitiveState.mode === 'restorative' ? '#FEF2F2' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#ECFDF5' : '#F0F9FF'),
-                    color: gamification.adaptiveCognitiveState.mode === 'restorative' ? '#991B1B' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#065F46' : '#0369A1'),
-                    border: `1px solid ${gamification.adaptiveCognitiveState.mode === 'restorative' ? '#FECACA' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#A7F3D0' : '#BAE6FD')}`
-                  }}>
-                    Cognitive State: {gamification.adaptiveCognitiveState.name}
-                  </span>
-                </div>
-                <div style={{ fontSize: '13px', fontStyle: 'italic', color: '#374151', lineHeight: 1.4 }}>
-                  "{gamification.adaptiveCognitiveState.mantra}"
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '11px', color: '#6B7280', display: 'block' }}>Adaptive Goal Pacing</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>
-                  {gamification.completedQuestsCount}/3 Quests Completed Today
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* 3 Core Metric Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '20px' }}>
-            
-            {/* Card 1: Active Streak */}
-            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Daily Practice & Mind Streak
-                  </span>
-                  <Flame size={18} color={gamification.activeStreak > 0 ? '#111827' : '#9CA3AF'} />
-                </div>
-                <p style={{ fontSize: '26px', fontWeight: 900, color: '#111827', margin: '6px 0 2px 0' }}>
-                  {gamification.activeStreak} {gamification.activeStreak === 1 ? 'Day' : 'Days'} Streak
-                </p>
-                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0 }}>
-                  {gamification.activeStreak > 0 
-                    ? 'Excellent momentum! Daily consistency strengthens neural pathways for technical mastery.' 
-                    : 'Complete a coding problem, mock interview, or diary reflection today to build your streak.'}
-                </p>
-              </div>
-
-              {/* Current Week Activity Tracker in Weekdays Order (Mon to Sun) */}
-              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
-                {gamification.currentWeekDays.map((item, idx) => {
-                  let iconElement = null;
-                  if (item.isDone) {
-                    iconElement = <Check size={12} strokeWidth={3} />;
-                  } else if (item.isToday) {
-                    iconElement = <span style={{ fontSize: '14px', lineHeight: 1 }}>•</span>;
-                  } else if (item.isPast) {
-                    iconElement = <X size={12} strokeWidth={2.5} />;
-                  }
-
-                  return (
-                    <div key={idx} style={{ textAlign: 'center', flex: 1 }}>
-                      <div 
-                        title={`${item.day}: ${item.isDone ? 'Completed' : (item.isToday ? 'Today (Pending)' : (item.isPast ? 'Missed' : 'Upcoming'))}`}
-                        style={{
-                          height: '24px',
-                          borderRadius: '6px',
-                          backgroundColor: item.isDone ? '#111827' : (item.isToday ? '#FFFFFF' : '#F9FAFB'),
-                          border: item.isDone ? '1px solid #111827' : (item.isToday ? '1.5px dashed #111827' : '1px solid #E5E7EB'),
-                          color: item.isDone ? '#FFFFFF' : (item.isToday ? '#111827' : '#9CA3AF'),
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginBottom: '4px'
-                        }}
-                      >
-                        {iconElement}
-                      </div>
-                      <span style={{ fontSize: '10px', color: item.isToday ? '#111827' : '#6B7280', fontWeight: item.isToday ? 700 : 500 }}>
-                        {item.day}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Card 2: Total XP & Level */}
-            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Total Experience Points
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827', backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '6px' }}>
-                    Level {gamification.level}
-                  </span>
-                </div>
-                <p style={{ fontSize: '26px', fontWeight: 900, color: '#111827', margin: '6px 0 2px 0' }}>
-                  {gamification.totalXp} <span style={{ fontSize: '14px', fontWeight: 600, color: '#6B7280' }}>XP</span>
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6B7280', marginTop: '6px' }}>
-                  <span>Progress to Level {gamification.level + 1}</span>
-                  <span style={{ fontWeight: 700, color: '#111827' }}>{gamification.xpInLevel} / 250 XP</span>
-                </div>
-                <div style={{ height: '6px', backgroundColor: '#E5E7EB', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${gamification.xpProgress}%`, height: '100%', backgroundColor: '#111827', borderRadius: '3px', transition: 'width 0.4s ease' }} />
-                </div>
-              </div>
-
-              <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#4B5563', borderTop: '1px solid #F3F4F6', paddingTop: '10px' }}>
-                <span>{gamification.solvedCount} Problems Solved</span>
-                <span>{gamification.unlockedBadges.length} Badges Earned</span>
-              </div>
-            </div>
-
-            {/* Card 3: Today's Featured Challenge */}
-            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Featured Daily Problem
-                  </span>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    backgroundColor: '#F3F4F6',
-                    color: '#111827'
-                  }}>
-                    {gamification.dailyChallenge.difficulty}
-                  </span>
-                </div>
-                <p style={{ fontSize: '16px', fontWeight: 800, color: '#111827', margin: '8px 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {gamification.dailyChallenge.title}
-                </p>
-                <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>
-                  Topic: <strong>{gamification.dailyChallenge.category || 'Data Structures'}</strong>
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setActiveTab('coding')} 
-                className="btn-primary-spec" 
-                style={{ marginTop: '14px', fontSize: '13px', padding: '8px 14px', width: '100%', justifyContent: 'center' }}
-              >
-                Solve in Coding Arena (+{gamification.dailyChallenge.xpReward} XP)
-              </button>
-            </div>
-
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('coding')}
+              className="btn-secondary-spec"
+              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
+            >
+              99 DSA Patterns Arena ➔
+            </button>
+            <button
+              onClick={() => setActiveTab('mock')}
+              className="btn-secondary-spec"
+              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
+            >
+              Virtual Recruiter Mock ➔
+            </button>
+            <button
+              onClick={() => setActiveTab('journal')}
+              className="btn-secondary-spec"
+              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
+            >
+              Placement Diary & Win Log ➔
+            </button>
           </div>
-
-          {/* Adaptive Multi-Module Cognitive Quests Matrix */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-            {gamification.dailyQuests.map((quest) => (
-              <div 
-                key={quest.id}
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: quest.completed ? '1px solid #86EFAC' : '1px solid #E5E7EB',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '12px'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {quest.completed ? (
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
-                          ✓ Completed
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px' }}>
-                          In Progress
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#111827' }}>
-                      +{quest.xp} XP
-                    </span>
-                  </div>
-
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#111827', margin: '0 0 4px 0' }}>
-                    {quest.title}
-                  </h4>
-                  <p style={{ fontSize: '12px', color: '#4B5563', margin: '0 0 8px 0', lineHeight: 1.4 }}>
-                    {quest.desc}
-                  </p>
-                  
-                  {quest.cognitiveBenefit && (
-                    <div style={{
-                      fontSize: '11px',
-                      color: '#065F46',
-                      backgroundColor: '#ECFDF5',
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      fontWeight: 600,
-                      lineHeight: 1.3
-                    }}>
-                      Mind Impact: {quest.cognitiveBenefit}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(quest.targetTab || 'coding')}
-                  className={quest.completed ? 'btn-secondary-spec' : 'btn-primary-spec'}
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    width: '100%',
-                    justifyContent: 'center',
-                    borderRadius: '8px'
-                  }}
-                >
-                  {quest.completed ? 'Practice Again' : `Start Quest ➔`}
-                </button>
-              </div>
-            ))}
-          </div>
-
         </div>
       </section>
 

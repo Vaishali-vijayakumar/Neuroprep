@@ -254,41 +254,47 @@ export class AIQuestionEngine {
   getBenchmarkModelAnswer(question, trackId = null) {
     const qLower = (question || '').toLowerCase();
     const role = this.config.role || 'Software Engineer';
-    const company = this.config.company || 'our company';
+    const company = this.config.company || 'our organization';
 
-    if (/tell me about yourself|introduce yourself|background/i.test(qLower)) {
+    if (/tell me about yourself|introduce yourself|background|walk me through your resume/i.test(qLower)) {
       return `Structure a 60–90 second pitch: 1) Education & Degree (e.g., Computer Science graduate), 2) Core Technical Skills & Major Projects built (e.g., full-stack apps, algorithms, cloud deployments), and 3) Clear career aspirations and enthusiasm for the ${role} position.`;
     }
-    if (/why (do you want|apply for|choose) this role|what motivated you/i.test(qLower)) {
-      return `Articulate your passion for engineering: Explain what excites you about the ${role} domain, reference hands-on project experiences, and describe how your technical skills and problem-solving mindset make you an impactful contributor.`;
-    }
-    if (/why (this company|join|work with us)|interested in joining/i.test(qLower) || qLower.includes(company.toLowerCase())) {
+    if (/why (this company|join|work with us)|interested in joining/i.test(qLower) || (company && qLower.includes(company.toLowerCase()))) {
       return `Demonstrate authentic company awareness: Highlight ${company}'s industry leadership, technological innovation, client impact, and collaborative learning culture, and connect these directly to your own personal work values.`;
     }
-    if (/career goal|where do you see yourself|5 years/i.test(qLower)) {
+    if (/why (do you want|apply for|choose) this role|what motivated you|what motivates you|source of motivation/i.test(qLower)) {
+      return `Articulate your professional drive: Explain your passion for solving challenging engineering problems through code, continuous learning, and delivering high-impact, reliable software systems as an impactful ${role}.`;
+    }
+    if (/career goal|where do you see yourself|5 years|future goal|ambition/i.test(qLower)) {
       return `Outline structured 3–5 year milestones: Transition from mastering core engineering responsibilities as a junior engineer to owning end-to-end architectural modules and mentoring team members in high-scale systems.`;
     }
-    if (/strength|strongest attribute/i.test(qLower)) {
+    if (/failure|mistake|setback|struggle|didn't go as planned|regret/i.test(qLower)) {
+      return `Use the STAR framework: Describe a real technical or project setback, take full personal accountability without external blaming, and explain the concrete lesson learned and systemic preventative measures you established.`;
+    }
+    if (/prioritize|priority|manage time|deadlines|competing tasks/i.test(qLower)) {
+      return `Describe your prioritization framework: Assess urgency vs business impact (e.g., Eisenhower Matrix), break deliverables into milestone sprints, manage dependencies, and communicate timeline trade-offs proactively with leads.`;
+    }
+    if (/learn new technology|fast learner|upskill|stay updated/i.test(qLower)) {
+      return `Explain your structured learning roadmap: Read official documentation and architecture guides, build a hands-on proof-of-concept project, seek code reviews from experienced peers, and integrate best practices.`;
+    }
+    if (/strength|strongest attribute|what are you good at/i.test(qLower)) {
       return `Highlight 2 role-relevant strengths with evidence (e.g., rapid learning agility and disciplined debugging), backed by a concrete project or academic achievement example.`;
     }
-    if (/weakness|failure|mistake|improve/i.test(qLower)) {
+    if (/weakness|area of improvement|critical feedback/i.test(qLower)) {
       return `Select a genuine, non-fatal area (e.g., initial hesitation in delegating tasks or perfectionism in early drafts), explain your self-awareness, and detail the actionable steps and habits you actively employ to overcome it.`;
     }
     if (/team|conflict|disagree|collaborat/i.test(qLower)) {
       return `Apply the STAR framework: Describe a real team conflict, your proactive step to listen objectively to all perspectives, and how you guided the team to a data-driven consensus that delivered the project successfully.`;
     }
-    if (/pressure|stress|deadline|prioritize/i.test(qLower)) {
-      return `Describe your prioritization method: Breaking complex deliverables into manageable milestones, transparent communication with stakeholders, and maintaining high code quality under tight delivery windows.`;
-    }
-    if (/learn|new technology|fast learner/i.test(qLower)) {
-      return `Explain your structured learning roadmap: Reading official documentation, building a hands-on proof-of-concept project, reviewing best practices, and integrating feedback from senior engineers.`;
+    if (/pressure|stress|tight deadline|overwhelm/i.test(qLower)) {
+      return `Describe your composure method: Breaking complex deliverables into manageable milestones, transparent communication with stakeholders, and maintaining high code quality and automated testing under tight delivery windows.`;
     }
 
-    return `A comprehensive answer structures the situation, specifies individual ownership, demonstrates technical depth, and highlights measurable results.`;
+    return `A comprehensive answer structures the situation, specifies individual ownership, demonstrates domain depth, and highlights measurable results.`;
   }
 
   /**
-   * Evaluate candidate's individual answer quality with deep semantic text analysis
+   * Evaluate candidate's individual answer quality with deep semantic & topic-specific analysis
    */
   evaluateAnswerQuality(question, answerText, trackId = null) {
     const activeTrack = trackId || this.trackId;
@@ -298,12 +304,75 @@ export class AIQuestionEngine {
     const qLower = (question || '').toLowerCase();
     const benchmark = this.getBenchmarkModelAnswer(question, activeTrack);
 
+    // Identify semantic topic of the question
+    const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
+    const isWhyCompany = /why (this company|join|work with us)|interested in joining/i.test(qLower) || (this.config.company && qLower.includes(this.config.company.toLowerCase()));
+    const isMotivation = /what motivated you|what motivates you|why (do you want|apply for|choose) this role|source of motivation/i.test(qLower);
+    const isFailure = /failure|mistake|setback|struggle|didn't go as planned/i.test(qLower);
+    const isPrioritize = /prioritize|priority|manage time|deadlines|competing tasks/i.test(qLower);
+    const isLearning = /learn new technology|fast learner|upskill|stay updated/i.test(qLower);
+    const isWeakness = /weakness|area of improvement/i.test(qLower);
+    const isStrengths = /strength|strongest attribute/i.test(qLower);
+    const isTeamConflict = /team|conflict|disagree|collaborat/i.test(qLower);
+
     // ── 1. Detect Incomplete / Dismissive / Negative Answers ────────────────────
-    const isDismissive = /\b(nothing|none|dont know|don't know|no reason|not interested|dont care|don't care|nothing motivated|no motivation|idk)\b/i.test(lower);
+    const isDismissive = /\b(nothing|none|dont care|don't care|no reason|not interested|not intresetd|nothing motivated|no motivation|nothing encourage|no failure|never failed|idk|whatever)\b/i.test(lower);
+
     if (isDismissive) {
       this.consecutiveWeak++;
       this.consecutiveStrong = 0;
       this._checkAdaptation();
+
+      if (isFailure && /\b(no failure|never failed|none|nothing)\b/i.test(lower)) {
+        return {
+          overall: 12,
+          is_correct: false,
+          verdict: 'Lacks Self-Reflection / Avoided Question',
+          what_was_right: 'Acknowledged the question topic.',
+          what_was_missing: 'Claiming to have never experienced failure indicates a lack of self-awareness or hesitation to acknowledge mistakes. Interviewers ask this to gauge your resilience, humility, and ability to learn from setbacks.',
+          feedback: 'Discuss a genuine minor project setback or bug, how you diagnosed the root cause, took ownership, and improved your engineering process.',
+          strengths: ['Acknowledged prompt'],
+          improvements: [
+            'Choose a real technical or project setback and explain what you learned',
+            'Demonstrate emotional maturity, resilience, and personal accountability'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isWhyCompany && /\b(not interested|not intresetd|dont care|no reason)\b/i.test(lower)) {
+        return {
+          overall: 5,
+          is_correct: false,
+          verdict: 'Disengaged / Expressed Disinterest in Company',
+          what_was_right: 'Responded to the prompt.',
+          what_was_missing: 'Stated direct disinterest in the organization. An interview requires articulating genuine curiosity about the company\'s engineering culture, scale, and opportunities.',
+          feedback: 'Research the company\'s key projects, client impact, and training culture to articulate positive alignment with your career aspirations.',
+          strengths: ['Prompt response'],
+          improvements: [
+            'Articulate positive company interest and core values alignment',
+            'Explain how the company\'s projects match your technical ambitions'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isMotivation) {
+        return {
+          overall: 6,
+          is_correct: false,
+          verdict: 'Disengaged / Stated Lack of Motivation',
+          what_was_right: 'Responded to the question prompt.',
+          what_was_missing: 'Expressed a lack of internal motivation or interest. You must convey positive career drive, passion for solving problems through code, and enthusiasm for the position.',
+          feedback: 'Reframe your response around authentic motivators: building scalable software, learning under experienced engineers, and contributing to company growth.',
+          strengths: ['Prompt response'],
+          improvements: [
+            'Articulate genuine career motivation and enthusiasm for software engineering',
+            'Explain what brings you professional fulfillment and satisfaction'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
 
       return {
         overall: 8,
@@ -312,7 +381,7 @@ export class AIQuestionEngine {
         what_was_right: 'Responded to the question prompt.',
         what_was_missing: 'Expressed lack of motivation or disinterest. In an interview, you must articulate genuine enthusiasm, positive career drive, and alignment with the company.',
         feedback: 'Reframe your response with positive motivators: desire to solve complex technical challenges, learn from experienced mentors, and contribute to company growth.',
-        strengths: ['Responded promptly'],
+        strengths: ['Prompt response'],
         improvements: ['Express genuine career enthusiasm and positive motivation', 'Connect your aspirations to the company and role'],
         ideal_answer: benchmark,
       };
@@ -324,23 +393,66 @@ export class AIQuestionEngine {
       this.consecutiveStrong = 0;
       this._checkAdaptation();
 
-      const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
+      if (isIntro) {
+        return {
+          overall: 16,
+          is_correct: false,
+          verdict: 'Incomplete / Only Name Stated',
+          what_was_right: 'Stated your name clearly.',
+          what_was_missing: 'Missing educational background, core technical skills (programming languages, frameworks), key projects built, and career ambitions as a Software Engineer.',
+          feedback: 'Deliver a structured 60-90 second introduction covering: 1) Education & Degree, 2) Technical Skills & Projects, 3) Enthusiasm for this role.',
+          strengths: ['Clear name statement'],
+          improvements: [
+            'Structure introduction with Education, Technical Projects, and Career Goals',
+            'Elaborate with at least 3-4 structured sentences'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isPrioritize) {
+        return {
+          overall: 30,
+          is_correct: false,
+          verdict: 'Oversimplified / Needs Practical Framework',
+          what_was_right: 'Identified the basic concept of ranking priorities.',
+          what_was_missing: 'Stating "from high to low" lacks a concrete methodology. You need to explain HOW you determine priority (e.g., deadline urgency, business impact, dependencies) and handle competing demands.',
+          feedback: 'Elaborate on your task management system: milestone tracking, dependency analysis, and communicating timeline adjustments with leads.',
+          strengths: ['Addressed prioritization concept'],
+          improvements: [
+            'Explain the specific criteria used to evaluate urgency vs business impact',
+            'Describe practical tools or frameworks (e.g., Eisenhower Matrix, Jira, milestone sprints)'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isLearning) {
+        return {
+          overall: 32,
+          is_correct: false,
+          verdict: 'Over-reliant on Peers / Lacks Autonomous Methods',
+          what_was_right: 'Valued collaborative peer learning.',
+          what_was_missing: 'Relying exclusively on peers suggests low self-directed autonomy. Interviewers look for initiative: reading documentation, building proof-of-concept projects, and self-study alongside peer feedback.',
+          feedback: 'Highlight a blended learning approach: independent documentation research + building sample projects + consulting senior peers for best practice reviews.',
+          strengths: ['Valued peer collaboration'],
+          improvements: [
+            'Highlight self-directed learning methods (official documentation, hands-on POCs)',
+            'Combine independent research with peer code reviews'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
       return {
-        overall: 16,
+        overall: 20,
         is_correct: false,
-        verdict: isIntro ? 'Incomplete / Only Name Stated' : 'Very Brief / Single Phrase',
-        what_was_right: 'Stated your name or response clearly.',
-        what_was_missing: isIntro
-          ? 'Missing educational background, core technical skills (programming languages, tools), key projects, and career aspirations.'
-          : 'Response is too brief to evaluate domain knowledge, reasoning, or communication skills.',
-        feedback: isIntro
-          ? 'Deliver a structured 60-90 second introduction covering: 1) Education, 2) Technical Skills & Projects, 3) Enthusiasm for this role.'
-          : 'Elaborate your response with specific examples, context, and clear explanations.',
+        verdict: 'Very Brief / Single Phrase',
+        what_was_right: 'Responded to prompt.',
+        what_was_missing: 'Response is too brief to evaluate domain knowledge, reasoning, or communication skills.',
+        feedback: 'Elaborate your response with specific examples, context, and clear explanations.',
         strengths: ['Clear statement'],
-        improvements: [
-          isIntro ? 'Structure introduction with Education, Technical Projects, and Career Goals' : 'Provide complete explanatory sentences',
-          'Elaborate with at least 3-4 structured sentences'
-        ],
+        improvements: ['Provide complete explanatory sentences with practical context', 'Elaborate with at least 3-4 structured sentences'],
         ideal_answer: benchmark,
       };
     }
@@ -351,18 +463,66 @@ export class AIQuestionEngine {
       this.consecutiveStrong = 0;
       this._checkAdaptation();
 
-      const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
-      const isWhy = /why|motivated/i.test(qLower);
+      if (isPrioritize) {
+        return {
+          overall: 48,
+          is_correct: 'partial',
+          verdict: 'Brief / Needs Prioritization Framework',
+          what_was_right: 'Acknowledged task order and priority management.',
+          what_was_missing: 'Needs a structured framework (e.g., Eisenhower Matrix, impact vs effort matrix) and examples of how you handle shifting deadlines.',
+          feedback: 'Explain your step-by-step workflow: assessing dependencies, daily planning, and communicating trade-offs with stakeholders.',
+          strengths: ['Direct response on prioritization'],
+          improvements: [
+            'Describe how you assess business impact vs deadline urgency',
+            'Explain how you communicate timeline adjustments when overloaded'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isLearning) {
+        return {
+          overall: 50,
+          is_correct: 'partial',
+          verdict: 'Brief / Needs Structured Learning Roadmap',
+          what_was_right: 'Identified learning resources and support systems.',
+          what_was_missing: 'Explain your end-to-end learning lifecycle: reading documentation, writing proof-of-concept code, and validating skills on real projects.',
+          feedback: 'Demonstrate active self-study: building small test projects to solidify theoretical concepts before production use.',
+          strengths: ['Highlighted learning approach'],
+          improvements: [
+            'Detail your process from reading documentation to building working prototypes',
+            'Mention how you track progress and apply best practices'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
+
+      if (isFailure) {
+        return {
+          overall: 45,
+          is_correct: 'partial',
+          verdict: 'Brief / Needs STAR Resolution Details',
+          what_was_right: 'Referenced a past challenge.',
+          what_was_missing: 'Needs complete STAR framing: what was the specific situation, your personal ownership, and the permanent system improvement you implemented.',
+          feedback: 'Focus on the positive resolution and what systemic checks you added to prevent the issue from recurring.',
+          strengths: ['Willingness to discuss setbacks'],
+          improvements: [
+            'Use the STAR method (Situation, Task, Action, Result) with specific details',
+            'Highlight the long-term learning and preventative mechanisms added'
+          ],
+          ideal_answer: benchmark,
+        };
+      }
 
       return {
-        overall: 45,
+        overall: 48,
         is_correct: 'partial',
         verdict: 'Brief / Needs Elaboration',
         what_was_right: 'Directly addressed the question topic.',
         what_was_missing: isIntro
           ? 'Could expand on specific engineering projects built, tech stack utilized, and problem-solving examples.'
-          : isWhy
-          ? 'Needs concrete examples of what excites you about the technology and organization.'
+          : isWhyCompany
+          ? 'Needs concrete examples of what excites you about the company\'s technology and client impact.'
           : 'Lacks supporting evidence, practical examples, and depth of explanation.',
         feedback: 'Good start. Expand your answer with concrete technical details, past project experiences, and measurable outcomes.',
         strengths: ['Direct response', 'Concise communication'],
@@ -373,7 +533,7 @@ export class AIQuestionEngine {
 
     // ── 4. Substantive Answers (16+ words): Deep Analysis ──────────────────────
     const domainKeywords = {
-      hr: ['team', 'ownership', 'collaborat', 'value', 'learn', 'goal', 'culture', 'resolv', 'adapt', 'integrity', 'project', 'skill', 'lead', 'deliver', 'growth', 'feedback', 'achiev'],
+      hr: ['team', 'ownership', 'collaborat', 'value', 'learn', 'goal', 'culture', 'resolv', 'adapt', 'integrity', 'project', 'skill', 'lead', 'deliver', 'growth', 'feedback', 'achiev', 'priorit', 'deadlin', 'impact'],
       tech: ['oop', 'class', 'database', 'transaction', 'acid', 'thread', 'process', 'memory', 'index', 'network', 'protocol', 'latency', 'api', 'server', 'async'],
       dsa: ['complexity', 'big-o', 'array', 'hashmap', 'tree', 'graph', 'pointer', 'dp', 'recursion', 'edge case', 'optimize', 'stack', 'queue'],
       system_design: ['scale', 'load balancer', 'cache', 'redis', 'sharding', 'replica', 'kafka', 'throughput', 'bottleneck', 'microservice', 'distributed', 'database'],

@@ -376,7 +376,6 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory,
                 <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 800 : 500, color: isCurrent ? '#111827' : '#6B7280' }}>
                   {s.label}
                 </span>
-                {s.num < 3 && <span style={{ color: '#D1D5DB', margin: '0 2px' }}>➔</span>}
               </div>
             );
           })}
@@ -427,7 +426,7 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory,
                 className="btn-primary-spec"
                 style={{ padding: '8px 16px', fontSize: '0.82rem', fontWeight: 600 }}
               >
-                Go to 99 DSA Patterns ➔
+                Go to 99 DSA Patterns
               </button>
             )}
           </div>
@@ -552,9 +551,9 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory,
                 <button
                   onClick={handleNextStep}
                   className="btn-primary-spec"
-                  style={{ padding: '8px 20px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '8px 20px', fontSize: '0.84rem', display: 'flex', alignItems: 'center' }}
                 >
-                  {currentStep === 3 ? 'Finish Challenge' : 'Next Question'} <ArrowRight size={14} />
+                  {currentStep === 3 ? 'Finish Challenge' : 'Next Question'}
                 </button>
               )}
             </div>

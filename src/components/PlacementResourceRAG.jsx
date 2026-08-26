@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, BookOpen, Video, FileText, CheckCircle2, Trophy, 
-  Sparkles, Clock, Target, ArrowRight, ExternalLink, Play, 
-  HelpCircle, Layers, Check, X, ChevronRight, Zap, RefreshCw, BarChart2, ArrowLeft
+  Sparkles, Clock, Target, ExternalLink, Play, 
+  HelpCircle, Layers, Check, X, ChevronRight, Zap, RefreshCw, BarChart2
 } from 'lucide-react';
 
 // Curated Knowledge Database for PLACER-RAG Intelligence
@@ -306,9 +306,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
               <button 
                 onClick={() => setActiveTab('dashboard')} 
                 className="btn-secondary-spec"
-                style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}
               >
-                <ArrowLeft size={14} /> Back to Dashboard
+                Back to Dashboard
               </button>
             )}
 
@@ -653,7 +653,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
                       className="btn-secondary-spec"
                       style={{ fontSize: '0.75rem', padding: '4px 10px', fontWeight: 700 }}
                     >
-                      Read Summary ➔
+                      Read Summary
                     </button>
                   </div>
                 ))}
@@ -665,9 +665,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             <button
               onClick={() => setActiveStepTab('notes')}
               className="btn-primary-spec"
-              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}
             >
-              Next Step: Read Distilled Notes <ArrowRight size={14} />
+              Next: Read Distilled Notes
             </button>
           </div>
         </div>
@@ -727,9 +727,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             <button
               onClick={() => setActiveStepTab('practice')}
               className="btn-primary-spec"
-              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}
             >
-              Next Step: Placement Practice <ArrowRight size={14} />
+              Next: Placement Practice
             </button>
           </div>
         </div>
@@ -803,9 +803,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             <button
               onClick={() => setActiveStepTab('quiz')}
               className="btn-primary-spec"
-              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}
             >
-              Next Step: Take Mini Quiz <ArrowRight size={14} />
+              Next: Take Mini Quiz
             </button>
           </div>
         </div>
@@ -824,7 +824,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
-                  Step 4: Check Understanding (3-Question Mini Test)
+                  Knowledge Check Quiz (3 Questions)
                 </span>
                 <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
                   Answer these questions to update your knowledge profile.
@@ -943,7 +943,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
                   marginTop: '12px'
                 }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                    Knowledge Model Updated • Next Adaptive Recommendation:
+                    Knowledge Model Updated • Next Recommendation:
                   </span>
                   <h4 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#111827', margin: '4px 0 2px 0' }}>
                     {currentTopic.nextRecommendation.topic} ({currentTopic.nextRecommendation.estimatedTime})
@@ -957,9 +957,9 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
                       handleSearch(currentTopic.nextRecommendation.topic);
                     }}
                     className="btn-primary-spec"
-                    style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center' }}
                   >
-                    Load Next Learning Path <ArrowRight size={14} />
+                    Load Next Learning Path
                   </button>
                 </div>
               )}

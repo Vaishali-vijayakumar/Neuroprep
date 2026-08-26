@@ -487,7 +487,7 @@ export default function Dashboard({
               className="btn-secondary-spec"
               style={{ fontSize: '12px', padding: '8px 16px', fontWeight: 700, whiteSpace: 'nowrap' }}
             >
-              {(codingState.score || 0) < 60 ? 'Practice DSA Patterns ➔' : ((interviewState.lastScore || 0) < 70 ? 'Start Mock Round ➔' : 'View Full Audit ➔')}
+              {(codingState.score || 0) < 60 ? 'Practice DSA Patterns' : ((interviewState.lastScore || 0) < 70 ? 'Start Mock Round' : 'View Full Audit')}
             </button>
           </div>
 
@@ -526,9 +526,9 @@ export default function Dashboard({
             <button
               onClick={() => setActiveTab('placer-rag')}
               className="btn-primary-spec"
-              style={{ padding: '12px 26px', fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+              style={{ padding: '12px 26px', fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
             >
-              Open Placement Study Hub <ArrowRight size={16} />
+              Open Placement Study Hub
             </button>
           </div>
         </div>

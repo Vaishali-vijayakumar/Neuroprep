@@ -314,9 +314,9 @@ export default function ThoughtJournal({
 
  let botResponseText = '';
  if (insight) {
- botResponseText = `${insight.empathy}\n\n Mind Reframing Perspective:\n${insight.reframe}\n\n Recommended Micro-Action:\n${insight.microStep}`;
+ botResponseText = `${insight.greeting}\n\n${insight.empathy}\n\nHere is how I see it as your friend:\n${insight.reframe}\n\nFriendly Advice:\n${insight.friendAdvice || insight.microStep}`;
  } else {
- botResponseText = "Thank you for sharing your thoughts with me. Writing your feelings down brings mental clarity. Would you like to save this reflection to your Placement Diary?";
+ botResponseText = "Hey, thanks so much for opening up to me! Getting things off your chest is so helpful during placement prep. How are you feeling right now?";
  }
 
  const botMsg = {

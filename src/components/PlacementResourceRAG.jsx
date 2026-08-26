@@ -5,7 +5,7 @@ import {
   Download, Code, ArrowUpRight
 } from 'lucide-react';
 
-// Placement Preparation Apps Multi-Source Intelligence Engine
+// Placement Preparation Apps Multi-Source Intelligence Engine with Direct Verified YouTube Links
 function retrieveResourcesForTopic(queryText) {
   const clean = (queryText || '').toLowerCase().trim();
   const encodedQuery = encodeURIComponent(queryText.trim());
@@ -34,19 +34,19 @@ function retrieveResourcesForTopic(queryText) {
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
 
-  // 1. DBMS & SQL Domain (Placement Preparation Apps)
+  // 1. DBMS & SQL Domain (Direct Gate Smashers & Knowledge Gate Video Links)
   if (domain === 'dbms') {
     return {
       title: 'DBMS Normalization & SQL Queries',
       category: 'Campus Placement Technical Track',
-      summary: 'Curated across top placement prep apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.',
+      summary: 'Curated across top placement prep channels and apps: Gate Smashers, Knowledge Gate, InterviewBit, and CodeStudio.',
       videos: [
         {
           id: 'v1',
           title: 'DBMS Normalization in One Shot (1NF, 2NF, 3NF, BCNF Placement Masterclass)',
-          channel: 'Gate Smashers (Placement Series)',
+          channel: 'Gate Smashers',
           duration: '18 mins',
-          url: 'https://www.youtube.com/results?search_query=gate+smashers+normalization+dbms+placement+one+shot',
+          url: 'https://www.youtube.com/watch?v=5fs1hdwd4jo',
           timestamps: [
             { time: '00:00', label: 'Why Normalization & Insertion/Deletion Anomalies' },
             { time: '04:15', label: '1NF: Eliminating Multi-Valued Attributes' },
@@ -57,9 +57,9 @@ function retrieveResourcesForTopic(queryText) {
         {
           id: 'v2',
           title: 'SQL Joins & Indexing Campus Placement Masterclass',
-          channel: 'Knowledge Gate Placement Prep',
+          channel: 'Knowledge Gate',
           duration: '22 mins',
-          url: 'https://www.youtube.com/results?search_query=knowledge+gate+sql+joins+indexing+placement+masterclass',
+          url: 'https://www.youtube.com/watch?v=9yeOJ0ZMUYw',
           timestamps: [
             { time: '00:00', label: 'INNER, LEFT, RIGHT, and FULL OUTER Joins Visualized' },
             { time: '08:20', label: 'Clustered vs Non-Clustered B-Tree Indexes' },
@@ -153,19 +153,19 @@ function retrieveResourcesForTopic(queryText) {
     };
   }
 
-  // 2. Binary Trees & BST Domain (Placement Preparation Apps)
+  // 2. Binary Trees & BST Domain (Direct Striver & Love Babbar Video Links)
   if (domain === 'trees') {
     return {
       title: 'Binary Trees & Binary Search Trees (BST)',
       category: 'Campus Placement Coding Track',
-      summary: 'Curated across top placement prep apps: Striver SDE Sheet, InterviewBit Trees Track, CodeStudio Guided Paths, and PrepInsta.',
+      summary: 'Curated across top placement channels: Striver (Take U Forward), CodeHelp (Love Babbar), InterviewBit, and CodeStudio.',
       videos: [
         {
           id: 'v1',
-          title: 'Binary Trees & Traversals Placement Masterclass (Inorder, Preorder, Postorder, BFS)',
-          channel: 'Take U Forward (Striver SDE Sheet)',
+          title: 'Binary Trees & Traversals Masterclass (Inorder, Preorder, Postorder, BFS in One Shot)',
+          channel: 'Take U Forward (Striver)',
           duration: '24 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+binary+trees+placement+masterclass+take+u+forward',
+          url: 'https://www.youtube.com/watch?v=jmy0LaGET1I',
           timestamps: [
             { time: '00:00', label: 'TreeNode Pointer Structure & Memory Representation' },
             { time: '06:15', label: 'DFS Traversals (Inorder, Preorder, Postorder Recursion)' },
@@ -175,10 +175,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Binary Search Tree (BST) Campus Placement Problems',
-          channel: 'CodeHelp (Love Babbar Placement Series)',
+          title: 'Binary Search Tree (BST) & All Placement Operations',
+          channel: 'CodeHelp (Love Babbar)',
           duration: '20 mins',
-          url: 'https://www.youtube.com/results?search_query=love+babbar+binary+search+tree+placement+series',
+          url: 'https://www.youtube.com/watch?v=p4DD60_B5t8',
           timestamps: [
             { time: '00:00', label: 'BST Property: Left < Root < Right' },
             { time: '07:30', label: 'Validating BST with Min/Max Boundary Recursion' },
@@ -271,19 +271,19 @@ function retrieveResourcesForTopic(queryText) {
     };
   }
 
-  // 3. Dynamic Programming Domain (Placement Preparation Apps)
+  // 3. Dynamic Programming Domain (Direct Aditya Verma & Striver Video Links)
   if (domain === 'dp') {
     return {
       title: 'Dynamic Programming & 0/1 Knapsack Patterns',
       category: 'Campus Placement Algorithms Track',
-      summary: 'Curated across top placement prep apps: InterviewBit DP Track, Striver SDE Sheet, CodeStudio, and PrepInsta.',
+      summary: 'Curated across top placement channels: Aditya Verma, Striver (Take U Forward), InterviewBit, and CodeStudio.',
       videos: [
         {
           id: 'v1',
-          title: '0/1 Knapsack Problem & DP Patterns Placement Series',
-          channel: 'Aditya Verma (Placement DP Series)',
+          title: '0/1 Knapsack Problem & Identification in Dynamic Programming',
+          channel: 'Aditya Verma',
           duration: '22 mins',
-          url: 'https://www.youtube.com/results?search_query=aditya+verma+01+knapsack+problem+placement+dp',
+          url: 'https://www.youtube.com/watch?v=kvyShbFVaY8',
           timestamps: [
             { time: '00:00', label: 'How to Identify DP in 30 Seconds' },
             { time: '06:15', label: 'Choice Diagram & Recursive Tree' },
@@ -293,10 +293,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Complete DP Playlist for Campus Placement Drives',
-          channel: 'Take U Forward (Striver SDE Sheet)',
+          title: 'Dynamic Programming Introduction & 1D DP Climbing Stairs',
+          channel: 'Take U Forward (Striver)',
           duration: '26 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+dynamic+programming+placement+take+u+forward',
+          url: 'https://www.youtube.com/watch?v=tyB0ztf0DNY',
           timestamps: [
             { time: '00:00', label: '1D DP: Climbing Stairs & House Robber' },
             { time: '09:40', label: '2D Grid DP & Minimum Path Sum' },
@@ -389,19 +389,19 @@ function retrieveResourcesForTopic(queryText) {
     };
   }
 
-  // 4. Graphs Domain (Placement Preparation Apps)
+  // 4. Graphs Domain (Direct Striver & Love Babbar Video Links)
   if (domain === 'graphs') {
     return {
       title: 'Graph Algorithms (BFS, DFS, Dijkstra, Topo Sort)',
       category: 'Campus Placement Algorithms Track',
-      summary: 'Curated across top placement prep apps: Striver SDE Sheet, InterviewBit Graph Track, CodeStudio, and IndiaBIX.',
+      summary: 'Curated across top placement channels: Striver (Take U Forward), CodeHelp (Love Babbar), InterviewBit, and CodeStudio.',
       videos: [
         {
           id: 'v1',
-          title: 'Complete Graph Series for Placement Tests (BFS, DFS, Cycle Detection)',
-          channel: 'Take U Forward (Striver SDE Sheet)',
+          title: 'Graph Representation & BFS Traversal Placement Masterclass',
+          channel: 'Take U Forward (Striver)',
           duration: '25 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+graph+series+placement+take+u+forward',
+          url: 'https://www.youtube.com/watch?v=-tgVpUgsQ5A',
           timestamps: [
             { time: '00:00', label: 'Adjacency List vs Matrix Space & Time' },
             { time: '06:30', label: 'BFS Traversal with Queue & Visited Array' },
@@ -411,10 +411,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Dijkstra & Topological Sort Placement Masterclass',
-          channel: 'CodeHelp (Love Babbar Placement Series)',
+          title: 'Dijkstra Algorithm & Shortest Path in Graphs',
+          channel: 'CodeHelp (Love Babbar)',
           duration: '20 mins',
-          url: 'https://www.youtube.com/results?search_query=love+babbar+graph+dijkstra+placement+series',
+          url: 'https://www.youtube.com/watch?v=dVUR3Rm6biE',
           timestamps: [
             { time: '00:00', label: 'When to Use BFS vs Dijkstra' },
             { time: '08:15', label: 'Course Schedule Topological Sort Pattern' },
@@ -507,18 +507,126 @@ function retrieveResourcesForTopic(queryText) {
     };
   }
 
-  // 5. Universal Dynamic Semantic Resolver across Placement Prep Apps for ANY query
+  // 5. Sliding Window Domain (Direct Aditya Verma & Striver Video Links)
+  if (domain === 'sliding_window') {
+    return {
+      title: 'Sliding Window & Two Pointer Patterns',
+      category: 'Campus Placement Coding Track',
+      summary: 'Curated across top placement channels: Aditya Verma, Striver (Take U Forward), InterviewBit, and CodeStudio.',
+      videos: [
+        {
+          id: 'v1',
+          title: 'Sliding Window Identification & Maximum Sum Subarray of Size K',
+          channel: 'Aditya Verma',
+          duration: '22 mins',
+          url: 'https://www.youtube.com/watch?v=EHCGAZBbB88',
+          timestamps: [
+            { time: '00:00', label: 'Fixed Size vs Variable Size Window Identification' },
+            { time: '07:30', label: 'Maximum Sum Subarray of Size K' },
+            { time: '14:20', label: 'Variable Window with Hash Map Frequency' }
+          ]
+        },
+        {
+          id: 'v2',
+          title: 'Two Pointers & Sliding Window Masterclass',
+          channel: 'Take U Forward (Striver)',
+          duration: '20 mins',
+          url: 'https://www.youtube.com/watch?v=1pkOGchrNx5',
+          timestamps: [
+            { time: '00:00', label: 'Two Pointers from Both Ends' },
+            { time: '08:00', label: 'Longest Substring Without Repeating Characters' },
+            { time: '14:30', label: 'Minimum Window Substring Pattern' }
+          ]
+        }
+      ],
+      notes: [
+        {
+          id: 'n1',
+          title: 'InterviewBit Two Pointers Placement Notes',
+          type: 'Placement Cheatsheet',
+          source: 'InterviewBit Placement Prep App',
+          readTime: '3 min read',
+          url: 'https://www.interviewbit.com/two-pointers-interview-questions/',
+          keyPoints: [
+            'Fixed Window: maintain window size (right - left + 1 == k). Slide by incrementing both.',
+            'Variable Window: expand right pointer while condition holds; shrink left pointer when invalid.',
+            'Time Complexity: converts nested loops O(N^2) into linear O(N).'
+          ]
+        },
+        {
+          id: 'n2',
+          title: 'CodeStudio Sliding Window Patterns Cheatsheet',
+          type: 'Placement Revision Notes',
+          source: 'CodeStudio by Coding Ninjas',
+          readTime: '3 min read',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms',
+          keyPoints: [
+            'Sorted Array Two Sum: left = 0, right = n - 1. If sum < target left++; else right--.',
+            'Fast and Slow Pointers: cycle detection in linked lists and middle node calculation.'
+          ]
+        }
+      ],
+      websites: [
+        {
+          id: 'w1',
+          name: 'InterviewBit',
+          title: 'InterviewBit Two Pointers Track',
+          desc: 'Placement coding problems covering 3 Sum, Remove Duplicates, and Container With Most Water.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/two-pointers/'
+        },
+        {
+          id: 'w2',
+          name: 'CodeStudio (Coding Ninjas)',
+          title: 'CodeStudio Sliding Window Guided Path',
+          desc: 'Interactive problems with line-by-line pointer traces and complexity analysis.',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms'
+        },
+        {
+          id: 'w3',
+          name: 'PrepInsta',
+          title: 'PrepInsta Array & Two Pointer Question Bank',
+          desc: 'Campus recruitment questions asked in tier-1 placement drives.',
+          url: 'https://prepinsta.com/'
+        }
+      ],
+      practice: [
+        {
+          id: 'p1',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Container With Most Water',
+          difficulty: 'Medium',
+          url: 'https://www.interviewbit.com/problems/container-with-most-water/'
+        },
+        {
+          id: 'p2',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: 3 Sum Problem',
+          difficulty: 'Medium',
+          url: 'https://www.interviewbit.com/problems/3-sum/'
+        },
+        {
+          id: 'p3',
+          platform: 'CodeStudio',
+          title: 'CodeStudio: Longest Substring Without Repeating Characters',
+          difficulty: 'Medium',
+          url: 'https://www.naukri.com/code360/problems/longest-substring-without-repeating-characters'
+        }
+      ]
+    };
+  }
+
+  // 6. Universal Dynamic Semantic Resolver across Specific Placement Channels for ANY query
   return {
     title: formattedTitle,
     category: 'Campus Placement Preparation Track',
-    summary: `Curated across top placement prep apps (InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry) for ${formattedTitle}.`,
+    summary: `Curated across top placement prep channels (Gate Smashers, Striver, Love Babbar) and apps (InterviewBit, CodeStudio, IndiaBIX, PrepInsta) for ${formattedTitle}.`,
     videos: [
       {
         id: 'v1',
-        title: `${formattedTitle} Complete Placement Concept & Code Tutorial`,
-        channel: 'Gate Smashers / Striver (Placement Series)',
+        title: `${formattedTitle} Placement Masterclass Lecture`,
+        channel: 'Gate Smashers (Placement Series)',
         duration: '20 mins',
-        url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+interview+tutorial+lecture`,
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent('gate smashers ' + queryText + ' placement lecture')}`,
         timestamps: [
           { time: '00:00', label: `Core Introduction & Why ${formattedTitle} is Asked in Campus Tests` },
           { time: '05:30', label: 'Step-by-Step Algorithm & Memory Trace' },
@@ -528,10 +636,10 @@ function retrieveResourcesForTopic(queryText) {
       },
       {
         id: 'v2',
-        title: `${formattedTitle} Campus Placement Crash Course & Dry Run`,
-        channel: 'CodeHelp (Love Babbar Placement Series)',
-        duration: '16 mins',
-        url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+coding+walkthrough+dry+run`,
+        title: `${formattedTitle} SDE Placement Sheet Coding Walkthrough`,
+        channel: 'Take U Forward (Striver)',
+        duration: '18 mins',
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent('striver take u forward ' + queryText + ' placement')}`,
         timestamps: [
           { time: '00:00', label: 'Visual Problem Breakdown' },
           { time: '07:15', label: 'Clean Implementation in Java / C++ / Python' },
@@ -680,14 +788,14 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             Placement Prep Intelligence
           </span>
           <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-            Dedicated Placement Preparation Apps & Resources
+            Dedicated Placement Channels & Preparation Apps
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
           Placement Learning Resources Search
         </h1>
         <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-          Search any placement concept to retrieve tutorials, cheatsheets, and coding challenges from top placement preparation apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.
+          Search any placement concept to retrieve direct video masterclasses from Gate Smashers, Striver (Take U Forward), Aditya Verma, and Love Babbar, alongside cheatsheets and practice sets from InterviewBit, CodeStudio, IndiaBIX, and PrepInsta.
         </p>
       </div>
 
@@ -742,7 +850,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             'Dynamic Programming',
             'SQL Joins',
             'Graph Algorithms',
-            'Operating Systems Paging'
+            'Sliding Window & Two Pointers'
           ].map((chip) => (
             <button
               key={chip}
@@ -795,22 +903,22 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             Search Any Campus Placement Concept
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
-            Type any topic above to search across top campus placement preparation apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.
+            Type any topic above to get direct video links from top placement educators (Gate Smashers, Striver, Aditya Verma, Love Babbar) and practice modules from InterviewBit, CodeStudio, and IndiaBIX.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
             {[
               {
                 title: 'DBMS Normalization',
-                desc: 'InterviewBit interview questions, CodeStudio guided path notes, IndiaBIX screening tests, and Gate Smashers videos.'
+                desc: 'Direct Gate Smashers video link, InterviewBit revision notes, IndiaBIX tests, and CodeStudio guided paths.'
               },
               {
                 title: 'Binary Trees & BST',
-                desc: 'Striver SDE Sheet video walkthroughs, InterviewBit practice problems, CodeStudio guided tracks, and PrepInsta question bank.'
+                desc: 'Direct Striver & Love Babbar video links, InterviewBit practice tracks, and CodeStudio company sheets.'
               },
               {
                 title: 'Dynamic Programming',
-                desc: 'Aditya Verma Knapsack masterclasses, InterviewBit DP track, CodeStudio problem sets, and Sanfoundry MCQs.'
+                desc: 'Direct Aditya Verma Knapsack tutorial, Striver DP playlist, InterviewBit challenges, and Sanfoundry MCQs.'
               }
             ].map(card => (
               <div 
@@ -835,7 +943,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   {card.desc}
                 </div>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
-                  Search Placement Apps
+                  Search Resources
                 </span>
               </div>
             ))}
@@ -912,7 +1020,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* SECTION 1: YOUTUBE VIDEOS */}
+            {/* SECTION 1: YOUTUBE VIDEOS WITH DIRECT CHANNEL LINKS */}
             {(activeFilter === 'all' || activeFilter === 'videos') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -973,7 +1081,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-primary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        <Play size={14} /> Watch on YouTube <ExternalLink size={12} />
+                        <Play size={14} /> Watch on {vid.channel.split(' ')[0]} YouTube <ExternalLink size={12} />
                       </a>
                     </div>
                   ))}

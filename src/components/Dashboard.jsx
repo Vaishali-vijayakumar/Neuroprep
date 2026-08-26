@@ -520,65 +520,65 @@ export default function Dashboard({
             </button>
           </div>
 
-          {/* 3 Resource Cards */}
+          {/* 3 Practical Learning Roadmaps */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
             
-            {/* Card 1: Core Technical & CS Fundamentals */}
+            {/* Card 1: Fast-Track Technical Concepts */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    DBMS & CS Fundamentals
+                    Core Technical Concepts
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
-                    Quality 95%
+                    Quality 98%
                   </span>
                 </div>
 
                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
-                  Normalization & SQL Queries
+                  Fast-Track Core Fundamentals
                 </p>
-                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
-                  1NF to BCNF rules, indexing strategies, ACID properties, and relational schema optimization.
+                <p style={{ fontSize: '13px', color: '#4B5563', margin: 0, lineHeight: 1.45 }}>
+                  Quickly understand key database, SQL, and core computer science questions with clear examples and short revision notes.
                 </p>
               </div>
 
               <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#065F46', fontWeight: 600 }}>
-                Includes: 18 min Video • 5 min Notes • Mini-Quiz
+                Includes: 15-Min Video Breakdown • 5-Min Summary • Quick Quiz
               </div>
             </div>
 
-            {/* Card 2: 99 DSA Patterns & Algorithms */}
+            {/* Card 2: Step-by-Step Coding Patterns */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Data Structures & Algorithms
+                    Coding & Problem Solving
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
-                    Quality 96%
+                    Quality 99%
                   </span>
                 </div>
 
                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
-                  Binary Trees & Dynamic Programming
+                  Step-by-Step Coding Patterns
                 </p>
-                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
-                  Traversals BFS/DFS, Binary Search Tree properties, Memoization tables, and 0/1 Knapsack.
+                <p style={{ fontSize: '13px', color: '#4B5563', margin: 0, lineHeight: 1.45 }}>
+                  Learn how to break down tricky problems, spot the right approach instantly, and write clean solutions with confidence.
                 </p>
               </div>
 
               <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#1E40AF', fontWeight: 600 }}>
-                Includes: Timestamped Chapters • Handpicked Problems
+                Includes: Visual Walkthroughs • 3 Handpicked Practice Problems
               </div>
             </div>
 
-            {/* Card 3: OOP, System Design & Architecture */}
+            {/* Card 3: Interview Q&A & Communication */}
             <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    OOP & System Thinking
+                    Interview Communication
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
                     Quality 97%
@@ -586,15 +586,15 @@ export default function Dashboard({
                 </div>
 
                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0' }}>
-                  Object-Oriented Design & Java
+                  HR & Technical Q&A Mastery
                 </p>
-                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0, lineHeight: 1.4 }}>
-                  Inheritance vs Composition, Polymorphism, Solid principles, and Thread safety.
+                <p style={{ fontSize: '13px', color: '#4B5563', margin: 0, lineHeight: 1.45 }}>
+                  Master how to explain your projects, answer situational interview questions, and speak with confidence under pressure.
                 </p>
               </div>
 
               <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#B45309', fontWeight: 600 }}>
-                Includes: Quick Cheatsheet • Top Recruiter Q&A
+                Includes: Sample Model Answers • Recruiter Tips & Traps
               </div>
             </div>
 

@@ -421,6 +421,42 @@ export const dbService = {
  },
 
  // ─────────────────────────────────────────────
+ // Report Snapshots & Progress Comparison Helpers
+ // ─────────────────────────────────────────────
+ getReportHistory(userEmail = 'guest') {
+ try {
+ const safeEmail = (userEmail || 'guest').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+ const raw = localStorage.getItem(`neuroprep_report_history_${safeEmail}`);
+ const history = raw ? JSON.parse(raw) : [];
+ const previousReport = history.length > 1 ? history[history.length - 2] : (history.length === 1 ? history[0] : null);
+ const latestReport = history.length > 0 ? history[history.length - 1] : null;
+ return { previousReport, latestReport, history };
+ } catch (e) {
+ console.error('Error fetching report history', e);
+ return { previousReport: null, latestReport: null, history: [] };
+ }
+ },
+
+ saveReportSnapshot(reportData, userEmail = 'guest') {
+ try {
+ const safeEmail = (userEmail || 'guest').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+ const current = this.getReportHistory(userEmail).history || [];
+ const newSnapshot = {
+ id: Date.now(),
+ timestamp: new Date().toISOString(),
+ dateFormatted: new Date().toLocaleDateString(),
+ ...reportData
+ };
+ const updated = [...current, newSnapshot].slice(-15); // keep latest 15 snapshots
+ localStorage.setItem(`neuroprep_report_history_${safeEmail}`, JSON.stringify(updated));
+ return newSnapshot;
+ } catch (e) {
+ console.error('Error saving report snapshot', e);
+ return null;
+ }
+ },
+
+ // ─────────────────────────────────────────────
  // Legacy helpers (kept for backward compatibility)
  // ─────────────────────────────────────────────
  async getJournals() {

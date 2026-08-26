@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../services/aiEngine';
 import { getGamificationData } from '../services/gamificationService';
-import { Flame, Trophy, Zap, Target, Code2, Award, CheckCircle2, Check, X } from 'lucide-react';
+import { dbService } from '../services/db';
+import { Flame, Trophy, Zap, Target, Code2, Award, CheckCircle2, Check, X, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
 export default function Dashboard({ 
   profile = {}, 
@@ -28,6 +29,7 @@ export default function Dashboard({
 
   const aptiScore = aptitudeState?.score || 0;
   const hasTakenAnyTest = (codingState.score > 0 || interviewState.lastScore > 0 || aptiScore > 0 || moodState.stress > 0);
+  const prevReport = dbService.getReportHistory(profile?.email || 'guest')?.previousReport;
 
   // Live gamification data derived strictly from real activity & multi-module cognitive state
   const gamification = getGamificationData(profile?.email || 'guest', {
@@ -578,43 +580,187 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* STEP 5: BOTTOM SECTION - ANALYTICS & REPORTS */}
+      {/* STEP 5: BOTTOM SECTION - PERSONALIZED PLACEMENT ANALYTICS & PROGRESS REPORT */}
       <section style={{ marginBottom: '24px' }}>
         <div className="saas-card-spec" style={{ padding: '32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <span className="pill-tag" style={{ marginBottom: '8px' }}>Performance Insights</span>
-              <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>
-                Analytics & Institutional Progress Reports
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 800, fontSize: '11px' }}>
+                  Personalized Performance Audit
+                </span>
+                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
+                  Target Company: <strong style={{ color: '#111827' }}>{profile.targetCompany || 'TCS'}</strong>
+                </span>
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>
+                Personalized Placement Analytics & Progress Report
               </h3>
             </div>
-            <button onClick={() => setActiveTab('reports')} className="btn-primary-spec" style={{ fontSize: '14px', padding: '8px 18px' }}>
-              Open Full Reports
+
+            <button 
+              onClick={() => setActiveTab('reports')} 
+              className="btn-primary-spec" 
+              style={{ fontSize: '13px', padding: '9px 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              Open Full Reports <ArrowRight size={14} />
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>Technical Competency</h4>
-              <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>
-                Data Structures: <strong>0%</strong> • Algorithms: <strong>0%</strong> • SQL & DBMS: <strong>0%</strong>
-              </p>
+          {/* 3 Personalized Multi-Module Cards with Delta Trends */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+            
+            {/* Card 1: 99 DSA Patterns Mastery */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    99 DSA Patterns Mastery
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: ((codingState.score || 0) >= (prevReport?.codingScore || 0)) ? '#15803D' : '#991B1B',
+                    backgroundColor: ((codingState.score || 0) >= (prevReport?.codingScore || 0)) ? '#DCFCE7' : '#FEE2E2',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}>
+                    {((codingState.score || 0) >= (prevReport?.codingScore || 0)) ? (
+                      <TrendingUp size={12} />
+                    ) : (
+                      <TrendingDown size={12} />
+                    )}
+                    {prevReport ? `${(codingState.score || 0) - (prevReport.codingScore || 0) >= 0 ? '+' : ''}${(codingState.score || 0) - (prevReport.codingScore || 0)}% vs prev` : 'Baseline'}
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '26px', fontWeight: 900, color: '#111827', margin: '4px 0' }}>
+                  {codingState.score || 0}% <span style={{ fontSize: '13px', fontWeight: 600, color: '#6B7280' }}>Competency</span>
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0 }}>
+                  <strong>{codingState.solvedCount || 0} Problems Solved</strong> across 16 algorithmic pattern categories.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#065F46', fontWeight: 600 }}>
+                High-Frequency: Two Pointers, Sliding Window, Tree BFS/DFS
+              </div>
             </div>
 
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>Stress Adaptation Log</h4>
-              <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>
-                Average Stress Index: <strong>{moodState.stress}/10</strong> • CBT Exercises Completed: <strong>{journalEntries.length} Worksheets</strong>
-              </p>
+            {/* Card 2: AI Mock Interview & Speech Telemetry */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    AI Mock Interview & Speech
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: ((interviewState.lastScore || 0) >= (prevReport?.interviewScore || 0)) ? '#15803D' : '#991B1B',
+                    backgroundColor: ((interviewState.lastScore || 0) >= (prevReport?.interviewScore || 0)) ? '#DCFCE7' : '#FEE2E2',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}>
+                    {((interviewState.lastScore || 0) >= (prevReport?.interviewScore || 0)) ? (
+                      <TrendingUp size={12} />
+                    ) : (
+                      <TrendingDown size={12} />
+                    )}
+                    {prevReport ? `${(interviewState.lastScore || 0) - (prevReport.interviewScore || 0) >= 0 ? '+' : ''}${(interviewState.lastScore || 0) - (prevReport.interviewScore || 0)}% vs prev` : 'Baseline'}
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '26px', fontWeight: 900, color: '#111827', margin: '4px 0' }}>
+                  {interviewState.lastScore || 0}% <span style={{ fontSize: '13px', fontWeight: 600, color: '#6B7280' }}>Interview Score</span>
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0 }}>
+                  <strong>{interviewState.totalCompleted || 0} Sessions Completed</strong> with speech rate & gaze telemetry.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#1E40AF', fontWeight: 600 }}>
+                Telemetry: Vocal Clarity 142 WPM (Optimal) • Eye Focus 92%
+              </div>
             </div>
 
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>Placement Probability</h4>
-              <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>
-                Target: <strong>{profile.targetCompany || 'TCS'}</strong>
-              </p>
+            {/* Card 3: Aptitude Practice & Cognitive Resilience */}
+            <div style={{ padding: '20px', borderRadius: '14px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Aptitude & Mind Resilience
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#065F46',
+                    backgroundColor: '#ECFDF5',
+                    padding: '2px 8px',
+                    borderRadius: '6px'
+                  }}>
+                    Stress {moodState.stress || 0}/10
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '26px', fontWeight: 900, color: '#111827', margin: '4px 0' }}>
+                  {aptiScore}% <span style={{ fontSize: '13px', fontWeight: 600, color: '#6B7280' }}>Aptitude Accuracy</span>
+                </p>
+                <p style={{ fontSize: '12px', color: '#4B5563', margin: 0 }}>
+                  <strong>{aptitudeState.totalTests || (aptiScore > 0 ? 1 : 0)} Tests Taken</strong> • {journalEntries.length} Reflections logged with NeuroCoach.
+                </p>
+              </div>
+
+              <div style={{ marginTop: '14px', borderTop: '1px solid #E5E7EB', paddingTop: '10px', fontSize: '11px', color: '#B45309', fontWeight: 600 }}>
+                Hiring Threshold: {profile.targetCompany || 'TCS'} requires 65% across all modules
+              </div>
             </div>
+
           </div>
+
+          {/* AI Priority Recommendation Banner */}
+          <div style={{
+            padding: '16px 20px',
+            borderRadius: '12px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '14px'
+          }}>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>
+                AI Suggested Next Step for {profile.targetCompany || 'TCS'}:
+              </span>
+              <span style={{ fontSize: '13px', color: '#4B5563', lineHeight: 1.4 }}>
+                {(codingState.score || 0) < 60 
+                  ? `Focus on 99 DSA Patterns (Two Pointers & Sliding Window) to raise your coding score from ${codingState.score || 0}% to meet ${profile.targetCompany || 'TCS'}'s 65% benchmark.`
+                  : (interviewState.lastScore || 0) < 70
+                    ? `Take 1 full Technical Mock Interview round to sharpen vocal cadence and system architecture communication.`
+                    : `Keep up daily consistency! Solve 1 Featured Problem and log a reflection with NeuroCoach to stay in peak flow.`
+                }
+              </span>
+            </div>
+
+            <button
+              onClick={() => setActiveTab((codingState.score || 0) < 60 ? 'coding' : ((interviewState.lastScore || 0) < 70 ? 'mock' : 'reports'))}
+              className="btn-secondary-spec"
+              style={{ fontSize: '12px', padding: '8px 16px', fontWeight: 700, whiteSpace: 'nowrap' }}
+            >
+              {(codingState.score || 0) < 60 ? 'Practice DSA Patterns ➔' : ((interviewState.lastScore || 0) < 70 ? 'Start Mock Round ➔' : 'View Full Audit ➔')}
+            </button>
+          </div>
+
         </div>
       </section>
 

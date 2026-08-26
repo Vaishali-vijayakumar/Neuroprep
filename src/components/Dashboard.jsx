@@ -300,93 +300,13 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* STEP 4: PLACEMENT FLASH GAUNTLET & DAILY CONFIDENCE FORGE */}
+      {/* STEP 4: DAILY 5-MINUTE PLACEMENT CHALLENGE */}
       <section style={{ marginBottom: '36px' }}>
-        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span className="pill-tag" style={{ backgroundColor: '#111827', color: '#FFFFFF', fontWeight: 800, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <Zap size={13} color="#FFFFFF" /> 5-Minute Confidence Forge
-              </span>
-              <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>
-                Career Rank: <strong style={{ color: '#111827' }}>{gamification.currentTier.name}</strong> ({gamification.currentTier.badge})
-              </span>
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#111827', margin: 0 }}>
-              Daily Placement Flash Gauntlet
-            </h3>
-            <p style={{ fontSize: '13px', color: '#4B5563', margin: '2px 0 0 0' }}>
-              Play today's 3-stage placement duel (HR Pitch ➔ Pattern Spotter ➔ 1-Line Bug Slayer) to forge interview reflexes & unshakable confidence!
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              onClick={() => setActiveTab('gamification')} 
-              className="btn-primary-spec" 
-              style={{ fontSize: '13px', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Trophy size={14} /> Trophy Hall & Streaks
-            </button>
-          </div>
-        </div>
-
-        {/* Live Interactive Flash Gauntlet Arena */}
         <PlacementFlashGauntlet 
           userEmail={profile?.email || 'guest'} 
-          targetCompany={profile?.targetCompany || 'TCS'} 
           onVictory={() => setGamificationTick(prev => prev + 1)}
+          setActiveTab={setActiveTab}
         />
-
-        {/* Quick Streak & Momentum Strip */}
-        <div style={{
-          marginTop: '16px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E5E7EB',
-          padding: '16px 22px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Flame size={22} color={gamification.activeStreak > 0 ? '#111827' : '#9CA3AF'} />
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>
-                {gamification.activeStreak} Day Placement Streak Active
-              </div>
-              <div style={{ fontSize: '11px', color: '#6B7280' }}>
-                Consistency multiplier: Level {gamification.level} ({gamification.totalXp} Total Career XP)
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setActiveTab('coding')}
-              className="btn-secondary-spec"
-              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
-            >
-              99 DSA Patterns Arena ➔
-            </button>
-            <button
-              onClick={() => setActiveTab('mock')}
-              className="btn-secondary-spec"
-              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
-            >
-              Virtual Recruiter Mock ➔
-            </button>
-            <button
-              onClick={() => setActiveTab('journal')}
-              className="btn-secondary-spec"
-              style={{ fontSize: '12px', padding: '7px 14px', fontWeight: 700 }}
-            >
-              Placement Diary & Win Log ➔
-            </button>
-          </div>
-        </div>
       </section>
 
       {/* STEP 5: BOTTOM SECTION - PERSONALIZED PLACEMENT ANALYTICS & PROGRESS REPORT */}

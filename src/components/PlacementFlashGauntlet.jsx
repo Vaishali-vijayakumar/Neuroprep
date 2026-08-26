@@ -1,182 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Swords, Zap, Shield, Trophy, CheckCircle2, XCircle, ArrowRight, 
-  RotateCcw, Sparkles, Flame, Mic2, Code2, Bug, Star, Award, Compass, Clock
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Swords, Trophy, ArrowRight, Flame, Check } from 'lucide-react';
 import { recordActivity } from '../services/gamificationService';
 
-// Curated pool of high-yield daily gauntlet scenarios
-const GAUNTLET_SCENARIOS = [
+// Daily practice scenarios written in simple, clear, friendly English
+const DAILY_SCENARIOS = [
   {
     id: 'day_1',
-    theme: 'Speed, Logic & Technical Communication',
-    stage1: {
-      title: 'Stage 1: The 45-Second Recruiter Pitch',
-      badge: 'Verbal Confidence Duel',
-      question: 'The Technical Interviewer asks: "You are stuck on an edge-case during a live coding interview with 10 minutes left. How do you handle this?"',
+    step1: {
+      tag: 'Step 1: Interview Question',
+      question: 'What is the best thing to do if you get stuck on a coding problem during an interview?',
       options: [
         {
-          id: 'opt_a',
-          text: 'Panic quietly and randomly change lines of code hoping it passes all tests.',
+          id: 'opt_1',
+          text: 'Stay silent and keep trying different lines of code secretly.',
           isCorrect: false,
-          feedback: 'This increases anxiety and makes the interviewer think you code by guesswork.'
+          feedback: 'Staying silent makes the interviewer think you are blocked. Always speak your thoughts.'
         },
         {
-          id: 'opt_b',
-          text: 'Calmly state your thought process out loud: "I notice this fails when the array is empty. Let me dry-run with a minimal test case on line 12."',
+          id: 'opt_2',
+          text: 'Explain your thought process out loud and test a small example with the interviewer.',
           isCorrect: true,
-          feedback: 'Top 1% candidate move! Interviewers care much more about structured communication under pressure than instant perfection.'
+          feedback: 'Correct! Interviewers love seeing how you think and communicate when solving problems.'
         },
         {
-          id: 'opt_c',
-          text: 'Tell the interviewer the question is unfair or has an error in the test suite.',
+          id: 'opt_3',
+          text: 'Give up and ask the interviewer to give you a different question.',
           isCorrect: false,
-          feedback: 'Never blame the problem. Staying composed and proactive is what gets you hired.'
+          feedback: 'Never give up early. Breaking the problem into smaller pieces shows good perseverance.'
         }
       ]
     },
-    stage2: {
-      title: 'Stage 2: The 30-Second Pattern Spotter',
-      badge: 'Algorithmic Intuition Reflex',
-      question: 'Scenario: "Given an array of integers with both positive and negative values, find the total number of continuous subarrays whose sum equals K in O(N) time."',
+    step2: {
+      tag: 'Step 2: Spot the Right Approach',
+      question: 'You need to find a target number in a sorted array of 1,000,000 numbers in less than 1 millisecond. Which approach is best?',
       options: [
         {
-          id: 'opt_a',
-          text: 'Sliding Window (Two Pointers)',
+          id: 'opt_1',
+          text: 'Check every number from start to end one by one (Linear Search)',
           isCorrect: false,
-          feedback: 'Sliding Window fails when numbers can be negative because shrinking the window does not monotonically decrease the sum!'
+          feedback: 'Linear search takes up to 1,000,000 steps. That is too slow for large sorted data.'
         },
         {
-          id: 'opt_b',
-          text: 'Prefix Sum + Hash Map (Frequency Map)',
+          id: 'opt_2',
+          text: 'Divide the search range in half each step (Binary Search)',
           isCorrect: true,
-          feedback: 'Spot on! Storing prefix sums in a Hash Map solves negative subarrays in O(N) time and O(N) space.'
+          feedback: 'Correct! Binary Search only takes around 20 comparisons for 1,000,000 items (O(log N)).'
         },
         {
-          id: 'opt_c',
-          text: 'Binary Search on Answer',
+          id: 'opt_3',
+          text: 'Generate all combinations and permutations of the array.',
           isCorrect: false,
-          feedback: 'The array is not sorted and the problem is not monotonic, so binary search does not apply.'
+          feedback: 'Permutations are extremely slow and unnecessary for searching.'
         }
       ]
     },
-    stage3: {
-      title: 'Stage 3: The 1-Line Bug Slayer',
-      badge: 'Senior Code Boss Fight',
-      question: 'The Senior Engineer\'s Binary Search is throwing integer overflow in production on large test cases:',
-      codeSnippet: `int search(int[] arr, int target) {\n    int low = 0, high = arr.length - 1;\n    while (low <= high) {\n        int mid = (low + high) / 2; // <--- BUG ON THIS LINE\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}`,
+    step3: {
+      tag: 'Step 3: Spot the Bug',
+      question: 'Look at this Binary Search code. Which line fixes the integer overflow issue?',
+      codeSnippet: `int binarySearch(int[] arr, int target) {\n    int low = 0, high = arr.length - 1;\n    while (low <= high) {\n        int mid = (low + high) / 2; // <-- Where the bug can happen\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}`,
       options: [
         {
-          id: 'opt_a',
-          text: 'Fix: int mid = low + (high - low) / 2;',
+          id: 'opt_1',
+          text: 'Change line to: int mid = low + (high - low) / 2;',
           isCorrect: true,
-          feedback: 'Code Boss Defeated! This prevents 32-bit integer overflow when (low + high) exceeds 2,147,483,647.'
+          feedback: 'Correct! This avoids adding large numbers together and prevents integer overflow.'
         },
         {
-          id: 'opt_b',
-          text: 'Fix: int mid = (high - low) / 2;',
+          id: 'opt_2',
+          text: 'Change line to: int mid = (high - low) / 2;',
           isCorrect: false,
-          feedback: 'This misses adding `low`, so `mid` will always calculate relative to 0 rather than the current search window.'
+          feedback: 'This calculates mid from 0 instead of the current search window.'
         },
         {
-          id: 'opt_c',
-          text: 'Fix: int mid = (low * high) / 2;',
+          id: 'opt_3',
+          text: 'Change line to: int mid = low * high / 2;',
           isCorrect: false,
-          feedback: 'Multiplying `low * high` drastically magnifies the integer overflow!'
+          feedback: 'Multiplying low and high causes an even larger overflow.'
         }
       ]
     }
   },
   {
     id: 'day_2',
-    theme: 'Dynamic Programming & System Thinking',
-    stage1: {
-      title: 'Stage 1: The 45-Second Recruiter Pitch',
-      badge: 'Verbal Confidence Duel',
-      question: 'HR Director asks: "Why do you want to join our engineering team specifically over competitors?"',
+    step1: {
+      tag: 'Step 1: Interview Question',
+      question: 'When an interviewer asks: "Tell me about a technical project you built", how should you start your answer?',
       options: [
         {
-          id: 'opt_a',
-          text: 'Connect 1 specific technical feature/product of the company with your own project experience and growth enthusiasm.',
+          id: 'opt_1',
+          text: 'Give a quick 1-sentence summary of the problem it solves, the technologies used, and your specific role.',
           isCorrect: true,
-          feedback: 'Irresistible answer! Shows genuine research, domain excitement, and mature cultural alignment.'
+          feedback: 'Great! Clear and structured answers immediately give the interviewer the full picture.'
         },
         {
-          id: 'opt_b',
-          text: 'Say: "I just need a job offer and your company is hiring on our campus."',
+          id: 'opt_2',
+          text: 'Read every single line of code you wrote from memory.',
           isCorrect: false,
-          feedback: 'Too generic. Companies want candidates who demonstrate deliberate interest.'
+          feedback: 'Keep it high level first, then dive into code details when asked.'
         },
         {
-          id: 'opt_c',
-          text: 'Recite the entire Wikipedia page of the company for 3 minutes.',
+          id: 'opt_3',
+          text: 'Say you copied the whole project from a tutorial without understanding it.',
           isCorrect: false,
-          feedback: 'Keep it punchy, authentic, and connected to your own engineering skills.'
+          feedback: 'Always highlight your own understanding, decisions, and what you learned.'
         }
       ]
     },
-    stage2: {
-      title: 'Stage 2: The 30-Second Pattern Spotter',
-      badge: 'Algorithmic Intuition Reflex',
-      question: 'Scenario: "Given daily stock prices, find the next day with a higher stock price for every day in O(N) total time."',
+    step2: {
+      tag: 'Step 2: Spot the Right Approach',
+      question: 'You need to check if a word has duplicate letters in fast O(N) time. What is the simplest helper tool?',
       options: [
         {
-          id: 'opt_a',
-          text: 'Monotonic Decreasing Stack',
+          id: 'opt_1',
+          text: 'A Hash Set (or boolean visited array) to remember seen characters.',
           isCorrect: true,
-          feedback: 'Boom! Monotonic Stack is the gold standard pattern for Next Greater Element problems in linear O(N) time.'
+          feedback: 'Correct! Hash Sets allow instant O(1) lookups to spot duplicates in one pass.'
         },
         {
-          id: 'opt_b',
-          text: 'Nested Loop Brute Force O(N^2)',
+          id: 'opt_2',
+          text: 'Compare every letter with every other letter using two nested loops.',
           isCorrect: false,
-          feedback: 'Brute force gets Time Limit Exceeded (TLE) on campus online assessments.'
+          feedback: 'Nested loops take O(N^2) time, which is slower for long strings.'
         },
         {
-          id: 'opt_c',
-          text: 'Topological Sort',
+          id: 'opt_3',
+          text: 'Convert the string into a binary tree and invert it.',
           isCorrect: false,
-          feedback: 'Topological sort is for Directed Acyclic Graphs (DAGs), not array price sequences.'
+          feedback: 'A Hash Set is much simpler and faster.'
         }
       ]
     },
-    stage3: {
-      title: 'Stage 3: The 1-Line Bug Slayer',
-      badge: 'Senior Code Boss Fight',
-      question: 'A recursive Fibonacci solver is running in O(2^N) exponential time and freezing the server:',
-      codeSnippet: `int fib(int n) {\n    if (n <= 1) return n;\n    return fib(n - 1) + fib(n - 2); // <--- OVERLAPPING SUBPROBLEMS\n}`,
+    step3: {
+      tag: 'Step 3: Spot the Bug',
+      question: 'This loop is supposed to print all elements in an array, but throws an ArrayIndexOutOfBounds error. How do you fix it?',
+      codeSnippet: `int[] numbers = {10, 20, 30, 40};\nfor (int i = 0; i <= numbers.length; i++) {\n    System.out.println(numbers[i]);\n}`,
       options: [
         {
-          id: 'opt_a',
-          text: 'Add Memoization Cache (memo[n]) to store already calculated subproblems in O(N) time.',
+          id: 'opt_1',
+          text: 'Change "i <= numbers.length" to "i < numbers.length"',
           isCorrect: true,
-          feedback: 'Boss Crushed! Memoization turns exponential O(2^N) into linear O(N) time instantly.'
+          feedback: 'Correct! Array indices start at 0 and end at length - 1, so "<" prevents out-of-bounds errors.'
         },
         {
-          id: 'opt_b',
-          text: 'Change recursion to while(n > 0) without any state variables.',
+          id: 'opt_2',
+          text: 'Change "int i = 0" to "int i = -1"',
           isCorrect: false,
-          feedback: 'Does not properly compute Fibonacci numbers without tracking the previous 2 terms.'
+          feedback: 'Negative index will cause an immediate crash.'
         },
         {
-          id: 'opt_c',
-          text: 'Increase server RAM and stack memory.',
+          id: 'opt_3',
+          text: 'Remove the print statement completely.',
           isCorrect: false,
-          feedback: 'Never solve algorithmic algorithmic complexity bottlenecks with brute force hardware!'
+          feedback: 'The fix is simply adjusting the loop boundary condition.'
         }
       ]
     }
   }
 ];
 
-export default function PlacementFlashGauntlet({ userEmail = 'guest', targetCompany = 'TCS', onVictory }) {
-  // Deterministic daily scenario based on day of month
-  const dayIndex = new Date().getDate() % GAUNTLET_SCENARIOS.length;
-  const scenario = GAUNTLET_SCENARIOS[dayIndex];
+export default function PlacementFlashGauntlet({ userEmail = 'guest', onVictory, setActiveTab }) {
+  // Deterministic daily scenario
+  const dayIndex = new Date().getDate() % DAILY_SCENARIOS.length;
+  const scenario = DAILY_SCENARIOS[dayIndex];
 
-  const STORAGE_KEY = `neuroprep_gauntlet_completed_${userEmail}_${new Date().toLocaleDateString()}`;
+  const STORAGE_KEY = `neuroprep_daily_challenge_done_${userEmail}_${new Date().toLocaleDateString()}`;
 
-  const [currentStage, setCurrentStage] = useState(1); // 1, 2, 3, or 'victory'
+  const [currentStep, setCurrentStep] = useState(1); // 1, 2, 3, or 'victory'
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [isCompletedToday, setIsCompletedToday] = useState(() => {
@@ -186,11 +175,10 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
       return false;
     }
   });
-  const [earnedXP, setEarnedXP] = useState(0);
 
-  const activeStageData = currentStage === 1 
-    ? scenario.stage1 
-    : (currentStage === 2 ? scenario.stage2 : scenario.stage3);
+  const activeStepData = currentStep === 1 
+    ? scenario.step1 
+    : (currentStep === 2 ? scenario.step2 : scenario.step3);
 
   const handleSelectOption = (opt) => {
     if (isAnswerChecked) return;
@@ -202,33 +190,29 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
     setIsAnswerChecked(true);
   };
 
-  const handleNextStage = () => {
-    if (selectedOption?.isCorrect) {
-      setEarnedXP(prev => prev + 40);
-    }
-    
-    if (currentStage === 1) {
-      setCurrentStage(2);
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      setCurrentStep(2);
       setSelectedOption(null);
       setIsAnswerChecked(false);
-    } else if (currentStage === 2) {
-      setCurrentStage(3);
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
       setSelectedOption(null);
       setIsAnswerChecked(false);
     } else {
-      // Victory!
-      setCurrentStage('victory');
+      // Victory
+      setCurrentStep('victory');
       setIsCompletedToday(true);
       try {
         localStorage.setItem(STORAGE_KEY, 'true');
-        recordActivity(userEmail, 'gauntlet', { xp: 120, title: 'Placement Flash Gauntlet' });
+        recordActivity(userEmail, 'gauntlet', { xp: 120, title: 'Daily Placement Challenge' });
       } catch (e) {}
       if (onVictory) onVictory(120);
     }
   };
 
-  const handleResetForPractice = () => {
-    setCurrentStage(1);
+  const handleRestart = () => {
+    setCurrentStep(1);
     setSelectedOption(null);
     setIsAnswerChecked(false);
   };
@@ -236,68 +220,50 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
   return (
     <div style={{
       backgroundColor: '#FFFFFF',
-      borderRadius: '20px',
-      border: '1.5px solid #111827',
-      padding: '26px 30px',
-      boxShadow: '0 8px 30px rgba(0, 0, 0, 0.05)',
-      position: 'relative',
-      overflow: 'hidden'
+      borderRadius: '18px',
+      border: '1px solid #E5E7EB',
+      padding: '26px 28px',
+      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+      marginBottom: '32px'
     }}>
       
-      {/* Top Banner with High-Voltage Placement Badge */}
+      {/* Unified Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
-            backgroundColor: '#111827',
-            color: '#FFFFFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px'
-          }}>
-            <Swords size={20} color="#FFFFFF" />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '6px',
+              backgroundColor: '#F3F4F6',
+              color: '#111827'
+            }}>
+              Daily 5-Minute Practice
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#6B7280', fontWeight: 600 }}>
+              Earn +120 XP
+            </span>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                backgroundColor: '#DCFCE7',
-                color: '#166534'
-              }}>
-                Exclusive 5-Minute Simulation
-              </span>
-              <span style={{ fontSize: '0.8rem', color: '#6B7280', fontWeight: 600 }}>
-                Target: <strong>{targetCompany}</strong>
-              </span>
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#111827', margin: '2px 0 0 0' }}>
-              Daily Placement Flash Gauntlet
-            </h3>
-          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+            Daily Placement Confidence Challenge
+          </h3>
         </div>
 
-        {/* 3-Stage Progress Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Simple Step 1-2-3 Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {[
-            { num: 1, label: 'Pitch' },
-            { num: 2, label: 'Pattern' },
-            { num: 3, label: 'Bug Boss' }
+            { num: 1, label: 'Interview' },
+            { num: 2, label: 'Approach' },
+            { num: 3, label: 'Bug Fix' }
           ].map(s => {
-            const isDone = (typeof currentStage === 'number' && currentStage > s.num) || currentStage === 'victory';
-            const isCurrent = currentStage === s.num;
+            const isDone = (typeof currentStep === 'number' && currentStep > s.num) || currentStep === 'victory';
+            const isCurrent = currentStep === s.num;
             return (
               <div key={s.num} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <div style={{
-                  width: '26px',
-                  height: '26px',
+                  width: '24px',
+                  height: '24px',
                   borderRadius: '50%',
                   backgroundColor: isDone ? '#111827' : (isCurrent ? '#F3F4F6' : '#FFFFFF'),
                   border: isDone ? '1px solid #111827' : (isCurrent ? '2px solid #111827' : '1px solid #D1D5DB'),
@@ -305,7 +271,7 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.75rem',
+                  fontSize: '0.72rem',
                   fontWeight: 800
                 }}>
                   {isDone ? '✓' : s.num}
@@ -320,126 +286,106 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
         </div>
       </div>
 
-      {/* VICTORY SCREEN */}
-      {currentStage === 'victory' ? (
+      {/* VICTORY VIEW */}
+      {currentStep === 'victory' ? (
         <div style={{
           backgroundColor: '#F9FAFB',
-          borderRadius: '16px',
-          border: '1.5px solid #86EFAC',
-          padding: '30px',
+          borderRadius: '14px',
+          border: '1px solid #86EFAC',
+          padding: '24px',
           textAlign: 'center'
         }}>
           <div style={{
-            width: '60px',
-            height: '60px',
+            width: '50px',
+            height: '50px',
             borderRadius: '50%',
             backgroundColor: '#DCFCE7',
             color: '#15803D',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px auto',
-            border: '2px solid #86EFAC'
+            margin: '0 auto 12px auto'
           }}>
-            <Trophy size={30} />
+            <Trophy size={26} />
           </div>
 
-          <span style={{
-            fontSize: '0.78rem',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.6px',
-            padding: '4px 12px',
-            borderRadius: '20px',
-            backgroundColor: '#DCFCE7',
-            color: '#166534'
-          }}>
-            Gauntlet Conquered! (+120 XP Added)
-          </span>
-
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#111827', margin: '12px 0 6px 0' }}>
-            Unstoppable Placement Momentum Unlocked!
-          </h2>
-          <p style={{ fontSize: '0.92rem', color: '#4B5563', maxWidth: '560px', margin: '0 auto 20px auto', lineHeight: 1.5 }}>
-            You aced the high-impact HR pitch, spotted the algorithmic pattern with rapid intuition, and crushed the code bug. You are building true interview-ready reflexes!
+          <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0' }}>
+            Great Job! Today's Challenge Completed
+          </h4>
+          <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '500px', margin: '0 auto 18px auto', lineHeight: 1.4 }}>
+            You practiced answering an interview question, spotted the optimal approach, and fixed the code bug. +120 XP added to your rank!
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <button
-              onClick={handleResetForPractice}
+              onClick={handleRestart}
               className="btn-secondary-spec"
-              style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
+              style={{ padding: '8px 16px', fontSize: '0.82rem', fontWeight: 600 }}
             >
-              Replay Today's Gauntlet
+              Practice Again
             </button>
-            <div style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              backgroundColor: '#111827',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '0.85rem'
-            }}>
-              ✓ Daily Placement Shield Active
-            </div>
+            {setActiveTab && (
+              <button
+                onClick={() => setActiveTab('coding')}
+                className="btn-primary-spec"
+                style={{ padding: '8px 16px', fontSize: '0.82rem', fontWeight: 600 }}
+              >
+                Go to 99 DSA Patterns ➔
+              </button>
+            )}
           </div>
         </div>
       ) : (
-        /* ACTIVE STAGE CARD */
+        /* QUESTION VIEW */
         <div>
-          {/* Stage Header */}
+          {/* Question Tag & Title */}
           <div style={{ marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                padding: '2px 8px',
-                borderRadius: '6px',
-                backgroundColor: '#F3F4F6',
-                color: '#111827'
-              }}>
-                {activeStageData.badge}
-              </span>
-              <span style={{ fontSize: '0.8rem', color: '#6B7280', fontWeight: 700 }}>
-                {activeStageData.title}
-              </span>
-            </div>
-            
-            <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1.45 }}>
-              {activeStageData.question}
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.4px',
+              display: 'block',
+              marginBottom: '4px'
+            }}>
+              {activeStepData.tag}
+            </span>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.45 }}>
+              {activeStepData.question}
             </p>
           </div>
 
-          {/* Code Snippet for Stage 3 */}
-          {activeStageData.codeSnippet && (
+          {/* Optional Code Snippet for Step 3 */}
+          {activeStepData.codeSnippet && (
             <div style={{
               backgroundColor: '#111827',
               color: '#F9FAFB',
-              padding: '14px 18px',
-              borderRadius: '12px',
+              padding: '12px 16px',
+              borderRadius: '10px',
               fontFamily: 'monospace',
-              fontSize: '0.85rem',
-              marginBottom: '16px',
-              lineHeight: 1.5,
+              fontSize: '0.82rem',
+              marginBottom: '14px',
+              lineHeight: 1.45,
               whiteSpace: 'pre-wrap'
             }}>
-              {activeStageData.codeSnippet}
+              {activeStepData.codeSnippet}
             </div>
           )}
 
-          {/* Interactive Multiple Choice Options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-            {activeStageData.options.map((opt) => {
+          {/* Options List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            {activeStepData.options.map((opt) => {
               const isSelected = selectedOption?.id === opt.id;
-              let borderStyle = isSelected ? '2px solid #111827' : '1px solid #E5E7EB';
+              let borderStyle = isSelected ? '1.5px solid #111827' : '1px solid #E5E7EB';
               let bgStyle = isSelected ? '#F9FAFB' : '#FFFFFF';
 
               if (isAnswerChecked) {
                 if (opt.isCorrect) {
-                  borderStyle = '2px solid #15803D';
+                  borderStyle = '1.5px solid #15803D';
                   bgStyle = '#F0FDF4';
                 } else if (isSelected && !opt.isCorrect) {
-                  borderStyle = '2px solid #DC2626';
+                  borderStyle = '1.5px solid #DC2626';
                   bgStyle = '#FEF2F2';
                 }
               }
@@ -449,24 +395,21 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
                   key={opt.id}
                   onClick={() => handleSelectOption(opt)}
                   style={{
-                    padding: '14px 18px',
-                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
                     border: borderStyle,
                     backgroundColor: bgStyle,
                     cursor: isAnswerChecked ? 'default' : 'pointer',
-                    transition: 'all 0.15s ease',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827', lineHeight: 1.4 }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>
                       {opt.text}
                     </span>
                     {isAnswerChecked && opt.isCorrect && (
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#15803D' }}>
-                        ✓ Winning Choice
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803D', whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                        ✓ Correct
                       </span>
                     )}
                   </div>
@@ -474,9 +417,9 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
                   {isAnswerChecked && isSelected && (
                     <div style={{
                       marginTop: '6px',
-                      fontSize: '0.82rem',
+                      fontSize: '0.8rem',
                       color: opt.isCorrect ? '#166534' : '#991B1B',
-                      lineHeight: 1.4,
+                      lineHeight: 1.35,
                       fontWeight: 500
                     }}>
                       {opt.feedback}
@@ -489,8 +432,8 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
 
           {/* Action Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-              Stage {currentStage} of 3 • Earn +40 XP
+            <span style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>
+              Question {currentStep} of 3
             </span>
 
             <div>
@@ -500,21 +443,21 @@ export default function PlacementFlashGauntlet({ userEmail = 'guest', targetComp
                   disabled={!selectedOption}
                   className="btn-primary-spec"
                   style={{
-                    padding: '10px 24px',
-                    fontSize: '0.88rem',
+                    padding: '8px 20px',
+                    fontSize: '0.84rem',
                     opacity: selectedOption ? 1 : 0.5,
                     cursor: selectedOption ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  Lock In Strategy
+                  Check Answer
                 </button>
               ) : (
                 <button
-                  onClick={handleNextStage}
+                  onClick={handleNextStep}
                   className="btn-primary-spec"
-                  style={{ padding: '10px 24px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '8px 20px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  {currentStage === 3 ? 'Complete Flash Gauntlet' : 'Next Stage'} <ArrowRight size={14} />
+                  {currentStep === 3 ? 'Finish Challenge' : 'Next Question'} <ArrowRight size={14} />
                 </button>
               )}
             </div>

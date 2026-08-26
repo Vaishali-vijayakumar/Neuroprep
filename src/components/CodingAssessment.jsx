@@ -26,7 +26,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
-  const [expandedCategoryId, setExpandedCategoryId] = useState('two-pointers');
+  const [expandedCategoryId, setExpandedCategoryId] = useState(null);
   const [selectedPattern, setSelectedPattern] = useState(null);
   
   // Solution drawer states

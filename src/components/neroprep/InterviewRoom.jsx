@@ -542,7 +542,10 @@ export default function InterviewRoom() {
 
       let engineReport = {};
       try {
-        engineReport = aiEngineRef.current?.evaluateTrackPerformance({
+        if (!aiEngineRef.current) {
+          aiEngineRef.current = new AIQuestionEngine(config || {});
+        }
+        engineReport = aiEngineRef.current.evaluateTrackPerformance({
           questionReviews,
           audioMetrics,
           vocalAnalysis,
@@ -550,7 +553,9 @@ export default function InterviewRoom() {
           stressIndex,
           config,
         }) || {};
-      } catch (_) {}
+      } catch (err) {
+        console.error('[InterviewRoom] evaluateTrackPerformance error:', err);
+      }
 
       const answeredReviews = questionReviews.filter((q) => q.score > 0);
       const rawScore = answeredReviews.length > 0

@@ -90,22 +90,35 @@ export default function InterviewRoom() {
   const aiEngineRef = useRef(null);
   const fallbackIndexRef = useRef(0);
 
+  // Initialize engine synchronously to load first question immediately
+  if (!aiEngineRef.current) {
+    try {
+      aiEngineRef.current = new AIQuestionEngine(config || {});
+    } catch (_) {}
+  }
+
   // Local UI state
   const [stream,         setStream]         = useState(null);
   const [sessionId,      setSessionId]      = useState(null);
-  const [aiStatus,       setAiStatus]       = useState('connecting'); // 'connecting' | 'speaking' | 'listening' | 'thinking'
+  const [aiStatus,       setAiStatus]       = useState('speaking'); // 'connecting' | 'speaking' | 'listening' | 'thinking'
   const [micEnabled,     setMicEnabled]     = useState(true);
   const [camEnabled,     setCamEnabled]     = useState(true);
   const [interimText,    setInterimText]    = useState('');
   const [userAnswerText, setUserAnswerText] = useState('');
   const [submitWarning,  setSubmitWarning]  = useState('');
   const [currentCode,    setCurrentCode]    = useState('');
-  const [currentQ,       setCurrentQ]       = useState('');
+  const [currentQ,       setCurrentQ]       = useState(() => {
+    try {
+      return aiEngineRef.current?.getNextQuestion?.() || 'Please introduce yourself and explain your background.';
+    } catch (_) {
+      return 'Please introduce yourself and explain your background.';
+    }
+  });
   const [questionNum,    setQuestionNum]    = useState(1);
   const [audioMetrics,   setAudioMetrics]   = useState({ volume: 0, wpm: 0, isVoice: false });
   const [faceTelemetry,  setFaceTelemetry]  = useState({ faceDetected: false, blinkRate: 0, headPose: 'forward', eyeContact: 100 });
   const [vocalAnalysis,  setVocalAnalysis]  = useState(null);
-  const [backendUp,      setBackendUp]      = useState(true);
+  const [backendUp,      setBackendUp]      = useState(false);
   const [responseTimer,  setResponseTimer]  = useState(0);
   const [thinkingTime,   setThinkingTime]   = useState(false);
   const [stressIndex,    setLocalStressIdx] = useState(0);
@@ -349,34 +362,32 @@ export default function InterviewRoom() {
     if (sessionInitializedRef.current) return;
     sessionInitializedRef.current = true;
 
-    let isMounted = true;
+    if (!aiEngineRef.current) {
+      aiEngineRef.current = new AIQuestionEngine(config || {});
+    }
+
+    let initialQ = currentQ;
+    if (!initialQ) {
+      initialQ = aiEngineRef.current.getNextQuestion();
+      setCurrentQ(initialQ);
+    }
+
+    if (initialQ) {
+      if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: initialQ });
+      speakQuestion(initialQ);
+    }
+
+    // Optional background backend session sync without blocking UI
     startInterviewSession(config || {})
       .then(sess => {
-        if (!isMounted) return;
         if (sess && sess.session_id) {
           setSessionId(sess.session_id);
-          if (sess.first_question) {
-            setCurrentQ(sess.first_question);
-            if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: sess.first_question });
-            speakQuestion(sess.first_question);
-            return;
-          }
+          setBackendUp(true);
         }
-        throw new Error('No session ID returned');
       })
-      .catch(err => {
-        console.warn('[InterviewRoom] Running with local Adaptive AI Engine:', err);
+      .catch(() => {
         setBackendUp(false);
-        if (!aiEngineRef.current) {
-          aiEngineRef.current = new AIQuestionEngine(config || {});
-        }
-        const firstQ = aiEngineRef.current.getNextQuestion();
-        setCurrentQ(firstQ);
-        if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: firstQ });
-        speakQuestion(firstQ);
       });
-
-    return () => { isMounted = false; };
   }, []);
 
   // Video Stream setup

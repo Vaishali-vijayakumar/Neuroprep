@@ -248,38 +248,135 @@ export class AIQuestionEngine {
   }
 
   /**
-   * Evaluate candidate's individual answer quality & adapt difficulty
+   * Helper: Generate a question-specific AI Benchmark Model Answer
+   */
+  getBenchmarkModelAnswer(question, trackId = null) {
+    const qLower = (question || '').toLowerCase();
+    const role = this.config.role || 'Software Engineer';
+    const company = this.config.company || 'our company';
+
+    if (/tell me about yourself|introduce yourself|background/i.test(qLower)) {
+      return `Structure a 60–90 second pitch: 1) Education & Degree (e.g., Computer Science graduate), 2) Core Technical Skills & Major Projects built (e.g., full-stack apps, algorithms, cloud deployments), and 3) Clear career aspirations and enthusiasm for the ${role} position.`;
+    }
+    if (/why (do you want|apply for|choose) this role|what motivated you/i.test(qLower)) {
+      return `Articulate your passion for engineering: Explain what excites you about the ${role} domain, reference hands-on project experiences, and describe how your technical skills and problem-solving mindset make you an impactful contributor.`;
+    }
+    if (/why (this company|join|work with us)|interested in joining/i.test(qLower) || qLower.includes(company.toLowerCase())) {
+      return `Demonstrate authentic company awareness: Highlight ${company}'s industry leadership, technological innovation, client impact, and collaborative learning culture, and connect these directly to your own personal work values.`;
+    }
+    if (/career goal|where do you see yourself|5 years/i.test(qLower)) {
+      return `Outline structured 3–5 year milestones: Transition from mastering core engineering responsibilities as a junior engineer to owning end-to-end architectural modules and mentoring team members in high-scale systems.`;
+    }
+    if (/strength|strongest attribute/i.test(qLower)) {
+      return `Highlight 2 role-relevant strengths with evidence (e.g., rapid learning agility and disciplined debugging), backed by a concrete project or academic achievement example.`;
+    }
+    if (/weakness|failure|mistake|improve/i.test(qLower)) {
+      return `Select a genuine, non-fatal area (e.g., initial hesitation in delegating tasks or perfectionism in early drafts), explain your self-awareness, and detail the actionable steps and habits you actively employ to overcome it.`;
+    }
+    if (/team|conflict|disagree|collaborat/i.test(qLower)) {
+      return `Apply the STAR framework: Describe a real team conflict, your proactive step to listen objectively to all perspectives, and how you guided the team to a data-driven consensus that delivered the project successfully.`;
+    }
+    if (/pressure|stress|deadline|prioritize/i.test(qLower)) {
+      return `Describe your prioritization method: Breaking complex deliverables into manageable milestones, transparent communication with stakeholders, and maintaining high code quality under tight delivery windows.`;
+    }
+    if (/learn|new technology|fast learner/i.test(qLower)) {
+      return `Explain your structured learning roadmap: Reading official documentation, building a hands-on proof-of-concept project, reviewing best practices, and integrating feedback from senior engineers.`;
+    }
+
+    return `A comprehensive answer structures the situation, specifies individual ownership, demonstrates technical depth, and highlights measurable results.`;
+  }
+
+  /**
+   * Evaluate candidate's individual answer quality with deep semantic text analysis
    */
   evaluateAnswerQuality(question, answerText, trackId = null) {
     const activeTrack = trackId || this.trackId;
     const text = (answerText || '').trim();
     const words = text.split(/\s+/).filter(Boolean).length;
     const lower = text.toLowerCase();
+    const qLower = (question || '').toLowerCase();
+    const benchmark = this.getBenchmarkModelAnswer(question, activeTrack);
 
-    if (words < 8) {
+    // ── 1. Detect Incomplete / Dismissive / Negative Answers ────────────────────
+    const isDismissive = /\b(nothing|none|dont know|don't know|no reason|not interested|dont care|don't care|nothing motivated|no motivation|idk)\b/i.test(lower);
+    if (isDismissive) {
       this.consecutiveWeak++;
       this.consecutiveStrong = 0;
       this._checkAdaptation();
 
       return {
-        overall: 38,
+        overall: 8,
         is_correct: false,
-        verdict: 'Incomplete / Too Brief',
-        what_was_right: 'Question received.',
-        what_was_missing: 'Response is too short to evaluate technical depth or STAR components.',
-        feedback: 'Provide a structured answer with technical steps, rationale, and past experience.',
+        verdict: 'Disengaged / Unsuitable Response',
+        what_was_right: 'Responded to the question prompt.',
+        what_was_missing: 'Expressed lack of motivation or disinterest. In an interview, you must articulate genuine enthusiasm, positive career drive, and alignment with the company.',
+        feedback: 'Reframe your response with positive motivators: desire to solve complex technical challenges, learn from experienced mentors, and contribute to company growth.',
         strengths: ['Responded promptly'],
-        improvements: ['Elaborate with concrete technical steps and measurable results'],
+        improvements: ['Express genuine career enthusiasm and positive motivation', 'Connect your aspirations to the company and role'],
+        ideal_answer: benchmark,
       };
     }
 
-    // Technical & Domain Keyword Depth Analysis
+    // ── 2. Detect Name-Only / Bare 1–3 Word Answers ───────────────────────────
+    if (words <= 3) {
+      this.consecutiveWeak++;
+      this.consecutiveStrong = 0;
+      this._checkAdaptation();
+
+      const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
+      return {
+        overall: 16,
+        is_correct: false,
+        verdict: isIntro ? 'Incomplete / Only Name Stated' : 'Very Brief / Single Phrase',
+        what_was_right: 'Stated your name or response clearly.',
+        what_was_missing: isIntro
+          ? 'Missing educational background, core technical skills (programming languages, tools), key projects, and career aspirations.'
+          : 'Response is too brief to evaluate domain knowledge, reasoning, or communication skills.',
+        feedback: isIntro
+          ? 'Deliver a structured 60-90 second introduction covering: 1) Education, 2) Technical Skills & Projects, 3) Enthusiasm for this role.'
+          : 'Elaborate your response with specific examples, context, and clear explanations.',
+        strengths: ['Clear statement'],
+        improvements: [
+          isIntro ? 'Structure introduction with Education, Technical Projects, and Career Goals' : 'Provide complete explanatory sentences',
+          'Elaborate with at least 3-4 structured sentences'
+        ],
+        ideal_answer: benchmark,
+      };
+    }
+
+    // ── 3. Detect Short / Brief Answers (4–15 words) ──────────────────────────
+    if (words < 16) {
+      this.consecutiveWeak++;
+      this.consecutiveStrong = 0;
+      this._checkAdaptation();
+
+      const isIntro = /tell me about yourself|introduce yourself|background/i.test(qLower);
+      const isWhy = /why|motivated/i.test(qLower);
+
+      return {
+        overall: 45,
+        is_correct: 'partial',
+        verdict: 'Brief / Needs Elaboration',
+        what_was_right: 'Directly addressed the question topic.',
+        what_was_missing: isIntro
+          ? 'Could expand on specific engineering projects built, tech stack utilized, and problem-solving examples.'
+          : isWhy
+          ? 'Needs concrete examples of what excites you about the technology and organization.'
+          : 'Lacks supporting evidence, practical examples, and depth of explanation.',
+        feedback: 'Good start. Expand your answer with concrete technical details, past project experiences, and measurable outcomes.',
+        strengths: ['Direct response', 'Concise communication'],
+        improvements: ['Elaborate with concrete examples and project context', 'Use the STAR method (Situation, Task, Action, Result)'],
+        ideal_answer: benchmark,
+      };
+    }
+
+    // ── 4. Substantive Answers (16+ words): Deep Analysis ──────────────────────
     const domainKeywords = {
-      hr: ['team', 'ownership', 'collaborate', 'value', 'learn', 'goal', 'culture', 'resolve', 'adapt', 'integrity'],
-      tech: ['oop', 'class', 'database', 'transaction', 'acid', 'thread', 'process', 'memory', 'index', 'network', 'protocol', 'latency'],
-      dsa: ['complexity', 'big-o', 'array', 'hashmap', 'tree', 'graph', 'pointer', 'dp', 'recursion', 'edge case', 'optimize'],
-      system_design: ['scale', 'load balancer', 'cache', 'redis', 'sharding', 'replica', 'kafka', 'throughput', 'bottleneck', 'microservice'],
-      behavioral: ['situation', 'task', 'action', 'result', 'led', 'resolved', 'improved', 'metric', 'stakeholder', 'team'],
+      hr: ['team', 'ownership', 'collaborat', 'value', 'learn', 'goal', 'culture', 'resolv', 'adapt', 'integrity', 'project', 'skill', 'lead', 'deliver', 'growth', 'feedback', 'achiev'],
+      tech: ['oop', 'class', 'database', 'transaction', 'acid', 'thread', 'process', 'memory', 'index', 'network', 'protocol', 'latency', 'api', 'server', 'async'],
+      dsa: ['complexity', 'big-o', 'array', 'hashmap', 'tree', 'graph', 'pointer', 'dp', 'recursion', 'edge case', 'optimize', 'stack', 'queue'],
+      system_design: ['scale', 'load balancer', 'cache', 'redis', 'sharding', 'replica', 'kafka', 'throughput', 'bottleneck', 'microservice', 'distributed', 'database'],
+      behavioral: ['situation', 'task', 'action', 'result', 'led', 'resolved', 'improved', 'metric', 'stakeholder', 'team', 'challenge', 'outcome'],
       gd: ['point', 'agree', 'perspective', 'evidence', 'counter', 'industry', 'consensus', 'impact', 'conclude'],
       communication: ['clearly', 'structured', 'firstly', 'secondly', 'impact', 'objective', 'approach', 'summary'],
       ai_ml: ['model', 'transformer', 'attention', 'embedding', 'rag', 'loss', 'gradient', 'tuning', 'evaluation', 'metric'],
@@ -289,16 +386,16 @@ export class AIQuestionEngine {
       qa: ['test', 'automation', 'selenium', 'cypress', 'api', 'bug', 'assertion', 'regression', 'mock', 'framework']
     };
 
-    const targetKws = domainKeywords[activeTrack] || domainKeywords.tech;
+    const targetKws = domainKeywords[activeTrack] || domainKeywords.hr;
     const matchedCount = targetKws.filter(kw => lower.includes(kw)).length;
 
     // Structural & Length Grading
-    const lengthScore = Math.min(100, Math.max(45, words * 1.8));
-    const keywordScore = Math.min(100, (matchedCount / Math.min(5, targetKws.length)) * 100);
-    const hasSTAR = /\b(when|situation|task|my role|i implemented|i built|as a result|we achieved|improved)\b/i.test(lower);
-    const starBonus = hasSTAR ? 15 : 0;
+    const lengthScore = Math.min(100, Math.max(50, words * 1.6));
+    const keywordScore = Math.min(100, (matchedCount / Math.min(4, targetKws.length)) * 100);
+    const hasSTAR = /\b(when|situation|task|my role|i built|i implemented|we achieved|improved|learned|result|outcome)\b/i.test(lower);
+    const starBonus = hasSTAR ? 12 : 0;
 
-    const overall = Math.max(45, Math.min(96, Math.round(lengthScore * 0.4 + keywordScore * 0.45 + starBonus + 10)));
+    const overall = Math.max(52, Math.min(96, Math.round(lengthScore * 0.35 + keywordScore * 0.45 + starBonus + 12)));
 
     // Update rolling performance & trigger adaptation
     if (overall >= 78) {
@@ -314,19 +411,20 @@ export class AIQuestionEngine {
     this._checkAdaptation();
 
     const isCorrect = overall >= 78 ? true : (overall >= 58 ? 'partial' : false);
-    const verdict = overall >= 80 ? 'Correct & Strong' : (overall >= 60 ? 'Partially Correct' : 'Needs Technical Depth');
+    const verdict = overall >= 82 ? 'Correct & Strong' : (overall >= 65 ? 'Good Structure' : 'Needs More Depth');
 
     return {
       overall,
       is_correct: isCorrect,
       verdict,
-      what_was_right: `Addressed key concepts (${matchedCount > 0 ? matchedCount : 1} domain points identified) with structured communication.`,
-      what_was_missing: overall >= 80 ? 'Minor: could add deeper quantitative metrics and edge-case failure scenarios.' : 'Include specific technical mechanisms, trade-offs, and measurable outcomes.',
+      what_was_right: `Demonstrated good understanding (${matchedCount > 0 ? matchedCount : 1} key domain concepts identified) with structured explanation.`,
+      what_was_missing: overall >= 82 ? 'Could add deeper quantitative impact metrics and long-term reflection.' : 'Include specific technical examples, trade-offs, and measurable results.',
       feedback: overall >= 78
-        ? 'Strong answer with clear domain knowledge and good structure.'
-        : 'Good effort. Strengthen your response with specific architectural terms, trade-off comparisons, and concrete results.',
-      strengths: words >= 30 ? ['Clear explanation', 'Domain terminology', 'Relevant context'] : ['Concise point'],
-      improvements: overall < 80 ? ['Include quantifiable metrics', 'Explain trade-offs and edge cases'] : ['Provide additional production context'],
+        ? 'Strong answer with clear structure, good domain terminology, and authentic delivery.'
+        : 'Good effort. Strengthen your response with specific architectural details, concrete examples, and measurable outcomes.',
+      strengths: words >= 25 ? ['Clear explanation', 'Domain terminology', 'Relevant context'] : ['Clear structure'],
+      improvements: overall < 80 ? ['Include quantifiable metrics and results', 'Explain trade-offs and edge cases'] : ['Provide additional production context'],
+      ideal_answer: benchmark,
     };
   }
 
@@ -355,16 +453,17 @@ export class AIQuestionEngine {
 
   /**
    * Complete Track Performance Evaluation Model
-   * Produces the 8-metric rubric matrix based on actual candidate performance, speech telemetry, and transcripts.
+   * Produces the 8-metric rubric matrix based on actual candidate text analysis, speech telemetry, and transcripts.
    */
   evaluateTrackPerformance({ questionReviews = [], audioMetrics = {}, vocalAnalysis = {}, faceTelemetry = {}, stressIndex = 30, config = {} }) {
     const trackDef = getTrackConfig(this.trackId);
     const matrix = trackDef.evaluationMatrix;
 
     // Calculate baseline average from question reviews
-    const avgScore = questionReviews.length > 0
-      ? Math.round(questionReviews.reduce((sum, item) => sum + (item.score || 75), 0) / questionReviews.length)
-      : 78;
+    const answeredReviews = questionReviews.filter(q => q.score > 0);
+    const avgScore = answeredReviews.length > 0
+      ? Math.round(answeredReviews.reduce((sum, item) => sum + (item.score || 0), 0) / answeredReviews.length)
+      : (questionReviews.length > 0 && questionReviews[0].score > 0 ? questionReviews[0].score : 0);
 
     // Speech & Fluency Telemetry Modifiers
     const wpm = audioMetrics.wpm || 142;
@@ -375,37 +474,43 @@ export class AIQuestionEngine {
     const fillerScore = Math.max(55, Math.min(98, 95 - fillerCount * 6));
 
     const eyeContact = faceTelemetry.eyeContact || 88;
-    const confidenceScore = Math.min(98, Math.max(50, Math.round(eyeContact * 0.5 + (100 - stressIndex) * 0.5)));
+    const confidenceScore = Math.min(98, Math.max(30, Math.round(eyeContact * 0.4 + (100 - stressIndex) * 0.4 + (avgScore * 0.2))));
 
-    // Map each of the 8 domain rubric criteria with weighted candidate evidence
+    // Differentiate each of the 8 domain rubric criteria with candidate text evidence
     const skillScores = {};
     matrix.forEach((metric, index) => {
-      // Base variance dynamically anchored to candidate's real overall score + telemetry
       let metricScore = avgScore;
 
-      if (index === 0) { // Core domain competency
-        metricScore = Math.min(100, Math.max(45, avgScore + 2));
-      } else if (index === 1) { // Communication & Structural Clarity
-        metricScore = Math.min(100, Math.max(45, Math.round((avgScore * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2))));
-      } else if (index === 2) { // Depth & Precision
-        metricScore = Math.min(100, Math.max(40, avgScore - 1));
-      } else if (index === 3) { // Problem Solving / Adaptability
-        metricScore = Math.min(100, Math.max(45, avgScore));
-      } else if (index === 4) { // Pacing / Fluency / Goals
-        metricScore = Math.min(100, Math.max(50, paceScore));
-      } else if (index === 5) { // Confidence / Demeanor / Code Quality
-        metricScore = Math.min(100, Math.max(50, confidenceScore));
-      } else if (index === 6) { // Trade-offs / Resilience / Impact
-        metricScore = Math.min(100, Math.max(40, avgScore - 3));
-      } else { // Ethics / Testing / Overall Synthesis
-        metricScore = Math.min(100, Math.max(50, avgScore + 1));
+      if (avgScore === 0) {
+        metricScore = 0;
+      } else {
+        if (index === 0) { // Cultural & Company Fit / Core Fundamentals
+          metricScore = Math.min(100, Math.max(10, avgScore + 2));
+        } else if (index === 1) { // Communication & Structural Clarity
+          metricScore = Math.min(100, Math.max(10, Math.round((avgScore * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2))));
+        } else if (index === 2) { // Emotional Intelligence (EQ) / Depth
+          metricScore = Math.min(100, Math.max(10, avgScore - 3));
+        } else if (index === 3) { // Growth Mindset / Problem Solving
+          metricScore = Math.min(100, Math.max(10, avgScore + 1));
+        } else if (index === 4) { // Career Motivation / Pacing
+          metricScore = Math.min(100, Math.max(10, avgScore - 2));
+        } else if (index === 5) { // Professional Demeanor / Confidence
+          metricScore = Math.min(100, Math.max(10, confidenceScore));
+        } else if (index === 6) { // Authenticity / Trade-offs
+          metricScore = Math.min(100, Math.max(10, avgScore + 3));
+        } else { // Ethics & Value Alignment / Synthesis
+          metricScore = Math.min(100, Math.max(10, avgScore));
+        }
       }
 
       skillScores[metric.label] = metricScore;
     });
 
     const grade = avgScore >= 92 ? 'A+' : (avgScore >= 85 ? 'A' : (avgScore >= 78 ? 'B+' : (avgScore >= 70 ? 'B' : (avgScore >= 60 ? 'C' : 'D'))));
-    const hire = avgScore >= 88 ? 'Strong Yes — High Potential' : (avgScore >= 75 ? 'Yes — Ready for Next Round' : (avgScore >= 60 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Fundamental Improvement'));
+    const hire = avgScore >= 88 ? 'Strong Yes — High Potential' : (avgScore >= 75 ? 'Yes — Ready for Next Round' : (avgScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'));
+
+    const uniqueStrengths = Array.from(new Set(questionReviews.flatMap(q => q.strengths || []))).filter(Boolean).slice(0, 4);
+    const uniqueWeaknesses = Array.from(new Set(questionReviews.flatMap(q => q.improvements || []))).filter(Boolean).slice(0, 3);
 
     return {
       trackId: this.trackId,
@@ -423,18 +528,9 @@ export class AIQuestionEngine {
       cognitive_load_label: stressIndex < 40 ? 'Optimal Flow State' : (stressIndex < 65 ? 'Moderate Focus Load' : 'High Pressure'),
       proctor_flags: 0,
       question_reviews: questionReviews,
-      executive_summary: `Candidate completed ${questionReviews.length} evaluated questions for ${trackDef.name} (${config.role || 'Candidate'}). Achieved an overall competency score of ${avgScore}/100 with ${isOptimalPace ? 'well-modulated speaking pace' : 'acceptable communication flow'}.`,
-      strengths: questionReviews.flatMap(q => q.strengths || []).slice(0, 4),
-      weak_areas: questionReviews.flatMap(q => q.improvements || []).slice(0, 3),
-      learning_plan: [
-        { day: 1, topic: `${trackDef.name} Core Pillars`, resource: `Review fundamental concepts in ${matrix[0]?.label || 'Core Fundamentals'}` },
-        { day: 2, topic: 'Evidence & Structured STAR Framing', resource: 'Format past achievements with quantifiable percentage metrics' },
-        { day: 3, topic: 'Trade-off & Architectural Defense', resource: `Deep dive into ${matrix[2]?.label || 'Deep Knowledge'} and design patterns` },
-        { day: 4, topic: 'Vocal Dynamics & Pacing', resource: 'Practice mock delivery at 130–150 WPM with minimal filler words' },
-        { day: 5, topic: 'Adaptive Mock Session', resource: `Take an advanced session on the ${trackDef.name} track in NeuroPrep` },
-        { day: 6, topic: 'Edge Cases & Production Scenarios', resource: `Study real-world failure handling and ${matrix[6]?.label || 'Edge Cases'}` },
-        { day: 7, topic: 'Final Readiness Simulation', resource: 'Conduct end-to-end interview simulation under timed conditions' },
-      ]
+      executive_summary: `Candidate completed ${answeredReviews.length} evaluated question(s) for ${trackDef.name} (${config.role || 'Candidate'}). Achieved an overall competency score of ${avgScore}/100.`,
+      strengths: uniqueStrengths.length > 0 ? uniqueStrengths : ['Responded to interview questions'],
+      weak_areas: uniqueWeaknesses.length > 0 ? uniqueWeaknesses : ['Provide structured elaboration on project details and technical steps'],
     };
   }
 

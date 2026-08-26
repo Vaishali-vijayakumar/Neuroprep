@@ -506,6 +506,7 @@ export default function InterviewRoom() {
                 feedback: 'Ensure you provide a structured verbal answer for each question.',
                 strengths: [],
                 improvements: ['Provide a structured verbal answer before moving forward'],
+                ideal_answer: aiEngineRef.current?.getBenchmarkModelAnswer?.(pair.q, trackId) || 'Structure the response with key concepts and examples.',
               }
             : (aiEngineRef.current?.evaluateAnswerQuality(pair.q, pair.a, trackId) || {
                 overall: 75,
@@ -516,9 +517,10 @@ export default function InterviewRoom() {
                 feedback: 'Structured answer with good clarity.',
                 strengths: ['Direct communication'],
                 improvements: ['Include quantifiable metrics'],
+                ideal_answer: aiEngineRef.current?.getBenchmarkModelAnswer?.(pair.q, trackId) || 'Structure the response with key concepts and examples.',
               });
         } catch (_) {
-          evalRes = { overall: isUnanswered ? 0 : 70, verdict: 'Evaluated' };
+          evalRes = { overall: isUnanswered ? 0 : 70, verdict: 'Evaluated', ideal_answer: 'Structure the response with key concepts and examples.' };
         }
 
         return {
@@ -528,9 +530,9 @@ export default function InterviewRoom() {
           verdict: evalRes.verdict || (evalRes.overall >= 80 ? 'Correct & Strong' : evalRes.overall >= 55 ? 'Partially Correct' : 'Incorrect / Needs Depth'),
           is_correct: evalRes.is_correct ?? (evalRes.overall >= 75 ? true : evalRes.overall >= 55 ? 'partial' : false),
           score: evalRes.overall ?? 0,
-          what_was_right: evalRes.what_was_right || 'Clear communication and relevant details provided.',
+          what_was_right: evalRes.what_was_right || 'Direct communication and relevant details provided.',
           what_was_missing: evalRes.what_was_missing || 'Include measurable impact and key results.',
-          ideal_answer: 'A comprehensive answer structures the situation, specifies individual ownership, and highlights measurable results.',
+          ideal_answer: evalRes.ideal_answer || aiEngineRef.current?.getBenchmarkModelAnswer?.(pair.q, trackId) || 'A comprehensive answer structures the situation, specifies individual ownership, and highlights measurable results.',
           key_takeaway: evalRes.feedback || 'Strengthen with quantifiable outcomes and ownership metrics.',
           strengths: evalRes.strengths || ['Clear tone'],
           improvements: evalRes.improvements || ['Quantifiable outcomes'],

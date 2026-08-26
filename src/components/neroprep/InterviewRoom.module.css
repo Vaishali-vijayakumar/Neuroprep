@@ -1,0 +1,82 @@
+.roomContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background-color: #111827;
+  border-bottom: 1px solid #27272A;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  color: #FFFFFF;
+}
+
+.trackInfo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timer {
+  background-color: #27272A;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #FFFFFF;
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.mainPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #09090B;
+  border-right: 1px solid #27272A;
+}
+
+.genericPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717A;
+}
+
+.sidePanelWrapper {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  background-color: #111827;
+}
+
+.footer {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #111827;
+  border-top: 1px solid #27272A;
+}

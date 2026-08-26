@@ -1,0 +1,21 @@
+﻿Rule,Interviewer-model instruction
+Universal loop,Ask → listen/transcribe → evaluate → extract evidence → choose next question → follow up → update candidate skill profile.
+Adaptive difficulty,Start around medium. After 2 strong answers increase difficulty; after 2 weak answers simplify and test prerequisites.
+No repetition,Use semantic similarity against previous questions; reject near-duplicates unless deliberate revision is needed.
+HR,"Prioritize confidence, communication, motivation, culture fit, ownership, adaptability, integrity, and realistic fresher expectations."
+Technical,Move from fundamentals to application. Correct answer → deeper probe. Partial answer → diagnostic question. Incorrect answer → prerequisite question.
+DSA,Require: clarify → approach → complexity → code → dry run → edge cases → tests → optimization. Do not reveal the solution prematurely.
+System Design,Require: requirements → scale estimates → APIs → data model → architecture → bottlenecks → reliability → security → trade-offs.
+Behavioral,"Use STAR. If Situation/Task/Action/Result is missing, ask only for the missing part."
+GD,"Moderate turns, track speaking time, interruptions, listening, evidence, rebuttal quality, leadership, and final synthesis."
+Resume,"Extract projects, skills, tools, claims, and achievements from the resume. Ask evidence-based project/skill questions."
+Aptitude,Give one problem at a time. Evaluate reasoning as well as the final answer. Increase complexity after correct reasoning.
+Communication,"Measure fluency, grammar, vocabulary, pronunciation, pace, filler words, structure, and clarity."
+AI/ML,"Progress from fundamentals to transformers/LLMs, RAG, evaluation, fine-tuning, production latency/cost, security, and responsible AI."
+DevOps,Progress from concepts to Docker/Kubernetes/CI-CD troubleshooting and production deployment scenarios.
+Cloud,"Progress from cloud concepts to IAM, networking, architecture, availability, disaster recovery, and cost optimization."
+Cybersecurity,"Progress from fundamentals to OWASP scenarios, mitigations, detection, incident response, and secure architecture."
+QA,"Progress from testing fundamentals to test design, automation, Selenium/Cypress, API testing, flaky tests, and CI."
+Fresher mode,"Emphasize fundamentals, projects, reasoning, learning ability, communication, and coachability rather than production experience."
+Session length,Do not ask all 100 questions in one interview. Select approximately 12–25 based on interview duration and candidate performance.
+Final report,"Return category score, strengths, weaknesses, evidence, missed concepts, recommended study topics, and interview-readiness level."

@@ -384,82 +384,167 @@ export default function CompletedModule({ userEmail = 'guest' }) {
               </div>
             </div>
 
-            {/* Question-by-Question Deep Evaluation Review */}
+            {/* Question-by-Question Deep Evaluation Review (Pastel Theme, Larger Fonts, No Emojis) */}
             {currentReport.question_reviews?.length > 0 && (
-              <div className="saas-card-spec" style={{ padding: '22px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+              <div className="saas-card-spec" style={{ padding: '26px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.3px' }}>
                     Question-by-Question Performance Audit
                   </h3>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>
                     {currentReport.question_reviews.length} Question{currentReport.question_reviews.length > 1 ? 's' : ''} Evaluated
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {currentReport.question_reviews.map((rev, idx) => (
-                    <div key={idx} style={{ padding: '16px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: '4px', backgroundColor: '#111827', color: '#FFFFFF', fontSize: '11px', fontWeight: 800 }}>
-                            Q{rev.question_number || idx + 1}
-                          </span>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
-                            {rev.question}
-                          </span>
-                        </div>
-                        <span style={{
-                          fontSize: '12px', fontWeight: 800, padding: '3px 10px', borderRadius: '6px',
-                          backgroundColor: rev.score >= 75 ? '#F3F4F6' : rev.score >= 55 ? '#F3F4F6' : '#F3F4F6',
-                          color: rev.score >= 75 ? '#111827' : rev.score >= 55 ? '#111827' : '#111827',
-                          border: `1px solid ${rev.score >= 75 ? '#E5E7EB' : rev.score >= 55 ? '#E5E7EB' : '#E5E7EB'}`
-                        }}>
-                          {rev.verdict || `${rev.score}/100`}
-                        </span>
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {currentReport.question_reviews.map((rev, idx) => {
+                    const isHigh = rev.score >= 75;
+                    const isMed = rev.score >= 50;
 
-                      <div style={{ fontSize: '13px', color: '#374151', padding: '10px 12px', backgroundColor: '#FFFFFF', borderRadius: '6px', border: '1px solid #E5E7EB', marginBottom: '10px', lineHeight: 1.5 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <strong style={{ color: '#111827' }}>Your Response:</strong>
-                          {rev.emotion && (
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '20px 22px',
+                          borderRadius: '12px',
+                          border: '1px solid #E2E8F0',
+                          backgroundColor: '#FFFFFF',
+                          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
+                        }}
+                      >
+                        {/* Question Header & Score Badge */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', gap: '14px' }}>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flex: 1 }}>
                             <span style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              backgroundColor: rev.emotion.valenceScore >= 20 ? '#F3F4F6' : rev.emotion.valenceScore <= -20 ? '#F3F4F6' : '#F3F4F6',
-                              color: '#111827',
-                              border: '1px solid #E5E7EB',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              backgroundColor: '#EEF2FF',
+                              color: '#3730A3',
+                              border: '1px solid #C7D2FE',
+                              fontSize: '12.5px',
+                              fontWeight: 800,
+                              flexShrink: 0,
+                              marginTop: '2px',
                             }}>
-                              Tone: {rev.emotion.primaryEmotion} ({rev.emotion.positivityRatio}% Positivity)
+                              Q{rev.question_number || idx + 1}
                             </span>
-                          )}
+                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', lineHeight: 1.45 }}>
+                              {rev.question}
+                            </span>
+                          </div>
+
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: 800,
+                            padding: '5px 12px',
+                            borderRadius: '8px',
+                            flexShrink: 0,
+                            backgroundColor: isHigh ? '#ECFDF5' : isMed ? '#FFFBEB' : '#FEF2F2',
+                            color: isHigh ? '#065F46' : isMed ? '#92400E' : '#991B1B',
+                            border: `1px solid ${isHigh ? '#A7F3D0' : isMed ? '#FDE68A' : '#FECACA'}`,
+                          }}>
+                            {rev.verdict || `${rev.score}/100`}
+                          </span>
                         </div>
-                        {rev.user_answer || '(No response recorded)'}
+
+                        {/* Candidate Response Box */}
+                        <div style={{
+                          fontSize: '14.5px',
+                          color: '#1E293B',
+                          padding: '14px 16px',
+                          backgroundColor: '#F8FAFC',
+                          borderRadius: '10px',
+                          border: '1px solid #E2E8F0',
+                          marginBottom: '12px',
+                          lineHeight: 1.6,
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <strong style={{ color: '#0F172A', fontSize: '13.5px' }}>Candidate Response:</strong>
+                            {rev.emotion && (
+                              <span style={{
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                padding: '3px 10px',
+                                borderRadius: '6px',
+                                backgroundColor: '#F3E8FF',
+                                color: '#6B21A8',
+                                border: '1px solid #E9D5FF',
+                              }}>
+                                Tone: {rev.emotion.primaryEmotion} ({rev.emotion.positivityRatio}% Positivity)
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontStyle: rev.user_answer ? 'normal' : 'italic', color: rev.user_answer ? '#1E293B' : '#64748B' }}>
+                            {rev.user_answer || '(No verbal response recorded before question progression)'}
+                          </div>
+                        </div>
+
+                        {/* Analysis Grid (Pastel Mint & Pastel Rose) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13.5px', marginBottom: '10px' }}>
+                          <div style={{
+                            padding: '12px 14px',
+                            backgroundColor: '#F0FDF4',
+                            borderRadius: '10px',
+                            color: '#166534',
+                            border: '1px solid #BBF7D0',
+                            lineHeight: 1.55,
+                          }}>
+                            <div style={{ fontWeight: 800, marginBottom: '4px', color: '#14532D' }}>
+                              Strengths Identified:
+                            </div>
+                            {rev.what_was_right}
+                          </div>
+
+                          <div style={{
+                            padding: '12px 14px',
+                            backgroundColor: '#FFF1F2',
+                            borderRadius: '10px',
+                            color: '#9F1239',
+                            border: '1px solid #FECDD3',
+                            lineHeight: 1.55,
+                          }}>
+                            <div style={{ fontWeight: 800, marginBottom: '4px', color: '#881337' }}>
+                              Areas for Growth & Refinement:
+                            </div>
+                            {rev.what_was_missing}
+                          </div>
+                        </div>
+
+                        {/* Tone & Communication Coaching (Pastel Ice Blue) */}
+                        {rev.emotion?.coachingAdvice && (
+                          <div style={{
+                            fontSize: '13.5px',
+                            color: '#0369A1',
+                            padding: '12px 14px',
+                            backgroundColor: '#F0F9FF',
+                            borderRadius: '10px',
+                            border: '1px solid #BAE6FD',
+                            marginBottom: '10px',
+                            lineHeight: 1.55,
+                          }}>
+                            <strong style={{ color: '#0C4A6E' }}>Tone & Communication Coaching: </strong>
+                            {rev.emotion.coachingAdvice}
+                          </div>
+                        )}
+
+                        {/* Benchmark Model Answer (Pastel Amber / Cream) */}
+                        {rev.ideal_answer && (
+                          <div style={{
+                            fontSize: '13.5px',
+                            color: '#92400E',
+                            padding: '12px 14px',
+                            backgroundColor: '#FFFBEB',
+                            borderRadius: '10px',
+                            border: '1px solid #FDE68A',
+                            lineHeight: 1.55,
+                          }}>
+                            <strong style={{ color: '#78350F' }}>Benchmark Model Answer: </strong>
+                            {rev.ideal_answer}
+                          </div>
+                        )}
                       </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px', marginBottom: '8px' }}>
-                        <div style={{ padding: '8px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px', color: '#111827', border: '1px solid #E5E7EB' }}>
-                          <strong>✓ What was answered well:</strong> {rev.what_was_right}
-                        </div>
-                        <div style={{ padding: '8px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px', color: '#111827', border: '1px solid #E5E7EB' }}>
-                          <strong>✕ What was missing / improvements:</strong> {rev.what_was_missing}
-                        </div>
-                      </div>
-
-                      {rev.emotion?.coachingAdvice && (
-                        <div style={{ fontSize: '12px', color: '#374151', padding: '8px 10px', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB', marginBottom: '8px' }}>
-                          <strong style={{ color: '#111827' }}>Emotional & Vocal Tone Coaching: </strong> {rev.emotion.coachingAdvice}
-                        </div>
-                      )}
-
-                      {rev.ideal_answer && (
-                        <div style={{ fontSize: '12px', color: '#4B5563', padding: '8px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
-                          <strong style={{ color: '#111827' }}>AI Benchmark Model Answer: </strong> {rev.ideal_answer}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

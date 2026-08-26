@@ -390,7 +390,23 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                       </div>
 
                       <div style={{ fontSize: '13px', color: '#374151', padding: '10px 12px', backgroundColor: '#FFFFFF', borderRadius: '6px', border: '1px solid #E5E7EB', marginBottom: '10px', lineHeight: 1.5 }}>
-                        <strong style={{ color: '#111827' }}>Your Response: </strong> {rev.user_answer || '(No response recorded)'}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <strong style={{ color: '#111827' }}>Your Response:</strong>
+                          {rev.emotion && (
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              backgroundColor: rev.emotion.valenceScore >= 20 ? '#F3F4F6' : rev.emotion.valenceScore <= -20 ? '#F3F4F6' : '#F3F4F6',
+                              color: '#111827',
+                              border: '1px solid #E5E7EB',
+                            }}>
+                              Tone: {rev.emotion.primaryEmotion} ({rev.emotion.positivityRatio}% Positivity)
+                            </span>
+                          )}
+                        </div>
+                        {rev.user_answer || '(No response recorded)'}
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px', marginBottom: '8px' }}>
@@ -401,6 +417,12 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                           <strong>✕ What was missing / improvements:</strong> {rev.what_was_missing}
                         </div>
                       </div>
+
+                      {rev.emotion?.coachingAdvice && (
+                        <div style={{ fontSize: '12px', color: '#374151', padding: '8px 10px', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB', marginBottom: '8px' }}>
+                          <strong style={{ color: '#111827' }}>Emotional & Vocal Tone Coaching: </strong> {rev.emotion.coachingAdvice}
+                        </div>
+                      )}
 
                       {rev.ideal_answer && (
                         <div style={{ fontSize: '12px', color: '#4B5563', padding: '8px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px', border: '1px solid #E5E7EB' }}>

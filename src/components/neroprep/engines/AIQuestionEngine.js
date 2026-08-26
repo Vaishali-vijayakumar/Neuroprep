@@ -7,6 +7,7 @@
 import QUESTION_BANK from '../../../data/adaptiveQuestionBank1400.json';
 import { getTrackConfig, INTERVIEW_TRACKS } from '../../../data/interviewTracksData';
 import { DSA_CATEGORIES } from '../../../data/dsaPatternsData';
+import { InterviewEmotionModel } from './InterviewEmotionModel';
 
 export class AIQuestionEngine {
   constructor(config = {}, { onQuestion, onAdaptation } = {}) {
@@ -410,6 +411,9 @@ export class AIQuestionEngine {
     }
     this._checkAdaptation();
 
+    // Run Deep Emotion & Valence Analysis
+    const emotionProfile = InterviewEmotionModel.analyzeEmotion(text, question, activeTrack);
+
     const isCorrect = overall >= 78 ? true : (overall >= 58 ? 'partial' : false);
     const verdict = overall >= 82 ? 'Correct & Strong' : (overall >= 65 ? 'Good Structure' : 'Needs More Depth');
 
@@ -417,14 +421,15 @@ export class AIQuestionEngine {
       overall,
       is_correct: isCorrect,
       verdict,
-      what_was_right: `Demonstrated good understanding (${matchedCount > 0 ? matchedCount : 1} key domain concepts identified) with structured explanation.`,
+      what_was_right: `Demonstrated good understanding (${matchedCount > 0 ? matchedCount : 1} key domain concepts identified) with ${emotionProfile.primaryEmotion.toLowerCase()} tone.`,
       what_was_missing: overall >= 82 ? 'Could add deeper quantitative impact metrics and long-term reflection.' : 'Include specific technical examples, trade-offs, and measurable results.',
       feedback: overall >= 78
-        ? 'Strong answer with clear structure, good domain terminology, and authentic delivery.'
+        ? `Strong answer with ${emotionProfile.sentimentLabel.toLowerCase()} delivery, good domain terminology, and authentic structure.`
         : 'Good effort. Strengthen your response with specific architectural details, concrete examples, and measurable outcomes.',
-      strengths: words >= 25 ? ['Clear explanation', 'Domain terminology', 'Relevant context'] : ['Clear structure'],
+      strengths: words >= 25 ? ['Clear explanation', 'Domain terminology', emotionProfile.primaryEmotion] : ['Clear structure'],
       improvements: overall < 80 ? ['Include quantifiable metrics and results', 'Explain trade-offs and edge cases'] : ['Provide additional production context'],
       ideal_answer: benchmark,
+      emotion: emotionProfile,
     };
   }
 

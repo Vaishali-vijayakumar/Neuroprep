@@ -536,6 +536,7 @@ export default function InterviewRoom() {
           key_takeaway: evalRes.feedback || 'Strengthen with quantifiable outcomes and ownership metrics.',
           strengths: evalRes.strengths || ['Clear tone'],
           improvements: evalRes.improvements || ['Quantifiable outcomes'],
+          emotion: evalRes.emotion || null,
         };
       });
 

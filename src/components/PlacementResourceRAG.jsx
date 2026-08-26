@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   Search, BookOpen, Video, FileText, Globe, 
   Sparkles, ExternalLink, Play, Layers, RefreshCw, 
-  Download, Code, ArrowUpRight, CheckCircle2, Bookmark
+  Download, Code, ArrowUpRight
 } from 'lucide-react';
 
-// Multi-Source Semantic RAG Resource Intelligence Engine
+// Placement Preparation Apps Multi-Source Intelligence Engine
 function retrieveResourcesForTopic(queryText) {
   const clean = (queryText || '').toLowerCase().trim();
   const encodedQuery = encodeURIComponent(queryText.trim());
@@ -34,19 +34,19 @@ function retrieveResourcesForTopic(queryText) {
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
 
-  // 1. DBMS & SQL Domain
+  // 1. DBMS & SQL Domain (Placement Preparation Apps)
   if (domain === 'dbms') {
     return {
       title: 'DBMS Normalization & SQL Queries',
-      category: 'Database Management Systems',
-      summary: 'Semantic multi-source retrieval across PostgreSQL Docs, Scaler Topics, Stanford Lecture PDFs, Gate Smashers, and LeetCode SQL.',
+      category: 'Campus Placement Technical Track',
+      summary: 'Curated across top placement prep apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.',
       videos: [
         {
           id: 'v1',
-          title: 'DBMS Normalization in One Shot (1NF, 2NF, 3NF, BCNF with Solved Examples)',
-          channel: 'Gate Smashers',
+          title: 'DBMS Normalization in One Shot (1NF, 2NF, 3NF, BCNF Placement Masterclass)',
+          channel: 'Gate Smashers (Placement Series)',
           duration: '18 mins',
-          url: 'https://www.youtube.com/results?search_query=gate+smashers+normalization+dbms+one+shot',
+          url: 'https://www.youtube.com/results?search_query=gate+smashers+normalization+dbms+placement+one+shot',
           timestamps: [
             { time: '00:00', label: 'Why Normalization & Insertion/Deletion Anomalies' },
             { time: '04:15', label: '1NF: Eliminating Multi-Valued Attributes' },
@@ -56,10 +56,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'SQL Joins & Indexing Performance Optimization Masterclass',
-          channel: 'Knowledge Gate',
+          title: 'SQL Joins & Indexing Campus Placement Masterclass',
+          channel: 'Knowledge Gate Placement Prep',
           duration: '22 mins',
-          url: 'https://www.youtube.com/results?search_query=knowledge+gate+sql+joins+indexing+masterclass',
+          url: 'https://www.youtube.com/results?search_query=knowledge+gate+sql+joins+indexing+placement+masterclass',
           timestamps: [
             { time: '00:00', label: 'INNER, LEFT, RIGHT, and FULL OUTER Joins Visualized' },
             { time: '08:20', label: 'Clustered vs Non-Clustered B-Tree Indexes' },
@@ -70,11 +70,11 @@ function retrieveResourcesForTopic(queryText) {
       notes: [
         {
           id: 'n1',
-          title: 'Stanford CS145 / MIT DB Normalization & BCNF Notes (PDF)',
-          type: 'University Lecture PDF Notes',
-          source: 'Stanford Database System Group',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=stanford+cs145+relational+normalization+functional+dependencies+filetype:pdf`,
+          title: 'InterviewBit DBMS & Normalization Placement Cheatsheet',
+          type: 'Placement Cheatsheet',
+          source: 'InterviewBit Placement Prep App',
+          readTime: '4 min read',
+          url: 'https://www.interviewbit.com/dbms-interview-questions/',
           keyPoints: [
             '1NF: Attributes must be atomic (no multi-valued collections).',
             '2NF: Must be in 1NF + NO non-prime attribute depends on a part of candidate key.',
@@ -84,81 +84,88 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'n2',
-          title: 'SQL Performance & Indexing Cheatsheet (PDF)',
-          type: 'Downloadable PDF Cheatsheet',
-          source: 'Database Architecture Labs',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=sql+query+optimization+indexing+cheat+sheet+filetype:pdf`,
+          title: 'CodeStudio SQL Joins & Schema Optimization Notes',
+          type: 'Placement Revision Notes',
+          source: 'CodeStudio by Coding Ninjas',
+          readTime: '5 min read',
+          url: 'https://www.naukri.com/code360/guided-paths/dbms-course',
           keyPoints: [
             'Clustered Index: Physically sorts table records on disk (1 per table).',
             'Non-Clustered Index: Separate B-Tree index pointers for fast WHERE lookups.',
             'Composite Index: Ordered key prefix evaluation (Left-to-Right rule).',
-            'Covering Index: Contains all queried columns to avoid table lookup.'
+            'ACID Guarantees: Atomicity, Consistency, Isolation, Durability.'
           ]
         }
       ],
       websites: [
         {
           id: 'w1',
-          name: 'PostgreSQL Documentation',
-          title: 'Official PostgreSQL Relational Model & Joins Guide',
-          desc: 'Official architectural documentation covering hash joins, merge joins, nested loops, and query plans.',
-          url: 'https://www.postgresql.org/docs/current/tutorial-join.html'
+          name: 'InterviewBit',
+          title: 'InterviewBit DBMS Placement Interview Track',
+          desc: 'Top 50 frequently asked DBMS and SQL interview questions with detailed step-by-step solutions.',
+          url: 'https://www.interviewbit.com/dbms-interview-questions/'
         },
         {
           id: 'w2',
-          name: 'Scaler Topics',
-          title: 'Database Normalization in DBMS with Solved Real-World Schemas',
-          desc: 'Comprehensive breakdown of insertion/deletion anomalies, partial dependencies, and BCNF decomposition.',
-          url: 'https://www.scaler.com/topics/dbms/normalization-in-dbms/'
+          name: 'IndiaBIX',
+          title: 'IndiaBIX Database Management & SQL Placement Tests',
+          desc: 'Campus recruitment aptitude & technical multiple-choice tests with explanations.',
+          url: 'https://www.indiabix.com/computer-science/database-systems/'
         },
         {
           id: 'w3',
-          name: 'W3Schools Interactive SQL',
-          title: 'Interactive SQL Joins, Subqueries & Clauses Editor',
-          desc: 'Live code runner with sample tables to test INNER/LEFT joins, GROUP BY, and HAVING clauses.',
-          url: 'https://www.w3schools.com/sql/sql_join.asp'
+          name: 'CodeStudio (Coding Ninjas)',
+          title: 'CodeStudio DBMS Guided Placement Path',
+          desc: 'Structured placement syllabus covering Relational Models, Indexing, and Transaction Concurrency.',
+          url: 'https://www.naukri.com/code360/guided-paths/dbms-course'
+        },
+        {
+          id: 'w4',
+          name: 'Sanfoundry',
+          title: 'Sanfoundry 1000+ DBMS Placement MCQs & Answers',
+          desc: 'Extensive question bank organized chapter-wise for technical assessment rounds.',
+          url: 'https://www.sanfoundry.com/1000-database-management-system-questions-answers/'
         }
       ],
       practice: [
         {
           id: 'p1',
-          platform: 'LeetCode',
-          title: '178. Rank Scores (SQL DENSE_RANK)',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Nth Highest Salary SQL Problem',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/rank-scores/'
+          url: 'https://www.interviewbit.com/problems/nth-highest-salary/'
         },
         {
           id: 'p2',
-          platform: 'LeetCode',
-          title: '184. Department Highest Salary (SQL JOIN & GROUP BY)',
-          difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/department-highest-salary/'
+          platform: 'CodeStudio',
+          title: 'CodeStudio: Second Largest Element & SQL Query Challenges',
+          difficulty: 'Easy / Medium',
+          url: 'https://www.naukri.com/code360/problems/dbms-practice'
         },
         {
           id: 'p3',
-          platform: 'LeetCode',
-          title: '180. Consecutive Numbers (Self-Join)',
+          platform: 'IndiaBIX',
+          title: 'IndiaBIX: Normalization Online Placement Test',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/consecutive-numbers/'
+          url: 'https://www.indiabix.com/online-test/database-systems-test/'
         }
       ]
     };
   }
 
-  // 2. Binary Trees & BST Domain
+  // 2. Binary Trees & BST Domain (Placement Preparation Apps)
   if (domain === 'trees') {
     return {
       title: 'Binary Trees & Binary Search Trees (BST)',
-      category: 'Data Structures & Algorithms',
-      summary: 'Semantic retrieval across MIT 6.006 Lecture PDFs, NeetCode Trees, CP-Algorithms, Striver Masterclasses, and LeetCode.',
+      category: 'Campus Placement Coding Track',
+      summary: 'Curated across top placement prep apps: Striver SDE Sheet, InterviewBit Trees Track, CodeStudio Guided Paths, and PrepInsta.',
       videos: [
         {
           id: 'v1',
-          title: 'Binary Trees & Traversals Masterclass (Inorder, Preorder, Postorder, BFS)',
-          channel: 'Take U Forward (Striver)',
+          title: 'Binary Trees & Traversals Placement Masterclass (Inorder, Preorder, Postorder, BFS)',
+          channel: 'Take U Forward (Striver SDE Sheet)',
           duration: '24 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+binary+trees+masterclass+take+u+forward',
+          url: 'https://www.youtube.com/results?search_query=striver+binary+trees+placement+masterclass+take+u+forward',
           timestamps: [
             { time: '00:00', label: 'TreeNode Pointer Structure & Memory Representation' },
             { time: '06:15', label: 'DFS Traversals (Inorder, Preorder, Postorder Recursion)' },
@@ -168,10 +175,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Binary Search Tree (BST) Operations: Insertion, Search & Deletion',
-          channel: 'NeetCode',
-          duration: '19 mins',
-          url: 'https://www.youtube.com/results?search_query=neetcode+binary+search+tree+operations',
+          title: 'Binary Search Tree (BST) Campus Placement Problems',
+          channel: 'CodeHelp (Love Babbar Placement Series)',
+          duration: '20 mins',
+          url: 'https://www.youtube.com/results?search_query=love+babbar+binary+search+tree+placement+series',
           timestamps: [
             { time: '00:00', label: 'BST Property: Left < Root < Right' },
             { time: '07:30', label: 'Validating BST with Min/Max Boundary Recursion' },
@@ -182,11 +189,11 @@ function retrieveResourcesForTopic(queryText) {
       notes: [
         {
           id: 'n1',
-          title: 'MIT 6.006 Introduction to Algorithms: Binary Search Trees Notes (PDF)',
-          type: 'University Lecture PDF Notes',
-          source: 'MIT OpenCourseWare',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=mit+ocw+6.006+binary+search+trees+lecture+notes+filetype:pdf`,
+          title: 'InterviewBit Binary Trees Placement Revision Notes',
+          type: 'Placement Cheatsheet',
+          source: 'InterviewBit Placement Prep App',
+          readTime: '4 min read',
+          url: 'https://www.interviewbit.com/tree-data-structure-interview-questions/',
           keyPoints: [
             'Inorder Traversal (Left, Root, Right) of BST always yields sorted ascending values.',
             'Preorder (Root, Left, Right) is used for tree cloning and serialization.',
@@ -196,11 +203,11 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'n2',
-          title: 'Tree Recursion & Traversal Algorithms Cheatsheet (PDF)',
-          type: 'Downloadable PDF Cheatsheet',
-          source: 'Algorithm Revision Labs',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=binary+tree+traversal+recursion+cheatsheet+filetype:pdf`,
+          title: 'CodeStudio Tree Recursion & Traversals Guided Cheatsheet',
+          type: 'Placement Revision Notes',
+          source: 'CodeStudio by Coding Ninjas',
+          readTime: '3 min read',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms',
           keyPoints: [
             'Height formula: 1 + Math.max(maxDepth(root.left), maxDepth(root.right)).',
             'Symmetric tree: check if (left.val === right.val && isMirror(left.left, right.right)).',
@@ -211,65 +218,72 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'NeetCode.io',
-          title: 'Trees Practice Roadmap & Visual Code Walkthroughs',
-          desc: 'Interactive tree practice roadmap with video dry runs, recursion state diagrams, and complexity comparisons.',
-          url: 'https://neetcode.io/practice'
+          name: 'InterviewBit',
+          title: 'InterviewBit Trees Data Structure Track',
+          desc: 'Handpicked placement problems with automated test case evaluation and memory complexity analysis.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/trees/'
         },
         {
           id: 'w2',
-          name: 'CP-Algorithms',
-          title: 'Tree Data Structures & Heavy-Light Decomposition',
-          desc: 'In-depth algorithmic analysis of tree traversals, lowest common ancestor (binary lifting), and subtree queries.',
-          url: 'https://cp-algorithms.com/'
+          name: 'CodeStudio (Coding Ninjas)',
+          title: 'CodeStudio Binary Tree Guided Path & Company Sheets',
+          desc: 'Curated TCS, Amazon, and Infosys tree problems with video hints and code templates.',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms'
         },
         {
           id: 'w3',
-          name: 'Programiz',
-          title: 'Binary Tree Data Structure Explained with Diagrams',
-          desc: 'Clear visual guide with complete code implementations in Java, C++, and Python.',
-          url: 'https://www.programiz.com/dsa/binary-tree'
+          name: 'PrepInsta',
+          title: 'PrepInsta Top Placement Tree Questions Bank',
+          desc: 'Campus recruitment questions asked in tier-1 and service-based placement drives.',
+          url: 'https://prepinsta.com/'
+        },
+        {
+          id: 'w4',
+          name: 'IndiaBIX',
+          title: 'IndiaBIX Trees & Graph Placement MCQs',
+          desc: 'Placement screening test MCQs covering traversal time complexities and tree properties.',
+          url: 'https://www.indiabix.com/data-structure/trees/'
         }
       ],
       practice: [
         {
           id: 'p1',
-          platform: 'LeetCode',
-          title: '102. Binary Tree Level Order Traversal',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Level Order Traversal Problem',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/binary-tree-level-order-traversal/'
+          url: 'https://www.interviewbit.com/problems/level-order/'
         },
         {
           id: 'p2',
-          platform: 'LeetCode',
-          title: '98. Validate Binary Search Tree',
+          platform: 'CodeStudio',
+          title: 'CodeStudio: Validate BST & Tree Diameter',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/validate-binary-search-tree/'
+          url: 'https://www.naukri.com/code360/problems/validate-bst'
         },
         {
           id: 'p3',
-          platform: 'LeetCode',
-          title: '236. Lowest Common Ancestor of a Binary Tree',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Lowest Common Ancestor (LCA)',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/'
+          url: 'https://www.interviewbit.com/problems/least-common-ancestor/'
         }
       ]
     };
   }
 
-  // 3. Dynamic Programming Domain
+  // 3. Dynamic Programming Domain (Placement Preparation Apps)
   if (domain === 'dp') {
     return {
       title: 'Dynamic Programming & 0/1 Knapsack Patterns',
-      category: 'Algorithms',
-      summary: 'Semantic retrieval across MIT OCW DP Notes, TopCoder Algorithms, Scaler Topics, Aditya Verma Masterclasses, and LeetCode DP Study Plans.',
+      category: 'Campus Placement Algorithms Track',
+      summary: 'Curated across top placement prep apps: InterviewBit DP Track, Striver SDE Sheet, CodeStudio, and PrepInsta.',
       videos: [
         {
           id: 'v1',
-          title: '0/1 Knapsack Problem & DP Patterns Explained',
-          channel: 'Aditya Verma',
+          title: '0/1 Knapsack Problem & DP Patterns Placement Series',
+          channel: 'Aditya Verma (Placement DP Series)',
           duration: '22 mins',
-          url: 'https://www.youtube.com/results?search_query=aditya+verma+01+knapsack+problem+dp',
+          url: 'https://www.youtube.com/results?search_query=aditya+verma+01+knapsack+problem+placement+dp',
           timestamps: [
             { time: '00:00', label: 'How to Identify DP in 30 Seconds' },
             { time: '06:15', label: 'Choice Diagram & Recursive Tree' },
@@ -279,10 +293,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Complete DP Playlist for Placement Interviews',
-          channel: 'Take U Forward (Striver)',
+          title: 'Complete DP Playlist for Campus Placement Drives',
+          channel: 'Take U Forward (Striver SDE Sheet)',
           duration: '26 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+dynamic+programming+playlist+take+u+forward',
+          url: 'https://www.youtube.com/results?search_query=striver+dynamic+programming+placement+take+u+forward',
           timestamps: [
             { time: '00:00', label: '1D DP: Climbing Stairs & House Robber' },
             { time: '09:40', label: '2D Grid DP & Minimum Path Sum' },
@@ -293,11 +307,11 @@ function retrieveResourcesForTopic(queryText) {
       notes: [
         {
           id: 'n1',
-          title: 'MIT 6.006 Dynamic Programming & Knapsack Notes (PDF)',
-          type: 'University Lecture PDF Notes',
-          source: 'MIT OpenCourseWare',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=mit+ocw+6.006+dynamic+programming+lecture+notes+filetype:pdf`,
+          title: 'InterviewBit Dynamic Programming Placement Notes',
+          type: 'Placement Cheatsheet',
+          source: 'InterviewBit Placement Prep App',
+          readTime: '5 min read',
+          url: 'https://www.interviewbit.com/dynamic-programming-interview-questions/',
           keyPoints: [
             'Overlapping Subproblems: Storing computed states to avoid exponential recalculation.',
             'Optimal Substructure: Optimal answer can be constructed from optimal answers of subproblems.',
@@ -307,11 +321,11 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'n2',
-          title: 'Dynamic Programming Patterns & Recurrence Formulas (PDF)',
-          type: 'Downloadable PDF Cheatsheet',
-          source: 'Competitive Programming Guild',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=dynamic+programming+knapsack+patterns+cheatsheet+filetype:pdf`,
+          title: 'CodeStudio 0/1 Knapsack & Subset Sum Formula Sheet',
+          type: 'Placement Revision Notes',
+          source: 'CodeStudio by Coding Ninjas',
+          readTime: '4 min read',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms',
           keyPoints: [
             'If wt[i-1] <= W: choose max(val[i-1] + dp[i-1][W-wt[i-1]], dp[i-1][W]).',
             'Subset Sum partition: target sum = totalSum / 2.',
@@ -322,65 +336,72 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'TopCoder Algorithms',
-          title: 'Dynamic Programming: From Novice to Advanced Guide',
-          desc: 'Legendary competitive programming guide covering state space representations and optimal subproblem formulation.',
-          url: 'https://www.topcoder.com/thrive/articles/Dynamic%20Programming:%20From%20Novice%20to%20Advanced'
+          name: 'InterviewBit',
+          title: 'InterviewBit Dynamic Programming Track',
+          desc: 'Standard placement DP patterns: 0/1 Knapsack, Longest Common Subsequence, and Matrix Chain Multiplication.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/dynamic-programming/'
         },
         {
           id: 'w2',
-          name: 'Scaler Topics',
-          title: '0/1 Knapsack Problem Tutorial with State Matrix Tables',
-          desc: 'Comprehensive walkthrough from recursive choice diagrams to 1D space optimization with dry runs.',
-          url: 'https://www.scaler.com/topics/data-structures/0-1-knapsack-problem/'
+          name: 'CodeStudio (Coding Ninjas)',
+          title: 'CodeStudio Dynamic Programming Guided Track',
+          desc: 'Step-by-step transition from recursion to memoization and space-optimized tabulation.',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms'
         },
         {
           id: 'w3',
-          name: 'LeetCode DP Plan',
-          title: 'LeetCode Official Dynamic Programming Study Series',
-          desc: 'Curated 30-day interactive track covering Fibonacci, Knapsack, and String Matching DP patterns.',
-          url: 'https://leetcode.com/studyplan/dynamic-programming/'
+          name: 'PrepInsta',
+          title: 'PrepInsta Top Placement Dynamic Programming Questions',
+          desc: 'Frequently tested DP problems in top service & product-based placement exams.',
+          url: 'https://prepinsta.com/'
+        },
+        {
+          id: 'w4',
+          name: 'Sanfoundry',
+          title: 'Sanfoundry Dynamic Programming MCQs & Practice Sets',
+          desc: 'Recruiter-tested questions on recurrence relations, time complexity, and state space.',
+          url: 'https://www.sanfoundry.com/dynamic-programming-questions-answers/'
         }
       ],
       practice: [
         {
           id: 'p1',
-          platform: 'LeetCode',
-          title: '70. Climbing Stairs',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Climbing Stairs Problem',
           difficulty: 'Easy',
-          url: 'https://leetcode.com/problems/climbing-stairs/'
+          url: 'https://www.interviewbit.com/problems/stairs/'
         },
         {
           id: 'p2',
-          platform: 'LeetCode',
-          title: '198. House Robber',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: 0/1 Knapsack Problem',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/house-robber/'
+          url: 'https://www.interviewbit.com/problems/0-1-knapsack/'
         },
         {
           id: 'p3',
-          platform: 'LeetCode',
-          title: '416. Partition Equal Subset Sum',
+          platform: 'CodeStudio',
+          title: 'CodeStudio: House Robber & Partition Equal Subset',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/partition-equal-subset-sum/'
+          url: 'https://www.naukri.com/code360/problems/partition-equal-subset-sum'
         }
       ]
     };
   }
 
-  // 4. Graphs Domain
+  // 4. Graphs Domain (Placement Preparation Apps)
   if (domain === 'graphs') {
     return {
       title: 'Graph Algorithms (BFS, DFS, Dijkstra, Topo Sort)',
-      category: 'Data Structures & Algorithms',
-      summary: 'Semantic retrieval across Stanford CS161 Lecture PDFs, CP-Algorithms, VisuAlgo, Striver Graph Series, and LeetCode.',
+      category: 'Campus Placement Algorithms Track',
+      summary: 'Curated across top placement prep apps: Striver SDE Sheet, InterviewBit Graph Track, CodeStudio, and IndiaBIX.',
       videos: [
         {
           id: 'v1',
           title: 'Complete Graph Series for Placement Tests (BFS, DFS, Cycle Detection)',
-          channel: 'Take U Forward (Striver)',
+          channel: 'Take U Forward (Striver SDE Sheet)',
           duration: '25 mins',
-          url: 'https://www.youtube.com/results?search_query=striver+graph+series+take+u+forward',
+          url: 'https://www.youtube.com/results?search_query=striver+graph+series+placement+take+u+forward',
           timestamps: [
             { time: '00:00', label: 'Adjacency List vs Matrix Space & Time' },
             { time: '06:30', label: 'BFS Traversal with Queue & Visited Array' },
@@ -390,10 +411,10 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'v2',
-          title: 'Dijkstra & Topological Sort Masterclass',
-          channel: 'NeetCode',
+          title: 'Dijkstra & Topological Sort Placement Masterclass',
+          channel: 'CodeHelp (Love Babbar Placement Series)',
           duration: '20 mins',
-          url: 'https://www.youtube.com/results?search_query=neetcode+dijkstra+algorithm+topological+sort',
+          url: 'https://www.youtube.com/results?search_query=love+babbar+graph+dijkstra+placement+series',
           timestamps: [
             { time: '00:00', label: 'When to Use BFS vs Dijkstra' },
             { time: '08:15', label: 'Course Schedule Topological Sort Pattern' },
@@ -404,11 +425,11 @@ function retrieveResourcesForTopic(queryText) {
       notes: [
         {
           id: 'n1',
-          title: 'Stanford CS161 Graph Traversals & Shortest Paths Notes (PDF)',
-          type: 'University Lecture PDF Notes',
-          source: 'Stanford Computer Science Department',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=stanford+cs161+graph+algorithms+bfs+dfs+dijkstra+filetype:pdf`,
+          title: 'InterviewBit Graph Algorithms & Cycle Detection Notes',
+          type: 'Placement Cheatsheet',
+          source: 'InterviewBit Placement Prep App',
+          readTime: '4 min read',
+          url: 'https://www.interviewbit.com/graph-interview-questions/',
           keyPoints: [
             'Adjacency List uses O(V + E) space; Matrix uses O(V^2).',
             'Cycle in Undirected: DFS with parent tracking.',
@@ -418,11 +439,11 @@ function retrieveResourcesForTopic(queryText) {
         },
         {
           id: 'n2',
-          title: 'Graph Shortest Paths & Minimum Spanning Tree Notes (PDF)',
-          type: 'Downloadable PDF Cheatsheet',
-          source: 'Algorithm Research Hub',
-          readTime: 'PDF Download / View',
-          url: `https://www.google.com/search?q=dijkstra+kruskal+prim+graph+algorithms+cheatsheet+filetype:pdf`,
+          title: 'CodeStudio Shortest Paths & Minimum Spanning Tree Notes',
+          type: 'Placement Revision Notes',
+          source: 'CodeStudio by Coding Ninjas',
+          readTime: '4 min read',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms',
           keyPoints: [
             'Unweighted Graph: Standard BFS finds shortest path in O(V + E).',
             'Weighted Non-Negative: Dijkstra with Min-Heap in O((V + E) log V).',
@@ -433,77 +454,84 @@ function retrieveResourcesForTopic(queryText) {
       websites: [
         {
           id: 'w1',
-          name: 'CP-Algorithms',
-          title: 'Breadth-First Search & Dijkstra Algorithm Tutorial',
-          desc: 'Exhaustive algorithmic breakdown with optimal C++ competitive programming templates.',
-          url: 'https://cp-algorithms.com/graph/breadth-first-search.html'
+          name: 'InterviewBit',
+          title: 'InterviewBit Graph Algorithms Track',
+          desc: 'Comprehensive placement challenges covering BFS/DFS, Cycle Detection, and Shortest Paths.',
+          url: 'https://www.interviewbit.com/courses/programming/topics/graph-data-structure-algorithms/'
         },
         {
           id: 'w2',
-          name: 'VisuAlgo',
-          title: 'Interactive Graph Traversal & Shortest Path Visualizer',
-          desc: 'Step through BFS, DFS, Dijkstra, and Kruskal algorithms visually with custom graphs.',
-          url: 'https://visualgo.net/en/graphds'
+          name: 'CodeStudio (Coding Ninjas)',
+          title: 'CodeStudio Graph Guided Path',
+          desc: 'Curated company-wise graph problems with hints, test case runners, and editorial solutions.',
+          url: 'https://www.naukri.com/code360/guided-paths/data-structures-algorithms'
         },
         {
           id: 'w3',
-          name: 'LeetCode Explore',
-          title: 'Graph Theory Module & Interactive Practice Card',
-          desc: 'Structured interactive module covering Disjoint Set Union (DSU), BFS, DFS, and topological ordering.',
-          url: 'https://leetcode.com/explore/learn/card/graph/'
+          name: 'IndiaBIX',
+          title: 'IndiaBIX Graph & Network Placement MCQs',
+          desc: 'Technical screening MCQs on graph traversals, topological sorting, and spanning trees.',
+          url: 'https://www.indiabix.com/data-structure/graphs/'
+        },
+        {
+          id: 'w4',
+          name: 'Sanfoundry',
+          title: 'Sanfoundry Graph Algorithms Questions & Answers',
+          desc: 'Over 500+ curated graph multiple-choice questions for technical campus tests.',
+          url: 'https://www.sanfoundry.com/graph-theory-questions-answers/'
         }
       ],
       practice: [
         {
           id: 'p1',
-          platform: 'LeetCode',
-          title: '200. Number of Islands (BFS/DFS)',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Path in Directed Graph / BFS',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/number-of-islands/'
+          url: 'https://www.interviewbit.com/problems/path-in-directed-graph/'
         },
         {
           id: 'p2',
-          platform: 'LeetCode',
-          title: '207. Course Schedule (Topological Sort)',
+          platform: 'InterviewBit',
+          title: 'InterviewBit: Possibility of Finishing all Courses (Topo Sort)',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/course-schedule/'
+          url: 'https://www.interviewbit.com/problems/possibility-of-finishing-all-courses-given-prerequisites/'
         },
         {
           id: 'p3',
-          platform: 'LeetCode',
-          title: '743. Network Delay Time (Dijkstra)',
+          platform: 'CodeStudio',
+          title: 'CodeStudio: Dijkstra Shortest Path Problem',
           difficulty: 'Medium',
-          url: 'https://leetcode.com/problems/network-delay-time/'
+          url: 'https://www.naukri.com/code360/problems/dijkstras-shortest-path'
         }
       ]
     };
   }
 
-  // 5. Universal Dynamic Semantic Resolver for ANY query
+  // 5. Universal Dynamic Semantic Resolver across Placement Prep Apps for ANY query
   return {
     title: formattedTitle,
-    category: 'Placement Technical Concept',
-    summary: `Semantic multi-source RAG retrieval for ${formattedTitle} across university lecture archives, official docs, technical masterclasses, and coding platforms.`,
+    category: 'Campus Placement Preparation Track',
+    summary: `Curated across top placement prep apps (InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry) for ${formattedTitle}.`,
     videos: [
       {
         id: 'v1',
         title: `${formattedTitle} Complete Placement Concept & Code Tutorial`,
-        channel: 'Top Tech Educators',
+        channel: 'Gate Smashers / Striver (Placement Series)',
         duration: '20 mins',
-        url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+tutorial+lecture`,
+        url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+interview+tutorial+lecture`,
         timestamps: [
-          { time: '00:00', label: `Core Introduction & Why ${formattedTitle} is Asked in Interviews` },
+          { time: '00:00', label: `Core Introduction & Why ${formattedTitle} is Asked in Campus Tests` },
           { time: '05:30', label: 'Step-by-Step Algorithm & Memory Trace' },
           { time: '12:45', label: 'Standard Placement Test Problems & Dry Run' },
-          { time: '17:30', label: 'Time/Space Complexity & Common Interview Mistakes' }
+          { time: '17:30', label: 'Time/Space Complexity & Common Recruiter Traps' }
         ]
       },
       {
         id: 'v2',
-        title: `${formattedTitle} Crash Course & Problem Solving Walkthrough`,
-        channel: 'Placement Prep Hub',
+        title: `${formattedTitle} Campus Placement Crash Course & Dry Run`,
+        channel: 'CodeHelp (Love Babbar Placement Series)',
         duration: '16 mins',
-        url: `https://www.youtube.com/results?search_query=${encodedQuery}+coding+walkthrough+dry+run`,
+        url: `https://www.youtube.com/results?search_query=${encodedQuery}+placement+coding+walkthrough+dry+run`,
         timestamps: [
           { time: '00:00', label: 'Visual Problem Breakdown' },
           { time: '07:15', label: 'Clean Implementation in Java / C++ / Python' },
@@ -514,11 +542,11 @@ function retrieveResourcesForTopic(queryText) {
     notes: [
       {
         id: 'n1',
-        title: `${formattedTitle} University Lecture & Theory Notes (PDF)`,
-        type: 'Downloadable University PDF Notes',
-        source: 'Computer Science Academic Archives',
-        readTime: 'PDF Download / View',
-        url: `https://www.google.com/search?q=${encodedQuery}+lecture+notes+theory+filetype:pdf`,
+        title: `${formattedTitle} Placement Cheatsheet & Revision Notes`,
+        type: 'Placement Cheatsheet',
+        source: 'InterviewBit Placement Prep App',
+        readTime: '4 min read',
+        url: `https://www.google.com/search?q=site:interviewbit.com+${encodedQuery}+notes`,
         keyPoints: [
           `Fundamental Definition: Core mechanics and principles of ${formattedTitle}.`,
           'Complexity: Analyze average and worst-case time/space tradeoffs before coding.',
@@ -528,11 +556,11 @@ function retrieveResourcesForTopic(queryText) {
       },
       {
         id: 'n2',
-        title: `${formattedTitle} Quick Reference & Revision Cheatsheet (PDF)`,
-        type: 'Downloadable PDF Cheatsheet',
-        source: 'Engineering QuickRef Archives',
-        readTime: 'PDF Download / View',
-        url: `https://www.google.com/search?q=${encodedQuery}+cheat+sheet+reference+filetype:pdf`,
+        title: `${formattedTitle} Guided Path & Formula Sheet`,
+        type: 'Placement Revision Notes',
+        source: 'CodeStudio by Coding Ninjas',
+        readTime: '3 min read',
+        url: `https://www.google.com/search?q=site:naukri.com/code360+${encodedQuery}`,
         keyPoints: [
           `Top Recruiter Questions: Frequently asked conceptual and coding questions on ${formattedTitle}.`,
           'Common Pitfalls: Off-by-one errors, infinite loops, and redundant space allocations.',
@@ -543,47 +571,54 @@ function retrieveResourcesForTopic(queryText) {
     websites: [
       {
         id: 'w1',
-        name: 'Dev.to / Technical Engineering Blogs',
-        title: `${formattedTitle} In-Depth Engineering Guide`,
-        desc: `High-quality articles written by practicing software engineers covering ${formattedTitle} with real-world architectures.`,
-        url: `https://dev.to/search?q=${encodedQuery}`
+        name: 'InterviewBit',
+        title: `InterviewBit Placement Guide: ${formattedTitle}`,
+        desc: `Topic track with curated interview questions, automated test runners, and company tags for ${formattedTitle}.`,
+        url: `https://www.google.com/search?q=site:interviewbit.com+${encodedQuery}`
       },
       {
         id: 'w2',
-        name: 'FreeCodeCamp Guide',
-        title: `${formattedTitle} Tutorial & Concept Walkthrough`,
-        desc: `Free open-source educational documentation with clear diagrams, code snippets, and beginner explanations.`,
-        url: `https://www.freecodecamp.org/news/search/?query=${encodedQuery}`
+        name: 'CodeStudio (Coding Ninjas)',
+        title: `CodeStudio Placement Hub: ${formattedTitle}`,
+        desc: `Structured placement syllabus covering ${formattedTitle} with hints, dry runs, and test case evaluation.`,
+        url: `https://www.google.com/search?q=site:naukri.com/code360+${encodedQuery}`
       },
       {
         id: 'w3',
-        name: 'Medium / Towards Tech',
-        title: `${formattedTitle} System Architecture & Code Patterns`,
-        desc: `Curated articles analyzing patterns, interview strategies, and production performance considerations.`,
-        url: `https://medium.com/search?q=${encodedQuery}`
+        name: 'IndiaBIX',
+        title: `IndiaBIX Campus Screening MCQs: ${formattedTitle}`,
+        desc: `Campus recruitment aptitude and technical test questions with step-by-step explanations for ${formattedTitle}.`,
+        url: `https://www.google.com/search?q=site:indiabix.com+${encodedQuery}`
+      },
+      {
+        id: 'w4',
+        name: 'PrepInsta',
+        title: `PrepInsta Placement MasterClass: ${formattedTitle}`,
+        desc: `Company-specific placement archives for TCS, Infosys, Accenture, Wipro, and Cognizant.`,
+        url: `https://www.google.com/search?q=site:prepinsta.com+${encodedQuery}`
       }
     ],
     practice: [
       {
         id: 'p1',
-        platform: 'LeetCode',
-        title: `LeetCode Problems: ${formattedTitle}`,
+        platform: 'InterviewBit',
+        title: `InterviewBit Placement Challenge: ${formattedTitle}`,
         difficulty: 'Medium',
-        url: `https://leetcode.com/problemset/all/?search=${encodedQuery}`
+        url: `https://www.google.com/search?q=site:interviewbit.com/problems+${encodedQuery}`
       },
       {
         id: 'p2',
-        platform: 'GeeksforGeeks Practice',
-        title: `GFG Practice Arena: ${formattedTitle}`,
+        platform: 'CodeStudio',
+        title: `CodeStudio Problem Arena: ${formattedTitle}`,
         difficulty: 'Medium',
-        url: `https://practice.geeksforgeeks.org/explore?page=1&sortBy=submissions&search=${encodedQuery}`
+        url: `https://www.google.com/search?q=site:naukri.com/code360/problems+${encodedQuery}`
       },
       {
         id: 'p3',
-        platform: 'HackerRank',
-        title: `HackerRank Challenges: ${formattedTitle}`,
+        platform: 'IndiaBIX',
+        title: `IndiaBIX Technical Test: ${formattedTitle}`,
         difficulty: 'Easy / Medium',
-        url: `https://www.hackerrank.com/search?q=${encodedQuery}`
+        url: `https://www.google.com/search?q=site:indiabix.com+${encodedQuery}`
       }
     ]
   };
@@ -642,17 +677,17 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             color: '#FFFFFF',
             letterSpacing: '0.4px'
           }}>
-            Multi-Source Resource Intelligence
+            Placement Prep Intelligence
           </span>
           <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-            Semantic Web & Academic RAG Search
+            Dedicated Placement Preparation Apps & Resources
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
           Placement Learning Resources Search
         </h1>
         <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
-          Search any placement concept to retrieve top YouTube video masterclasses, downloadable university lecture PDF notes, authority websites (PostgreSQL, Scaler, NeetCode, Dev.to), and direct practice challenges.
+          Search any placement concept to retrieve tutorials, cheatsheets, and coding challenges from top placement preparation apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.
         </p>
       </div>
 
@@ -671,7 +706,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-              placeholder="Search any concept (e.g., DBMS Normalization, Binary Trees, Dynamic Programming, SQL Joins, Graphs)..."
+              placeholder="Search any placement concept (e.g., DBMS Normalization, Binary Trees, Dynamic Programming, SQL Joins, Graphs)..."
               style={{
                 width: '100%',
                 padding: '12px 16px 12px 46px',
@@ -699,7 +734,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
         {/* Quick Suggestion Chips */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6B7280' }}>
-            Popular Topics:
+            Popular Placement Topics:
           </span>
           {[
             'DBMS Normalization',
@@ -757,25 +792,25 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <BookOpen size={26} />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 6px 0' }}>
-            Search Any Placement Concept
+            Search Any Campus Placement Concept
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#4B5563', maxWidth: '520px', margin: '0 auto 22px auto', lineHeight: 1.5 }}>
-            Type any topic above to search for top YouTube video masterclasses, downloadable university lecture PDF notes, diverse authority websites (PostgreSQL, Scaler, NeetCode, Dev.to), and targeted practice challenges.
+            Type any topic above to search across top campus placement preparation apps: InterviewBit, CodeStudio by Coding Ninjas, IndiaBIX, PrepInsta, and Sanfoundry.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '850px', margin: '0 auto', textAlign: 'left' }}>
             {[
               {
                 title: 'DBMS Normalization',
-                desc: 'YouTube video breakdowns, Stanford lecture PDF notes, PostgreSQL official docs, and LeetCode SQL challenges.'
+                desc: 'InterviewBit interview questions, CodeStudio guided path notes, IndiaBIX screening tests, and Gate Smashers videos.'
               },
               {
                 title: 'Binary Trees & BST',
-                desc: 'MIT OCW lecture notes, Striver masterclasses, NeetCode roadmaps, and standard LeetCode problems.'
+                desc: 'Striver SDE Sheet video walkthroughs, InterviewBit practice problems, CodeStudio guided tracks, and PrepInsta question bank.'
               },
               {
                 title: 'Dynamic Programming',
-                desc: 'Aditya Verma Knapsack tutorials, MIT OCW notes, TopCoder algorithms guide, and coding problems.'
+                desc: 'Aditya Verma Knapsack masterclasses, InterviewBit DP track, CodeStudio problem sets, and Sanfoundry MCQs.'
               }
             ].map(card => (
               <div 
@@ -800,7 +835,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                   {card.desc}
                 </div>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
-                  Search Resources
+                  Search Placement Apps
                 </span>
               </div>
             ))}
@@ -849,10 +884,10 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'All Resources' },
-                { id: 'videos', label: `YouTube Videos (${currentResources.videos.length})` },
-                { id: 'notes', label: `PDFs & Notes (${currentResources.notes.length})` },
-                { id: 'websites', label: `Websites (${currentResources.websites.length})` },
-                { id: 'practice', label: `Practice (${currentResources.practice.length})` }
+                { id: 'videos', label: `Placement Videos (${currentResources.videos.length})` },
+                { id: 'notes', label: `Placement Notes (${currentResources.notes.length})` },
+                { id: 'websites', label: `Placement Apps (${currentResources.websites.length})` },
+                { id: 'practice', label: `Practice Problems (${currentResources.practice.length})` }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -883,7 +918,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Video size={18} color="#DC2626" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Top YouTube Video Masterclasses & Timestamps
+                    Placement Video Masterclasses & Timestamps
                   </h3>
                 </div>
 
@@ -904,7 +939,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                       <div>
                         <div style={{ marginBottom: '6px' }}>
                           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>
-                            YouTube Video
+                            Placement Video
                           </span>
                         </div>
 
@@ -918,7 +953,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         {/* Timestamps Breakdown */}
                         <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px' }}>
                           <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                            Key Concepts Covered:
+                            Key Placement Concepts Covered:
                           </span>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             {vid.timestamps.map((ts, idx) => (
@@ -952,7 +987,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <FileText size={18} color="#2563EB" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Downloadable University PDFs, Notes & Cheatsheets
+                    Placement Cheatsheets & Fast Revision Notes
                   </h3>
                 </div>
 
@@ -1000,7 +1035,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-secondary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        <Download size={14} /> Download PDF Notes & Cheatsheet <ExternalLink size={12} />
+                        <Download size={14} /> Open Placement Notes <ExternalLink size={12} />
                       </a>
                     </div>
                   ))}
@@ -1014,7 +1049,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Globe size={18} color="#059669" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Authority Documentation & Topic-Specific Websites
+                    Dedicated Placement Preparation Apps & Portals
                   </h3>
                 </div>
 
@@ -1051,7 +1086,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-secondary-spec"
                         style={{ padding: '8px 16px', fontSize: '0.82rem', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                       >
-                        Visit {site.name} <ArrowUpRight size={14} />
+                        Open on {site.name} <ArrowUpRight size={14} />
                       </a>
                     </div>
                   ))}
@@ -1065,7 +1100,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <Code size={18} color="#7C3AED" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                    Targeted Placement Coding & Practice Problems
+                    Placement Practice & Technical Test Sets
                   </h3>
                 </div>
 
@@ -1111,7 +1146,7 @@ export default function PlacementResourceRAG({ profile = {}, setActiveTab }) {
                         className="btn-primary-spec"
                         style={{ padding: '6px 14px', fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                       >
-                        Solve <ArrowUpRight size={12} />
+                        Solve on {prob.platform} <ArrowUpRight size={12} />
                       </a>
                     </div>
                   ))}

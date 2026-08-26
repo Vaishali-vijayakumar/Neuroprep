@@ -166,14 +166,7 @@ export default function InterviewRoom() {
     };
   }, []);
 
-  // Initialize AI Question Engine on config change
-  useEffect(() => {
-    try {
-      aiEngineRef.current = new AIQuestionEngine(config || {});
-    } catch (e) {
-      console.warn('[InterviewRoom] AIQuestionEngine init error:', e);
-    }
-  }, [config]);
+
 
   // Helper to safely speak question via TTS and transition to listening
   const speakQuestion = useCallback((text) => {
@@ -335,26 +328,25 @@ export default function InterviewRoom() {
       } catch (e) {
         console.warn('sendAnswer error:', e);
       }
-    } else {
-      setTimeout(() => {
-        let nextQ = '';
-        if (!aiEngineRef.current) {
-          aiEngineRef.current = new AIQuestionEngine(config || {});
-        }
-        nextQ = aiEngineRef.current.generateFollowUp(textToSend);
-        const localEval = aiEngineRef.current.evaluateAnswerQuality(currentQ, textToSend, trackId);
-        useInterviewStore.getState().setLastRubric?.(localEval);
-
-        setQuestionNum(n => n + 1);
-        setCurrentQ(nextQ);
-        if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: nextQ });
-        speakQuestion(nextQ);
-      }, 1000);
     }
+
+    setTimeout(() => {
+      if (!aiEngineRef.current) {
+        aiEngineRef.current = new AIQuestionEngine(config || {});
+      }
+      const nextQ = aiEngineRef.current.generateFollowUp(textToSend);
+      const localEval = aiEngineRef.current.evaluateAnswerQuality(currentQ, textToSend, trackId);
+      useInterviewStore.getState().setLastRubric?.(localEval);
+
+      setQuestionNum(n => n + 1);
+      setCurrentQ(nextQ);
+      if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: nextQ });
+      speakQuestion(nextQ);
+    }, 800);
 
     setUserAnswerText('');
     setInterimText('');
-  }, [userAnswerText, currentCode, backendUp, sessionId, trackId, currentQ, addTranscriptLine, sendAnswer, speakQuestion, config, questionNum]);
+  }, [userAnswerText, currentCode, backendUp, sessionId, trackId, currentQ, addTranscriptLine, sendAnswer, speakQuestion, config]);
 
   // Initializing session and first question strictly ONCE on mount
   const sessionInitializedRef = useRef(false);

@@ -129,12 +129,24 @@ export class AIQuestionEngine {
       this.askedQuestions.add(selected.question);
       this.askedIndex++;
 
+      // Store current question metadata
+      this.currentQuestionData = {
+        id: selected.id,
+        question: selected.question,
+        difficulty: selected.difficulty || this.currentDifficulty,
+        adaptiveAction: selected.adaptiveAction || 'Evaluate answer and adapt difficulty state.',
+        evaluationGuide: selected.evaluationGuide || 'Use category-specific scoring and observable evidence.',
+      };
+
       // Personalize question if company / role / topic is set
       const formattedQ = this._personalizeQuestion(selected.question, this.config);
+      this.currentQ = formattedQ;
       return formattedQ;
     }
 
-    return `Walk me through a significant technical or leadership challenge you encountered in your ${this.config.role || 'domain'} preparation.`;
+    const fallback = `Walk me through a significant technical or leadership challenge you encountered in your ${this.config.role || 'domain'} preparation.`;
+    this.currentQ = fallback;
+    return fallback;
   }
 
   /**
@@ -155,7 +167,7 @@ export class AIQuestionEngine {
 
   /**
    * Generate STT follow-up adhering strictly to the 1,400 Dataset & Model Guide rules
-   * Ensures EVERY question asked is selected directly from the dataset.
+   * Converts raw questions into natural conversational transitions (< 40 words)
    */
   generateFollowUp(answerText, stressIndex = 0) {
     // 1. Evaluate previous response and adapt difficulty state machine
@@ -163,7 +175,24 @@ export class AIQuestionEngine {
 
     // 2. Fetch the next question strictly from the 1,400 Question Bank dataset for this track
     const nextDatasetQuestion = this.getNextQuestion(stressIndex);
-    return nextDatasetQuestion;
+
+    // 3. Conversational bridging prefixes (Engine 1: Orchestrator & Fast Transition)
+    const words = (answerText || '').trim().split(/\s+/).filter(Boolean).length;
+    const bridges = words > 15
+      ? [
+          `Great perspective on that. Moving forward: `,
+          `Thank you for explaining that. Let's delve into: `,
+          `Solid explanation. Shifting our focus: `,
+          `Understood. Next question: `,
+        ]
+      : [
+          `Thank you. Let's move on: `,
+          `Got it. Next: `,
+          `Moving forward: `,
+        ];
+    const bridge = bridges[Math.floor(Math.random() * bridges.length)];
+
+    return `${bridge}${nextDatasetQuestion}`;
   }
 
   /**

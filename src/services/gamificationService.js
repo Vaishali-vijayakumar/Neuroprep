@@ -410,19 +410,46 @@ export function getGamificationData(userEmail = 'guest', externalStats = {}) {
   const currentTier = RANK_TIERS.find(t => totalXp >= t.minXp && totalXp <= t.maxXp) || RANK_TIERS[0];
   const nextTier = RANK_TIERS[RANK_TIERS.indexOf(currentTier) + 1] || null;
 
+  // Multi-Module Cognitive Adaptation Engine
+  const stressLevel = Number(externalStats.stress || externalStats.moodState?.stress || 0);
+  const codingScore = Number(externalStats.codingScore || externalStats.codingState?.score || 0);
+  const interviewScore = Number(externalStats.lastInterviewScore || externalStats.interviewState?.lastScore || 0);
+
+  let cognitiveMode = 'balanced';
+  let cognitiveStateName = 'Flow State & Consistent Momentum';
+  let cognitiveTagline = 'Optimal pace for mastering patterns & technical communication';
+  let cognitiveMantra = 'Consistency beats intensity every time. Showing up daily builds your placement confidence.';
+
+  if (stressLevel >= 6) {
+    cognitiveMode = 'restorative';
+    cognitiveStateName = 'Restorative & Confidence Building';
+    cognitiveTagline = 'Pacing adapted to reduce exam tension and rebuild positive momentum';
+    cognitiveMantra = 'Peak performance begins with a calm mind. Tackle one small step without any pressure today.';
+  } else if (stressLevel <= 2 && (codingScore > 50 || interviewScore > 70)) {
+    cognitiveMode = 'peak';
+    cognitiveStateName = 'Peak Placement Readiness';
+    cognitiveTagline = 'High confidence unlocked — challenging advanced patterns & rapid mock rounds';
+    cognitiveMantra = 'You are in optimal rhythm. Channel this focus to master complex algorithms and interview rounds.';
+  }
+
   // Daily Quests Status for Today (Strict real check)
   const dailyChallenge = getDailyChallenge();
   const todayDsaSolved = (saved?.dailyProgress?.[todayStr]?.dsa || 0) > 0;
   const todayAptitudeDone = (saved?.dailyProgress?.[todayStr]?.aptitude || 0) > 0;
   const todayJournalDone = (saved?.dailyProgress?.[todayStr]?.journal || 0) > 0;
+  const todayMockDone = (saved?.dailyProgress?.[todayStr]?.mock || 0) > 0 || (saved?.dailyProgress?.[todayStr]?.interview || 0) > 0;
 
   const dailyQuests = [
     {
       id: 'dsa_quest',
-      title: 'Daily Coding Goal',
-      desc: `Solve 1 coding problem today (Featured: ${dailyChallenge.title})`,
-      xp: 50,
+      title: cognitiveMode === 'restorative' ? 'Confidence Coding Step' : (cognitiveMode === 'peak' ? 'High-Velocity Coding Challenge' : 'Pattern Practice Goal'),
+      desc: cognitiveMode === 'restorative'
+        ? `Solve 1 easy/medium problem at your own pace (Featured: ${dailyChallenge.title})`
+        : `Master today's algorithmic pattern: ${dailyChallenge.title}`,
+      cognitiveBenefit: 'Locks in pattern memory and reduces coding round hesitation',
+      xp: cognitiveMode === 'peak' ? 75 : 50,
       iconName: 'Code2',
+      targetTab: 'coding',
       progress: todayDsaSolved ? 1 : 0,
       target: 1,
       completed: todayDsaSolved,
@@ -430,23 +457,29 @@ export function getGamificationData(userEmail = 'guest', externalStats = {}) {
       claimed: Boolean(saved?.claimedQuests?.[`${todayStr}_dsa_quest`])
     },
     {
-      id: 'aptitude_quest',
-      title: 'Aptitude & Logic Goal',
-      desc: 'Complete 1 aptitude or logical reasoning quiz',
-      xp: 30,
-      iconName: 'Brain',
-      progress: todayAptitudeDone ? 1 : 0,
+      id: 'mock_quest',
+      title: cognitiveMode === 'restorative' ? 'Gentle Speech & Mind Drill' : 'Mock Interview or Aptitude Sprint',
+      desc: cognitiveMode === 'restorative'
+        ? 'Complete 1 gentle mock interview round or 5 aptitude questions to stay in touch'
+        : 'Simulate a technical mock interview question or complete 1 timed aptitude test',
+      cognitiveBenefit: 'Sharpens verbal precision, vocabulary composure, and problem clarity',
+      xp: 40,
+      iconName: 'Mic2',
+      targetTab: 'mock',
+      progress: (todayAptitudeDone || todayMockDone) ? 1 : 0,
       target: 1,
-      completed: todayAptitudeDone,
-      claimable: todayAptitudeDone && !saved?.claimedQuests?.[`${todayStr}_aptitude_quest`],
-      claimed: Boolean(saved?.claimedQuests?.[`${todayStr}_aptitude_quest`])
+      completed: (todayAptitudeDone || todayMockDone),
+      claimable: (todayAptitudeDone || todayMockDone) && !saved?.claimedQuests?.[`${todayStr}_mock_quest`],
+      claimed: Boolean(saved?.claimedQuests?.[`${todayStr}_mock_quest`])
     },
     {
       id: 'journal_quest',
-      title: 'Daily Diary Goal',
-      desc: 'Write 1 reflection in your personal placement diary',
-      xp: 20,
+      title: 'Mind Reset & Diary Reflection',
+      desc: 'Chat with NeuroCoach to log your daily wins, reflect on prep, or clear mental clutter',
+      cognitiveBenefit: 'Reduces cortisol, prevents burnout, and reinforces psychological resilience',
+      xp: 25,
       iconName: 'BookOpen',
+      targetTab: 'journal',
       progress: todayJournalDone ? 1 : 0,
       target: 1,
       completed: todayJournalDone,
@@ -454,6 +487,14 @@ export function getGamificationData(userEmail = 'guest', externalStats = {}) {
       claimed: Boolean(saved?.claimedQuests?.[`${todayStr}_journal_quest`])
     }
   ];
+
+  const adaptiveCognitiveState = {
+    mode: cognitiveMode,
+    name: cognitiveStateName,
+    tagline: cognitiveTagline,
+    mantra: cognitiveMantra,
+    stressLevel
+  };
 
   const completedQuestsCount = dailyQuests.filter(q => q.completed || q.claimed).length;
   const isTripleCrownClaimable = completedQuestsCount === 3 && !saved?.claimedQuests?.[`${todayStr}_triple_crown`];
@@ -570,7 +611,8 @@ export function getGamificationData(userEmail = 'guest', externalStats = {}) {
     solvedCount,
     interviewCount,
     journalCount,
-    aptitudeTestsCount
+    aptitudeTestsCount,
+    adaptiveCognitiveState
   };
 }
 

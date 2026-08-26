@@ -29,15 +29,21 @@ export default function Dashboard({
   const aptiScore = aptitudeState?.score || 0;
   const hasTakenAnyTest = (codingState.score > 0 || interviewState.lastScore > 0 || aptiScore > 0 || moodState.stress > 0);
 
-  // Live gamification data derived strictly from real activity
+  // Live gamification data derived strictly from real activity & multi-module cognitive state
   const gamification = getGamificationData(profile?.email || 'guest', {
     name: profile?.name || 'You',
     college: profile?.college || 'Engineering Student',
     solvedCount: codingState.solvedCount || 0,
+    codingScore: codingState.score || 0,
     interviewCount: interviewState.totalCompleted || 0,
     lastInterviewScore: interviewState.lastScore || 0,
     aptitudeTestsCount: aptitudeState.totalTests || aptitudeState.testsTaken || (aptiScore > 0 ? 1 : 0),
-    journalCount: journalEntries.length || 0
+    journalCount: journalEntries.length || 0,
+    stress: moodState.stress || 0,
+    moodState,
+    codingState,
+    interviewState,
+    aptitudeState
   });
 
   const readinessScore = hasTakenAnyTest ? calculatePlacementReadiness({
@@ -291,14 +297,16 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* STEP 4: DAILY CHALLENGES & XP STREAK TRACKER */}
+      {/* STEP 4: DAILY CHALLENGES & ADAPTIVE STREAK TRACKER */}
       <section style={{ marginBottom: '36px' }}>
         <div className="saas-card-spec" style={{ padding: '28px', backgroundColor: '#F8F9FA' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                 <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Zap size={13} color="#111827" /> Daily Momentum
+                  <Zap size={13} color="#111827" /> Adaptive Cognitive Momentum
                 </span>
                 <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
                   Rank: <strong style={{ color: gamification.currentTier.color }}>{gamification.currentTier.name}</strong> ({gamification.currentTier.badge})
@@ -320,6 +328,49 @@ export default function Dashboard({
             </div>
           </div>
 
+          {/* Adaptive Cognitive Motivation & State Banner */}
+          {gamification.adaptiveCognitiveState && (
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '14px',
+              border: '1px solid #E5E7EB',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '14px'
+            }}>
+              <div style={{ flex: 1, minWidth: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.4px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    backgroundColor: gamification.adaptiveCognitiveState.mode === 'restorative' ? '#FEF2F2' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#ECFDF5' : '#F0F9FF'),
+                    color: gamification.adaptiveCognitiveState.mode === 'restorative' ? '#991B1B' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#065F46' : '#0369A1'),
+                    border: `1px solid ${gamification.adaptiveCognitiveState.mode === 'restorative' ? '#FECACA' : (gamification.adaptiveCognitiveState.mode === 'peak' ? '#A7F3D0' : '#BAE6FD')}`
+                  }}>
+                    Cognitive State: {gamification.adaptiveCognitiveState.name}
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', fontStyle: 'italic', color: '#374151', lineHeight: 1.4 }}>
+                  "{gamification.adaptiveCognitiveState.mantra}"
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', color: '#6B7280', display: 'block' }}>Adaptive Goal Pacing</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>
+                  {gamification.completedQuestsCount}/3 Quests Completed Today
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* 3 Core Metric Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '20px' }}>
             
@@ -328,7 +379,7 @@ export default function Dashboard({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Daily Practice Streak
+                    Daily Practice & Mind Streak
                   </span>
                   <Flame size={18} color={gamification.activeStreak > 0 ? '#111827' : '#9CA3AF'} />
                 </div>
@@ -337,8 +388,8 @@ export default function Dashboard({
                 </p>
                 <p style={{ fontSize: '12px', color: '#4B5563', margin: 0 }}>
                   {gamification.activeStreak > 0 
-                    ? 'Great consistency! Active streak earns bonus experience on all practice.' 
-                    : 'Complete a coding problem, quiz, interview, or diary entry today to start your streak.'}
+                    ? 'Excellent momentum! Daily consistency strengthens neural pathways for technical mastery.' 
+                    : 'Complete a coding problem, mock interview, or diary reflection today to build your streak.'}
                 </p>
               </div>
 
@@ -417,7 +468,7 @@ export default function Dashboard({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Today's Challenge
+                    Featured Daily Problem
                   </span>
                   <span style={{
                     fontSize: '11px',
@@ -439,54 +490,89 @@ export default function Dashboard({
               </div>
 
               <button 
-                onClick={() => setActiveTab('daily-challenge')} 
+                onClick={() => setActiveTab('coding')} 
                 className="btn-primary-spec" 
                 style={{ marginTop: '14px', fontSize: '13px', padding: '8px 14px', width: '100%', justifyContent: 'center' }}
               >
-                Start Challenge (+{gamification.dailyChallenge.xpReward} XP)
+                Solve in Coding Arena (+{gamification.dailyChallenge.xpReward} XP)
               </button>
             </div>
 
           </div>
 
-          {/* Daily Quests Mini Bar */}
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Target size={18} color="#111827" />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>
-                  Daily Practice Goals ({gamification.completedQuestsCount}/3 Completed)
-                </div>
-                <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                  Complete all 3 daily practice goals for a +50 XP Daily Champion Bonus
-                </div>
-              </div>
-            </div>
+          {/* Adaptive Multi-Module Cognitive Quests Matrix */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+            {gamification.dailyQuests.map((quest) => (
+              <div 
+                key={quest.id}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '12px',
+                  border: quest.completed ? '1px solid #86EFAC' : '1px solid #E5E7EB',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {quest.completed ? (
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
+                          ✓ Completed
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px' }}>
+                          In Progress
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#111827' }}>
+                      +{quest.xp} XP
+                    </span>
+                  </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {gamification.dailyQuests.map((quest) => (
-                <div 
-                  key={quest.id}
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#111827', margin: '0 0 4px 0' }}>
+                    {quest.title}
+                  </h4>
+                  <p style={{ fontSize: '12px', color: '#4B5563', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                    {quest.desc}
+                  </p>
+                  
+                  {quest.cognitiveBenefit && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#065F46',
+                      backgroundColor: '#ECFDF5',
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      lineHeight: 1.3
+                    }}>
+                      Mind Impact: {quest.cognitiveBenefit}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(quest.targetTab || 'coding')}
+                  className={quest.completed ? 'btn-secondary-spec' : 'btn-primary-spec'}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #E5E7EB',
-                    backgroundColor: quest.completed ? '#F3F4F6' : '#F9FAFB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
+                    padding: '8px 12px',
                     fontSize: '12px',
-                    fontWeight: 600,
-                    color: quest.completed ? '#111827' : '#4B5563'
+                    fontWeight: 700,
+                    width: '100%',
+                    justifyContent: 'center',
+                    borderRadius: '8px'
                   }}
                 >
-                  {quest.completed ? <Check size={13} color="#111827" /> : <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', backgroundColor: '#9CA3AF' }} />}
-                  <span>{quest.title} (+{quest.xp} XP)</span>
-                </div>
-              ))}
-            </div>
+                  {quest.completed ? 'Practice Again' : `Start Quest ➔`}
+                </button>
+              </div>
+            ))}
           </div>
 
         </div>

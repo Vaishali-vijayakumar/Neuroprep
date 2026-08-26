@@ -3,6 +3,7 @@ import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../se
 import { getGamificationData } from '../services/gamificationService';
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
+import PlacementResourceRAG from './PlacementResourceRAG';
 import { Flame, Trophy, Zap, Target, Code2, Award, CheckCircle2, Check, X, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
 export default function Dashboard({ 
@@ -491,6 +492,16 @@ export default function Dashboard({
           </div>
 
         </div>
+      </section>
+
+      {/* PLACEMENT RESOURCE INTELLIGENCE + ADAPTIVE RAG SYSTEM (PLACER-RAG) */}
+      <section style={{ marginBottom: '36px' }}>
+        <PlacementResourceRAG 
+          profile={profile}
+          codingState={codingState}
+          interviewState={interviewState}
+          aptitudeState={aptitudeState}
+        />
       </section>
 
     </div>

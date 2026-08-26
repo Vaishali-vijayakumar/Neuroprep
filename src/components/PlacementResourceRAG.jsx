@@ -287,27 +287,17 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
                 color: '#FFFFFF',
                 letterSpacing: '0.4px'
               }}>
-                PLACER-RAG
+                Smart Study Hub
               </span>
               <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-                Adaptive Learning Resource Intelligence
-              </span>
-              <span style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '4px',
-                backgroundColor: '#DCFCE7',
-                color: '#15803D'
-              }}>
-                Multimodal Search & Reranking Active
+                Curated Placement Learning Paths
               </span>
             </div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', margin: 0 }}>
-              Placement Resource Intelligence & Learning Path RAG
+              Placement Learning Resources & Guided Study Paths
             </h1>
-            <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0' }}>
-              Searches multi-source content, evaluates quality with multi-factor scoring, and adapts the learning path to your current skill level.
+            <p style={{ fontSize: '0.9rem', color: '#4B5563', margin: '4px 0 0 0', lineHeight: 1.45 }}>
+              Search any placement topic to get a structured 4-step learning roadmap: a top-rated video explanation with key timestamps, concise revision notes, targeted practice problems, and a quick quiz to test your understanding.
             </p>
           </div>
 
@@ -331,7 +321,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
               textAlign: 'right'
             }}>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>
-                Student Knowledge State
+                Current Preparation Level
               </div>
               <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
                 {studentLevel} ({solvedCount} Solved)
@@ -379,7 +369,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
             style={{ padding: '12px 24px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             {isSearching ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            Generate RAG Path
+            Generate Study Path
           </button>
         </div>
 
@@ -524,7 +514,7 @@ export default function PlacementResourceRAG({ profile = {}, codingState = {}, i
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.72rem', color: '#6B7280', display: 'block', fontWeight: 700 }}>
-              Resource Quality Score (RQS)
+              Content Quality Score
             </span>
             <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#15803D' }}>
               {currentTopic.videoRAG.rqsScore}%

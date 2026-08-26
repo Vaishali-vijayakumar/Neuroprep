@@ -494,10 +494,10 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* PLACEMENT RESOURCE INTELLIGENCE + ADAPTIVE RAG (PLACER-RAG) */}
+      {/* PLACEMENT RESOURCE INTELLIGENCE & STUDY HUB */}
       <section style={{ marginBottom: '36px' }}>
-        <div className="saas-card-spec" style={{ padding: '26px 30px', backgroundColor: '#FFFFFF', border: '1.5px solid #111827' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="saas-card-spec" style={{ padding: '26px 32px', backgroundColor: '#FFFFFF', border: '1.5px solid #111827' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '18px' }}>
             <div style={{ flex: 1, minWidth: '280px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                 <span style={{
@@ -509,17 +509,17 @@ export default function Dashboard({
                   color: '#FFFFFF',
                   letterSpacing: '0.4px'
                 }}>
-                  PLACER-RAG
+                  Smart Study Hub
                 </span>
                 <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
-                  Adaptive Learning Resource Intelligence
+                  Personalized Learning Roadmaps
                 </span>
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#111827', margin: '0 0 6px 0' }}>
-                Placement Resource Intelligence & Adaptive RAG Hub
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#111827', margin: '0 0 6px 0' }}>
+                Placement Learning Resources & Study Hub
               </h3>
-              <p style={{ fontSize: '0.88rem', color: '#4B5563', margin: 0, lineHeight: 1.45 }}>
-                Searches the internet, evaluates video & PDF resources with multi-factor quality scoring, understands your skill level, and creates custom 4-step learning paths.
+              <p style={{ fontSize: '0.88rem', color: '#4B5563', margin: 0, lineHeight: 1.5 }}>
+                Get structured study paths tailored to your skill level. We curate the best video explanations, summarize key concepts into quick revision notes, provide targeted practice problems, and test your understanding so you can master topics without searching through dozens of websites.
               </p>
             </div>
 
@@ -528,7 +528,7 @@ export default function Dashboard({
               className="btn-primary-spec"
               style={{ padding: '12px 26px', fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
             >
-              Open PLACER-RAG Hub <ArrowRight size={16} />
+              Open Placement Study Hub <ArrowRight size={16} />
             </button>
           </div>
         </div>

@@ -538,6 +538,91 @@ export const dbService = {
     }
   },
 
+  // ─────────────────────────────────────────────
+  // Performance Test Score Management (Real-Time Live Sync)
+  // ─────────────────────────────────────────────
+  getTestScore(testType, userEmail) {
+    try {
+      const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const raw = localStorage.getItem(`neuroprep_testscore_${testType}_${safeEmail}`);
+      if (raw) return JSON.parse(raw);
+
+      // Fallbacks to specific storage keys if testscore not yet written:
+      if (testType === 'coding') {
+        const dsaRaw = localStorage.getItem(`neuroprep_dsa_solved_${safeEmail}`);
+        if (dsaRaw) {
+          const parsed = JSON.parse(dsaRaw);
+          const count = Object.values(parsed).filter(Boolean).length;
+          const pct = Math.min(100, Math.round((count / 396) * 100));
+          return { score: pct, solvedCount: count, date: new Date().toLocaleDateString() };
+        }
+      } else if (testType === 'interview') {
+        const hist = this.getInterviewHistoryForUser(userEmail);
+        if (hist && hist.length > 0) {
+          return {
+            score: hist[0].overall_score || 0,
+            totalCompleted: hist.length,
+            date: hist[0].date
+          };
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  saveTestScore(testType, score, userEmail, metadata = {}) {
+    try {
+      const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const record = {
+        score: Number(score) || 0,
+        date: new Date().toLocaleDateString(),
+        timestamp: Date.now(),
+        ...metadata
+      };
+      localStorage.setItem(`neuroprep_testscore_${testType}_${safeEmail}`, JSON.stringify(record));
+
+      // Dispatch global real-time event
+      try {
+        window.dispatchEvent(new CustomEvent('neuroprep-score-update', {
+          detail: { testType, score: Number(score) || 0, userEmail, ...metadata }
+        }));
+      } catch (_) {}
+
+      return record;
+    } catch (e) {
+      console.error("Error saving test score:", e);
+      return null;
+    }
+  },
+
+  getSavedReadinessScore(userEmail) {
+    try {
+      const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const raw = localStorage.getItem(`neuroprep_score_${safeEmail}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  saveReadinessScore(scoreObj, userEmail) {
+    try {
+      const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const record = {
+        ...scoreObj,
+        lastUpdated: new Date().toLocaleDateString(),
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`neuroprep_score_${safeEmail}`, JSON.stringify(record));
+      return record;
+    } catch (e) {
+      console.error("Error saving readiness score:", e);
+      return null;
+    }
+  },
+
   // 1-Click Database Export
   exportLocalDump() {
     return localDb.exportDatabaseDump();

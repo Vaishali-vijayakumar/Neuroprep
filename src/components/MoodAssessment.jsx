@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { dbService } from '../services/db';
 
-export default function MoodAssessment({ moodState, setMoodState, setActiveTab }) {
+export default function MoodAssessment({ moodState, setMoodState, setActiveTab, userEmail = 'guest' }) {
   // Multi-dimension psychological metrics
   const [selectedMood, setSelectedMood] = useState(moodState.label || 'Moderate');
   const [stress, setStress] = useState(moodState.stress || 5);
@@ -96,6 +96,10 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab }
 
     setMoodState(updatedMoodState);
     dbService.logMood(updatedMoodState);
+    dbService.saveTestScore('mood', computedStressScore, userEmail, {
+      label: selectedMood,
+      confidence: computedConfidence
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

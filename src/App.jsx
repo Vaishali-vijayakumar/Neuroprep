@@ -255,6 +255,27 @@ export default function App() {
     }
   }, [userEmail]);
 
+  // Live synchronization for all performance scores across modules
+  useEffect(() => {
+    const handleScoreUpdate = (e) => {
+      const { testType, score, solvedCount, accuracy, totalTests, label, confidence } = e.detail || {};
+      if (testType === 'coding') {
+        setCodingState((prev) => ({ ...prev, score: Number(score) || 0, solvedCount: solvedCount ?? prev.solvedCount, lastUpdated: new Date().toLocaleDateString() }));
+      } else if (testType === 'interview') {
+        setInterviewState((prev) => ({ ...prev, lastScore: Number(score) || 0, totalCompleted: (prev.totalCompleted || 0) + 1, lastUpdated: new Date().toLocaleDateString() }));
+      } else if (testType === 'speech') {
+        setInterviewState((prev) => ({ ...prev, commScore: Number(score) || 0 }));
+      } else if (testType === 'aptitude') {
+        setAptitudeState((prev) => ({ ...prev, score: Number(score) || 0, accuracy: accuracy ?? prev.accuracy, totalTests: totalTests ?? (prev.totalTests || 0) + 1, lastUpdated: new Date().toLocaleDateString() }));
+      } else if (testType === 'mood') {
+        setMoodState((prev) => ({ ...prev, stress: Number(score) || 0, label: label || prev.label, confidence: confidence ?? prev.confidence }));
+      }
+    };
+
+    window.addEventListener('neuroprep-score-update', handleScoreUpdate);
+    return () => window.removeEventListener('neuroprep-score-update', handleScoreUpdate);
+  }, []);
+
   const handleOpenAuth = (mode = 'login') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
@@ -419,11 +440,11 @@ export default function App() {
         )}
 
         {activeTab === 'mock' && (
-          <NeroprepEngine userEmail={userEmail} />
+          <NeroprepEngine userEmail={userEmail} setActiveTab={setActiveTab} />
         )}
 
         {activeTab === 'mood' && (
-          <MoodAssessment moodState={moodState} setMoodState={setMoodState} setActiveTab={setActiveTab} />
+          <MoodAssessment moodState={moodState} setMoodState={setMoodState} setActiveTab={setActiveTab} userEmail={userEmail} />
         )}
 
         {activeTab === 'journal' && (

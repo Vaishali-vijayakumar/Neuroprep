@@ -67,17 +67,24 @@ export default function CompletedModule({ userEmail = 'guest' }) {
   const trackDef = getTrackConfig(currentConfig.trackId || currentReport.trackId || 'hr');
   const trackName = currentConfig.trackName || trackDef.name;
 
-  // Auto-save interview session on mount
+  // Auto-save interview session and live scores on mount
   useEffect(() => {
     if (report && config) {
       try {
-        dbService.saveInterviewSession({ config, elapsedSeconds, report }, userEmail);
+        dbService.saveInterviewSession({ config, elapsedSeconds, report: currentReport }, userEmail);
+        const finalScore = displayScore != null ? displayScore : (currentReport.overall_score || 75);
+        dbService.saveTestScore('interview', finalScore, userEmail, {
+          grade: derivedGrade,
+          role: currentConfig.role || 'Software Engineer',
+          trackName: trackName
+        });
+        dbService.saveTestScore('speech', currentReport.communication_score || Math.max(50, finalScore), userEmail);
         recordActivity(userEmail || 'guest', 'interview');
       } catch (err) {
         console.error('Failed to auto-save interview session:', err);
       }
     }
-  }, [report, config, elapsedSeconds, userEmail]);
+  }, [report, config, elapsedSeconds, userEmail, displayScore, derivedGrade, trackName]);
 
   const formatTime = (secs) => {
     const total = Number.isFinite(Number(secs)) ? Math.max(0, Math.round(Number(secs))) : 0;

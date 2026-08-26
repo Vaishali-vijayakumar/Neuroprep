@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FORMULA_SECTORS, TOPIC_FORMULAS } from '../data/aptitudeFormulasData';
 import { MOCK_TESTS_CATALOG, MOCK_TEST_CATEGORIES } from '../data/mockTestsData';
 import { localDb } from '../services/localDb';
+import { dbService } from '../services/db';
 import { recordActivity } from '../services/gamificationService';
 
 export default function AptitudePractice({ setActiveTab, aptitudeState, setAptitudeState, userEmail }) {
@@ -140,11 +141,18 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     await localDb.from('aptitude_mock_attempts').insert(attemptRecord);
     setPastAttempts((prev) => [attemptRecord, ...prev]);
 
+    const newTotalTests = (pastAttempts.length || 0) + 1;
+    dbService.saveTestScore('aptitude', accuracyPercent, userEmail, {
+      accuracy: accuracyPercent,
+      totalTests: newTotalTests,
+      mockTestTitle: selectedMockTest.title
+    });
+
     if (setAptitudeState) {
       setAptitudeState((prev) => ({
         score: accuracyPercent,
         accuracy: accuracyPercent,
-        totalTests: (prev?.totalTests || 0) + 1,
+        totalTests: newTotalTests,
         lastUpdated: new Date().toLocaleDateString()
       }));
     }

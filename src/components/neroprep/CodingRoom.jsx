@@ -546,7 +546,49 @@ export default function CodingRoom({ config = {}, onEndSession }) {
     }
   };
 
-  const handleFinishSession = () => {
+  const handleFinishSession = async () => {
+    // If the candidate wrote code for the current problem but hasn't submitted yet, evaluate it
+    const existingProblem = (scoringEngine.current.submissions || []).find((s) => s.problemTitle === currentQ?.title);
+    if (!existingProblem && code && problemData) {
+      try {
+        const results = await runAllTestCases();
+        const passed = results.filter((r) => r.passed).length;
+        const total = Math.max(results.length, 1);
+        const integrity = await CodeIntegrityModel.evaluateIntegrity({
+          code,
+          language,
+          problemTitle: currentQ?.title || '',
+          problemData,
+          testCases: problemData?.testCases || [],
+        });
+        const allPassed = passed === total && total > 0 && !integrity.isCheatDetected;
+        const lines = (code || '').split('\n').filter((l) => l.trim() && !l.trim().startsWith('//')).length;
+        const hasMeaningfulCode = (code || '').trim().length > 10 && lines > 1;
+
+        let correctness = total > 0 ? Math.round((passed / total) * 30) : 0;
+        let time_complexity = allPassed ? 20 : passed > 0 ? Math.round((passed / total) * 15) : 0;
+        let space_complexity = allPassed ? 15 : passed > 0 ? Math.round((passed / total) * 12) : 0;
+        let code_quality = hasMeaningfulCode ? (allPassed ? 20 : passed > 0 ? Math.min(20, Math.max(8, lines * 2)) : (lines > 3 ? 5 : 0)) : 0;
+        let edge_cases = allPassed ? Math.round((integrity.edgeCaseScore / 100) * 10) : passed > 0 ? Math.round((integrity.edgeCaseScore / 100) * 6) : 0;
+
+        if (integrity.isCheatDetected || !hasMeaningfulCode || passed === 0) {
+          correctness = 0; time_complexity = 0; space_complexity = 0; edge_cases = 0;
+          if (!hasMeaningfulCode || integrity.isCheatDetected) code_quality = 0;
+        }
+
+        const totalScore = Math.min(100, correctness + time_complexity + space_complexity + code_quality + edge_cases);
+        scoringEngine.current.recordSubmission({
+          problemId: currentQ.title,
+          problemTitle: currentQ.title,
+          difficulty: currentQ.difficulty,
+          score: totalScore,
+          breakdown: { correctness, time_complexity, space_complexity, code_quality, edge_cases },
+          outcome: allPassed ? 'optimal' : passed > 0 ? 'partially_correct' : 'incorrect',
+          pattern: currentQ.patternName,
+        });
+      } catch (_) {}
+    }
+
     const report = scoringEngine.current.generateReport();
     
     // 1. Raw code performance score from testcases and algorithmic evaluation matrix
@@ -573,6 +615,12 @@ export default function CodingRoom({ config = {}, onEndSession }) {
       : finalScore >= 55
       ? 'Consider — With Targeted Mentorship'
       : 'No — Needs Fundamental Improvement';
+
+    // Stop video hardware
+    try {
+      if (faceEngineRef.current) faceEngineRef.current.stop();
+      if (sharedStream) sharedStream.getTracks().forEach(t => t.stop());
+    } catch (_) {}
 
     const questionReviews = (sessionList || []).map((q, idx) => {
       const att = (report.problems || []).find((p) => p.title === q.title) || {};

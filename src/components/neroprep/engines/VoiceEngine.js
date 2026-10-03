@@ -41,14 +41,52 @@ export class VoiceEngine {
     this._initMediaRecorder();
 
     if (this.synthesis) {
-      if (this.synthesis.getVoices().length > 0) {
-        this._selectedVoice = this._pickBestFemaleVoice();
-      }
+      this._ensureVoicesLoaded().then(() => {
+        if (!this._selectedVoice) {
+          this._selectedVoice = this._pickBestFemaleVoice();
+        }
+      });
       this.synthesis.onvoiceschanged = () => {
         if (!this._selectedVoice) {
           this._selectedVoice = this._pickBestFemaleVoice();
         }
       };
+    }
+  }
+
+  /**
+   * Warm up and cache voices reliably, eliminating empty getVoices() on initial page load
+   */
+  async _ensureVoicesLoaded() {
+    if (!this.synthesis) return [];
+    let voices = this.synthesis.getVoices();
+    if (voices && voices.length > 0) return voices;
+
+    return new Promise((resolve) => {
+      const handler = () => {
+        voices = this.synthesis.getVoices();
+        try { this.synthesis.removeEventListener('voiceschanged', handler); } catch (_) {}
+        resolve(voices);
+      };
+      this.synthesis.addEventListener('voiceschanged', handler);
+      // Timeout safeguard after 1.5s
+      setTimeout(() => {
+        try { this.synthesis.removeEventListener('voiceschanged', handler); } catch (_) {}
+        resolve(this.synthesis?.getVoices() || []);
+      }, 1500);
+    });
+  }
+
+  /**
+   * Hardware-level acoustic isolation: toggle the underlying MediaStreamTrack
+   */
+  setHardwareAudioEnabled(enabled) {
+    if (this.mediaStream) {
+      try {
+        this.mediaStream.getAudioTracks().forEach((track) => {
+          track.enabled = enabled;
+        });
+      } catch (_) {}
     }
   }
 
@@ -355,9 +393,19 @@ export class VoiceEngine {
     );
   }
 
-  speak(text, { rate = 0.95, pitch = 1.05 } = {}) {
+  stopSpeaking() {
+    clearInterval(this._ttsKeepalive);
+    if (this.synthesis) {
+      try { this.synthesis.cancel(); } catch (_) {}
+    }
+    this.isSpeaking = false;
+    this.onStateChange({ type: 'speaking', value: false });
+  }
+
+  async speak(text, { rate = 0.95, pitch = 1.05, onSentenceChange } = {}) {
     if (!this.synthesis || !text || this._destroyed) return Promise.resolve();
 
+    await this._ensureVoicesLoaded();
     this.synthesis.cancel();
 
     return new Promise((resolve) => {
@@ -367,32 +415,23 @@ export class VoiceEngine {
         .replace(/[*_#>-]/g, '')
         .trim();
 
-      const utterance  = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate   = rate;
-      utterance.pitch  = pitch;
-      utterance.volume = 1.0;
+      if (!cleanText) {
+        if (onSentenceChange) onSentenceChange(-1, '');
+        resolve();
+        return;
+      }
+
+      // Sentence boundary chunking: splits on punctuation [.!?] while keeping boundaries
+      const rawMatches = cleanText.match(/[^.!?]+[.!?]+|\S[^.!?]+$/g) || [cleanText];
+      const sentences = rawMatches.map(s => s.trim()).filter(Boolean);
+
+      if (sentences.length === 0) {
+        if (onSentenceChange) onSentenceChange(-1, '');
+        resolve();
+        return;
+      }
 
       const voice = this._selectedVoice || this._pickBestFemaleVoice();
-      if (voice) utterance.voice = voice;
-
-      utterance.onstart = () => {
-        if (this._destroyed) { this.synthesis.cancel(); resolve(); return; }
-        this.isSpeaking = true;
-        this.onStateChange({ type: 'speaking', value: true });
-      };
-
-      utterance.onend = () => {
-        this.isSpeaking = false;
-        this.onStateChange({ type: 'speaking', value: false });
-        resolve();
-      };
-
-      utterance.onerror = (e) => {
-        if (e.error !== 'interrupted') console.warn('[VoiceEngine] TTS error:', e.error);
-        this.isSpeaking = false;
-        this.onStateChange({ type: 'speaking', value: false });
-        resolve();
-      };
 
       clearInterval(this._ttsKeepalive);
       this._ttsKeepalive = setInterval(() => {
@@ -404,7 +443,43 @@ export class VoiceEngine {
         }
       }, 8000);
 
-      this.synthesis.speak(utterance);
+      this.isSpeaking = true;
+      this.onStateChange({ type: 'speaking', value: true });
+
+      const speakChain = (index = 0) => {
+        if (this._destroyed || index >= sentences.length) {
+          clearInterval(this._ttsKeepalive);
+          this.isSpeaking = false;
+          this.onStateChange({ type: 'speaking', value: false });
+          if (onSentenceChange) onSentenceChange(-1, '');
+          resolve();
+          return;
+        }
+
+        const sentenceText = sentences[index];
+        if (onSentenceChange) onSentenceChange(index, sentenceText);
+
+        const utterance  = new SpeechSynthesisUtterance(sentenceText);
+        utterance.rate   = rate;
+        utterance.pitch  = pitch;
+        utterance.volume = 1.0;
+        if (voice) utterance.voice = voice;
+
+        utterance.onend = () => {
+          speakChain(index + 1);
+        };
+
+        utterance.onerror = (e) => {
+          if (e.error !== 'interrupted') {
+            console.warn('[VoiceEngine] TTS sentence error:', e.error);
+          }
+          speakChain(index + 1);
+        };
+
+        this.synthesis.speak(utterance);
+      };
+
+      speakChain(0);
     });
   }
 

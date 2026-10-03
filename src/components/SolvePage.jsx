@@ -56,8 +56,8 @@ function LangBtn({ lang, active, onClick }) {
  fontWeight: 600,
  fontFamily: C.sans,
  borderRadius: '5px',
- border: active ? '1px solid #475569' : `1px solid ${C.border}`,
- backgroundColor: active ? '#475569' : C.bg,
+ border: active ? '1px solid #66666B' : `1px solid ${C.border}`,
+ backgroundColor: active ? '#66666B' : C.bg,
  color: active ? '#FFF' : C.body,
  cursor: 'pointer',
  }}>{lang}</button>
@@ -505,7 +505,7 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  <span style={{
  padding: '2px 9px', borderRadius: '12px', fontSize: '11px', fontWeight: 700,
  flexShrink: 0,
- backgroundColor: '#E2E8F0', color: '#475569', border: '1px solid #CBD5E1',
+ backgroundColor: '#D8D2CE', color: '#66666B', border: '1px solid #D8D2CE',
  }}>
  Completed 
  </span>
@@ -531,7 +531,7 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  </button>
  <button onClick={handleSubmit} disabled={submitting || running} style={{
  padding: '6px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
- border: 'none', backgroundColor: '#475569',
+ border: 'none', backgroundColor: '#66666B',
  color: '#FFF', cursor: (submitting || running) ? 'not-allowed' : 'pointer',
  opacity: (submitting || running) ? 0.7 : 1,
  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
@@ -644,8 +644,8 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  style={{
  padding: '4px 10px', fontSize: '11.5px', fontWeight: 600,
  borderRadius: '4px', cursor: 'pointer',
- border: solutionLang === l ? '1px solid #475569' : `1px solid ${C.border}`,
- backgroundColor: solutionLang === l ? '#475569' : C.bg,
+ border: solutionLang === l ? '1px solid #66666B' : `1px solid ${C.border}`,
+ backgroundColor: solutionLang === l ? '#66666B' : C.bg,
  color: solutionLang === l ? '#FFF' : C.body,
  }}
  >{l}</button>
@@ -666,11 +666,11 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
 
  <pre style={{
  margin: 0, padding: '14px',
- backgroundColor: '#1E293B',
+ backgroundColor: '#34343A',
  border: `1px solid ${C.border}`,
  borderRadius: '8px',
  fontFamily: C.mono, fontSize: '12.5px',
- lineHeight: 1.6, color: '#F8FAFC',
+ lineHeight: 1.6, color: '#FCF9F6',
  overflowX: 'auto',
  }}>
  {problemData.solutionCode?.[LANG_CODE_KEY[solutionLang]] || '// Solution code available'}

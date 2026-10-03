@@ -82,93 +82,99 @@ export default function PlacementRoadmap({ setActiveTab }) {
   const progressPercent = Math.round((completed.length / totalMilestones) * 100);
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '32px 24px', maxWidth: 980, margin: '0 auto', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 20, padding: '4px 14px', marginBottom: 8 }}>
-            <Compass size={13} color="#111827" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111827' }}>Step-by-Step Placement Path</span>
+          <div className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <Compass size={13} color="var(--btn-sage)" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Step-by-Step Placement Path</span>
           </div>
-          <h1 style={{ fontWeight: 900, fontSize: '1.7rem', color: '#111827', letterSpacing: '-0.5px' }}>Placement Master Roadmap</h1>
-          <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 4 }}>
+          <h1 style={{ fontWeight: 800, fontSize: '2rem', color: 'var(--main-heading)', letterSpacing: '-0.5px', fontFamily: 'var(--font-heading)' }}>
+            Placement Master Roadmap
+          </h1>
+          <p style={{ color: 'var(--body-text)', fontSize: '0.92rem', marginTop: 4, fontFamily: 'var(--font-body)' }}>
             Semester-by-semester structured preparation path from 1st Year to Final Campus Drives.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           {/* Progress Card */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 16, padding: '16px 24px', textAlign: 'right', minWidth: 200 }}>
-            <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase' }}>Overall Progress</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#111827', marginTop: 2 }}>{progressPercent}%</div>
-            <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{completed.length} / {totalMilestones} Milestones Completed</div>
-            <div style={{ height: 6, background: '#F3F4F6', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
-              <div style={{ width: `${progressPercent}%`, height: '100%', background: '#111827', borderRadius: 3, transition: 'width 0.4s ease' }} />
+          <div className="calm-sub-card" style={{ padding: '14px 22px', textAlign: 'right', minWidth: 210 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--accent-terracotta)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Overall Progress</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>{progressPercent}%</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--body-text)' }}>{completed.length} / {totalMilestones} Milestones Completed</div>
+            <div style={{ height: 6, backgroundColor: 'rgba(82, 98, 87, 0.12)', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
+              <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: 'var(--btn-sage)', borderRadius: 3, transition: 'width 0.4s ease' }} />
             </div>
           </div>
 
           <button 
             onClick={() => setActiveTab && setActiveTab('dashboard')} 
-            style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+            className="btn-back-dashboard"
+            style={{ padding: '9px 18px', fontSize: '0.85rem', fontWeight: 700 }}
           >
-            Back to Dashboard
+            ← Dashboard
           </button>
         </div>
       </div>
 
       {/* Phases Timeline */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {ROADMAP_PHASES.map((p, idx) => {
           const Icon = p.icon;
           const phaseCompleted = p.milestones.filter(m => completed.includes(m.id)).length;
           const isExpanded = expandedPhase === idx;
 
           return (
-            <div key={p.phase} style={{
-              background: '#fff', border: `1px solid ${isExpanded ? '#111827' : '#E5E7EB'}`,
-              borderRadius: 18, overflow: 'hidden', transition: 'all 0.2s ease',
-              boxShadow: isExpanded ? '0 8px 24px rgba(0,0,0,0.06)' : 'none'
+            <div key={p.phase} className="saas-card-spec" style={{
+              borderRadius: 18, overflow: 'hidden', padding: 0,
+              border: `1px solid ${isExpanded ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+              transition: 'all 0.2s ease',
+              boxShadow: isExpanded ? 'var(--shadow-3d-hover)' : 'var(--shadow-3d-card)'
             }}>
               {/* Phase Header */}
               <div
                 onClick={() => setExpandedPhase(isExpanded ? null : idx)}
                 style={{
-                  padding: '24px 28px', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                  justify: 'space-between', gap: 16, background: isExpanded ? '#FAFBFD' : '#fff'
+                  padding: '22px 28px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between', gap: 16,
+                  backgroundColor: isExpanded ? 'rgba(82, 98, 87, 0.04)' : 'transparent'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
                   <div style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    background: isExpanded ? '#111827' : '#F3F4F6',
-                    color: isExpanded ? '#fff' : '#111827',
+                    width: 46, height: 46, borderRadius: 12,
+                    backgroundColor: isExpanded ? 'var(--btn-sage)' : 'var(--primary-tint)',
+                    color: isExpanded ? '#FFFFFF' : 'var(--btn-sage)',
+                    border: '1px solid rgba(82, 98, 87, 0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                   }}>
                     <Icon size={22} />
                   </div>
                   <div>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', tracking: '0.5px', color: '#6B7280' }}>{p.phase}</span>
-                      <span style={{ fontSize: '0.72rem', background: '#F3F4F6', border: '1px solid #E5E7EB', padding: '2px 8px', borderRadius: 10, color: '#374151', fontWeight: 600 }}>{p.period}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-terracotta)' }}>{p.phase}</span>
+                      <span className="pill-tag" style={{ fontSize: '0.72rem', padding: '1px 8px' }}>{p.period}</span>
                     </div>
-                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', color: '#111827' }}>{p.title}</h3>
-                    <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: 2 }}>{p.desc}</p>
+                    <h3 style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>{p.title}</h3>
+                    <p style={{ fontSize: '0.84rem', color: 'var(--body-text)', marginTop: 2, fontFamily: 'var(--font-body)' }}>{p.desc}</p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{phaseCompleted}/{p.milestones.length}</span>
-                    <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>Done</div>
+                    <span style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--main-heading)' }}>{phaseCompleted}/{p.milestones.length}</span>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Done</div>
                   </div>
-                  {isExpanded ? <ChevronUp size={18} color="#111827" /> : <ChevronDown size={18} color="#9CA3AF" />}
+                  {isExpanded ? <ChevronUp size={18} color="var(--btn-sage)" /> : <ChevronDown size={18} color="var(--text-muted)" />}
                 </div>
               </div>
 
               {/* Milestones List */}
               {isExpanded && (
-                <div style={{ borderTop: '1px solid #F3F4F6', padding: '24px 28px', background: '#fff' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ borderTop: '1px solid var(--border-color)', padding: '22px 28px', backgroundColor: 'rgba(255, 255, 255, 0.6)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {p.milestones.map(m => {
                       const isDone = completed.includes(m.id);
                       return (
@@ -177,29 +183,29 @@ export default function PlacementRoadmap({ setActiveTab }) {
                           onClick={() => toggleMilestone(m.id)}
                           style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
-                            padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
-                            border: `1px solid ${isDone ? '#E5E7EB' : '#E5E7EB'}`,
-                            background: isDone ? '#F3F4F6' : '#FAFAFA',
+                            padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
+                            border: `1px solid ${isDone ? 'var(--border-color)' : 'var(--border-color)'}`,
+                            backgroundColor: isDone ? 'rgba(82, 98, 87, 0.08)' : 'var(--bg-card)',
+                            boxShadow: '0 1px 3px rgba(45, 58, 48, 0.02)',
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             {isDone ? (
-                              <CheckCircle2 size={20} color="#111827" style={{ flexShrink: 0 }} />
+                              <CheckCircle2 size={18} color="var(--btn-sage)" style={{ flexShrink: 0 }} />
                             ) : (
-                              <Circle size={20} color="#9CA3AF" style={{ flexShrink: 0 }} />
+                              <Circle size={18} color="var(--border-color)" style={{ flexShrink: 0 }} />
                             )}
                             <span style={{
-                              fontWeight: 600, fontSize: '0.88rem',
-                              color: isDone ? '#111827' : '#374151',
-                              textDecoration: isDone ? 'line-through' : 'none'
+                              fontWeight: isDone ? 600 : 700, fontSize: '0.88rem',
+                              color: isDone ? 'var(--text-muted)' : 'var(--main-heading)',
+                              textDecoration: isDone ? 'line-through' : 'none',
+                              fontFamily: 'var(--font-body)'
                             }}>{m.title}</span>
                           </div>
-                          <span style={{
-                            fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12,
-                            background: isDone ? '#F3F4F6' : '#E5E7EB',
-                            color: isDone ? '#111827' : '#4B5563'
-                          }}>{m.tag}</span>
+                          <span className={isDone ? 'calm-pill-sage' : 'pill-tag'} style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
+                            {m.tag}
+                          </span>
                         </div>
                       );
                     })}
@@ -212,24 +218,26 @@ export default function PlacementRoadmap({ setActiveTab }) {
       </div>
 
       {/* Action Footer Banner */}
-      <div style={{
-        marginTop: 32, background: '#111827', borderRadius: 18, padding: '28px 32px',
+      <div className="calm-sub-card" style={{
+        marginTop: 32, padding: '24px 30px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20
       }}>
         <div>
-          <h3 style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem', marginBottom: 4 }}>Ready to Test Your Readiness?</h3>
-          <p style={{ color: '#9CA3AF', fontSize: '0.85rem' }}>Take an AI Mock Interview or solve top DSA problems based on your roadmap tier.</p>
+          <h3 style={{ color: 'var(--main-heading)', fontWeight: 800, fontSize: '1.15rem', marginBottom: 4, fontFamily: 'var(--font-heading)' }}>
+            Ready to Test Your Readiness?
+          </h3>
+          <p style={{ color: 'var(--body-text)', fontSize: '0.88rem', margin: 0, fontFamily: 'var(--font-body)' }}>
+            Take an AI Mock Interview or solve top DSA problems based on your roadmap tier.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={() => setActiveTab('mock')} style={{
-            padding: '10px 20px', borderRadius: 10, border: 'none', background: '#fff', color: '#111827',
-            fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => setActiveTab('mock')} className="btn-primary-spec" style={{
+            padding: '10px 18px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8
           }}>
             <Mic2 size={15} /> AI Mock Interview
           </button>
-          <button onClick={() => setActiveTab('coding')} style={{
-            padding: '10px 20px', borderRadius: 10, border: '1px solid #374151', background: 'transparent', color: '#fff',
-            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+          <button onClick={() => setActiveTab('coding')} className="btn-secondary-spec" style={{
+            padding: '10px 18px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8
           }}>
             <Code2 size={15} /> Coding Lab
           </button>

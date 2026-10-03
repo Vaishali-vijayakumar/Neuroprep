@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 
 // ── Shared tokens matching the app's index.css design system ─────────────────
 const T = {
- bg: '#FFFFFF',
- bgPage: '#F8F9FA',
- bgCard: '#F3F4F6',
- border: '#E5E7EB',
- borderDark: '#D1D5DB',
- textMain: '#111827',
- textBody: '#374151',
- textMuted: '#6B7280',
- textLight: '#9CA3AF',
- black: '#111827',
- shadow: '0 1px 3px rgba(0,0,0,0.06)',
+  bg: 'var(--bg-card)',
+  bgPage: 'var(--bg-page)',
+  bgCard: 'var(--bg-card-solid, #FCF9F6)',
+  border: 'var(--border-color)',
+  borderDark: '#C5BCB3',
+  textMain: 'var(--main-heading)',
+  textBody: 'var(--body-text)',
+  textMuted: 'var(--text-muted)',
+  textLight: '#847C75',
+  black: 'var(--main-heading)',
+  sage: 'var(--btn-sage)',
+  terracotta: 'var(--accent-terracotta)',
+  shadow: 'var(--shadow-3d-card)',
 };
 
 /** ── Weighted score bar ──────────────────────────────────────────────────── */

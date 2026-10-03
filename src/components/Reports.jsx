@@ -54,7 +54,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
     }
   }, [userEmail, readiness, codingState?.score, interviewState?.lastScore, aptitudeState?.score, moodState?.stress]);
 
-  const prev = reportHistory.previousReport;
+  const prev = reportHistory?.previousReport;
 
   // Calculate Improvement or Decrement Deltas
   const readinessDelta = prev ? readiness - (prev.readiness || 0) : 0;
@@ -64,10 +64,10 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
   const stressDelta = prev ? (prev.stress || 0) - (moodState?.stress || 0) : 0; // Positive means stress decreased (improvement!)
 
   const getGrade = (score) => {
-    if (score >= 85) return { grade: 'A', color: '#15803D', bg: '#DCFCE7', border: '#86EFAC', label: 'Placement Ready (Top Tier)' };
-    if (score >= 70) return { grade: 'B', color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', label: 'Strong Contender' };
-    if (score >= 50) return { grade: 'C', color: '#B45309', bg: '#FEF3C7', border: '#FDE68A', label: 'Moderate Preparation' };
-    return { grade: 'D', color: '#9F1239', bg: '#FFE4E6', border: '#FECDD3', label: 'Needs Structured Practice' };
+    if (score >= 85) return { grade: 'A', color: '#526257', bg: '#EAECE8', border: '#D8D2CE', label: 'Placement Ready (Top Tier)' };
+    if (score >= 70) return { grade: 'B', color: '#68705F', bg: '#EAECE8', border: '#D8D2CE', label: 'Strong Contender' };
+    if (score >= 50) return { grade: 'C', color: '#9A6854', bg: '#F5EBE6', border: '#D8D2CE', label: 'Moderate Preparation' };
+    return { grade: 'D', color: '#34343A', bg: '#F5EBE6', border: '#D8D2CE', label: 'Needs Structured Practice' };
   };
 
   const readinessGrade = getGrade(readiness);
@@ -167,7 +167,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
       area: 'Stress Regulation & Mind Recovery',
       priority: 'High',
       gap: 'Elevated stress detected',
-      tip: `Your cognitive stress is high (${moodState.stress}/10). Spend 3 minutes in Box Breathing or share your thoughts with NeuroCoach in your Placement Diary to clear anxiety.`,
+      tip: `Your stress feels high (${moodState.stress}/10). Spend 3 minutes in Box Breathing or share your thoughts with NeuroCoach in your Placement Diary to recharge and clear your mind.`,
       tab: 'journal'
     });
   }
@@ -204,7 +204,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
         <div style={{ display: 'flex', gap: 10 }}>
           <button 
             onClick={() => setActiveTab && setActiveTab('dashboard')} 
-            className="btn-secondary-spec"
+            className="btn-back-dashboard"
             style={{ padding: '9px 18px', fontSize: '0.85rem', fontWeight: 600 }}
           >
             ← Back to Dashboard
@@ -221,7 +221,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
 
       {/* Main Overview & Performance Delta Banner */}
       <div style={{
-        backgroundColor: '#FFFFFF',
+        background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
         border: '1.5px solid #E5E7EB',
         borderRadius: 20,
         padding: '30px 34px',
@@ -346,7 +346,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '18px', marginBottom: '28px' }}>
         
         {/* Pillar 1: 99 DSA Patterns */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -378,12 +378,12 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             className="btn-secondary-spec"
             style={{ marginTop: '16px', fontSize: '0.8rem', padding: '7px 12px', width: '100%', justifyContent: 'center' }}
           >
-            Practice DSA Patterns →
+            Practice DSA Patterns
           </button>
         </div>
 
         {/* Pillar 2: AI Mock Interview */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -415,12 +415,12 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             className="btn-secondary-spec"
             style={{ marginTop: '16px', fontSize: '0.8rem', padding: '7px 12px', width: '100%', justifyContent: 'center' }}
           >
-            Take AI Mock Test →
+            Take AI Mock Test
           </button>
         </div>
 
         {/* Pillar 3: Aptitude & Reasoning */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -452,12 +452,12 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             className="btn-secondary-spec"
             style={{ marginTop: '16px', fontSize: '0.8rem', padding: '7px 12px', width: '100%', justifyContent: 'center' }}
           >
-            Practice Aptitude →
+            Practice Aptitude
           </button>
         </div>
 
         {/* Pillar 4: Stress & Cognitive Resilience */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderRadius: '16px', border: '1.5px solid #E5E7EB', padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -479,7 +479,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             </div>
 
             <p style={{ fontSize: '0.82rem', color: '#4B5563', margin: 0 }}>
-              Status: <strong>{moodState?.label || 'Calm'}</strong>. Cognitive reframing active with NeuroCoach.
+              Status: <strong>{moodState?.label || 'Calm'}</strong>. Friendly support active with NeuroCoach.
             </p>
           </div>
 
@@ -489,14 +489,14 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
             className="btn-secondary-spec"
             style={{ marginTop: '16px', fontSize: '0.8rem', padding: '7px 12px', width: '100%', justifyContent: 'center' }}
           >
-            Placement Diary →
+            Placement Diary
           </button>
         </div>
 
       </div>
 
       {/* Actionable Recommendations & Step-by-Step Improvement Roadmap */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #E5E7EB', borderRadius: 20, padding: 28, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+      <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1.5px solid #E5E7EB', borderRadius: 20, padding: 28, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -566,7 +566,7 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
                     gap: '6px'
                   }}
                 >
-                  Start Practice <ArrowRight size={14} />
+                  Start Practice
                 </button>
               </div>
             );

@@ -179,6 +179,106 @@ export class WebRAGEvaluationEngine {
       };
     }
 
+    // ── System Design: URL Shortener (TinyURL / Bitly) ──
+    if (/tinyurl|url shortener|shorten|bitly/i.test(qLower)) {
+      return {
+        topic: 'System Design: URL Shortener (TinyURL)',
+        mustHaveConcepts: ['Base62 Encoding', 'Key Generation Service (KGS)', 'Redis Caching (80/20 Rule)', 'Database Schema & Indexing', 'Redirect 301 vs 302', 'High Availability & Read Scalability'],
+        goldStandardSolution: 'A URL shortener converts long URLs to 7-character Base62 keys (62^7 = 3.5 trillion URLs). Architecture: 1) Capacity: 100:1 read-to-write ratio, requiring high read availability. 2) Key Generation: Standalone Key Generation Service (KGS) pre-generates unique tokens in random sequence to eliminate runtime hash collisions. 3) Database: NoSQL Key-Value (DynamoDB/Cassandra) or PostgreSQL with a B-tree index on short_key. 4) Caching: Redis cluster caching top 20% hot URLs with LRU eviction for sub-10ms redirection. 5) Redirection: HTTP 301 (Permanent, cached by browser) vs HTTP 302/307 (Temporary, captures analytics/click metrics).',
+        commonPitfalls: ['Relying on raw MD5/SHA-256 without handling collision truncation', 'Omitting the 80/20 caching strategy for high read throughput', 'Not explaining 301 vs 302 redirection trade-offs']
+      };
+    }
+
+    // ── System Design: Ride Sharing (Uber / Lyft) ──
+    if (/uber|lyft|ride sharing|driver matching|geospatial/i.test(qLower)) {
+      return {
+        topic: 'System Design: Ride Sharing (Uber/Lyft)',
+        mustHaveConcepts: ['Geospatial Indexing (H3 / S2 / QuadTree)', 'WebSocket Location Streaming', 'Redis Pub/Sub', 'Driver-Rider Matching Engine', 'Surge Pricing & Dynamic Fare', 'Cassandra Trip Log'],
+        goldStandardSolution: 'Uber architecture components: 1) Location Ingestion: Active drivers send GPS pings every 3–4 seconds over persistent WebSockets. 2) Geospatial Index: Partition world into hexagonal cells using Uber H3 or Google S2 cells stored in memory (Redis Geo / In-Memory QuadTree) for O(1) radius search. 3) Matching Service: Queries surrounding cell rings to find Top K closest drivers, ranks by ETA, and sends dispatch offers via Kafka. 4) Surge Pricing: Aggregates demand vs supply ratios per cell every minute. 5) Storage: Cassandra / ScyllaDB for historical trip logs and PostgreSQL for financial transactions.',
+        commonPitfalls: ['Using raw SQL latitude/longitude range queries without spatial indexing (QuadTree/H3)', 'Failing to explain WebSocket bidirectional streaming for live driver locations']
+      };
+    }
+
+    // ── System Design: Real-Time Chat (WhatsApp / Discord / Slack) ──
+    if (/whatsapp|chat system|discord|slack|messaging app|instant messag/i.test(qLower)) {
+      return {
+        topic: 'System Design: Real-Time Chat (WhatsApp/Discord)',
+        mustHaveConcepts: ['WebSockets / Long Polling', 'Chat Gateway & Connection Pool', 'Kafka Message Broker', 'Cassandra / HBase Chat History', 'User Online Presence (Heartbeat & Redis Bitmaps)', 'Push Notifications (APNS/FCM)'],
+        goldStandardSolution: 'Real-time chat requires sub-100ms message delivery: 1) Protocol: WebSockets for full-duplex bi-directional communication with a stateless Chat Gateway maintaining open TCP connections. 2) Message Broker: Apache Kafka partitions topics by conversation_id to preserve message ordering. 3) Storage: NoSQL Wide-Column store (Cassandra / ScyllaDB) with compound primary key ((chat_id), message_id DESC) for fast paginated timeline fetches. 4) Presence: Redis Bitmaps / Key TTL heartbeats every 30 seconds to track online status. 5) Offline Messages: Push Notification Server (FCM/APNs) triggers mobile alerts when receiver is disconnected.',
+        commonPitfalls: ['Using polling instead of persistent WebSockets', 'Failing to address distributed message sequencing and ordering']
+      };
+    }
+
+    // ── System Design: Video Streaming (Netflix / YouTube) ──
+    if (/netflix|youtube|video streaming|video transcoder|cdn edge/i.test(qLower)) {
+      return {
+        topic: 'System Design: Video Streaming (Netflix/YouTube)',
+        mustHaveConcepts: ['Adaptive Bitrate Streaming (HLS / DASH)', 'Video Transcoding Pipeline', 'CDN Edge Caching', 'Cloud Object Storage (S3 / Blob)', 'Cassandra Metadata', 'Content Recommendation Engine'],
+        goldStandardSolution: 'Video streaming platform architecture: 1) Ingestion & Transcoding: Uploaded raw video is split into 5-10 second chunks, processed by worker fleets into multiple resolutions and codecs (H.264, VP9, AV1) for Adaptive Bitrate Streaming (HLS/DASH). 2) Storage: Transcoded chunks stored in AWS S3 / Google Cloud Storage. 3) Distribution: Globally distributed Content Delivery Networks (CDNs) cache video chunks close to users for zero-buffering playback. 4) Metadata & Playback History: Cassandra / DynamoDB records user playback timestamps and watch history.',
+        commonPitfalls: ['Streaming full monolithic video files instead of chunked HLS/DASH streams', 'Ignoring CDN edge caching architecture']
+      };
+    }
+
+    // ── System Design: Distributed Rate Limiter & API Gateway ──
+    if (/rate limiter|token bucket|leaky bucket|sliding window|api gateway/i.test(qLower)) {
+      return {
+        topic: 'System Design: Distributed Rate Limiter',
+        mustHaveConcepts: ['Token Bucket / Leaky Bucket Algorithm', 'Sliding Window Counter', 'Redis Memory & Lua Scripts', 'HTTP 429 Too Many Requests', 'Race Condition Prevention', 'API Gateway Middleware'],
+        goldStandardSolution: 'A distributed rate limiter prevents API abuse and DDoS: 1) Algorithm: Sliding Window Counter or Token Bucket for burst handling with smooth traffic shaping. 2) Architecture: Deployed as API Gateway middleware (Kong/Envoy) before application microservices. 3) Distributed Counter: Centralized Redis key per client IP/user ID. 4) Concurrency: Atomic operations via Redis Lua scripts or MULTI/EXEC to prevent race conditions during high-concurrency window increments. 5) Response: HTTP 429 Too Many Requests with headers X-RateLimit-Limit, X-RateLimit-Remaining, and Retry-After.',
+        commonPitfalls: ['Storing rate limit counters in local server memory without Redis in a distributed cluster', 'Not accounting for race conditions during read-and-update counter cycles']
+      };
+    }
+
+    // ── System Design: Distributed In-Memory Cache (Redis-like) ──
+    if (/distributed cache|redis|memcached|cache eviction|lru cache/i.test(qLower)) {
+      return {
+        topic: 'System Design: Distributed Cache System',
+        mustHaveConcepts: ['Consistent Hashing & Virtual Nodes', 'LRU / LFU Eviction', 'Cache-Aside vs Write-Through vs Write-Behind', 'Cache Invalidation (TTL / PubSub)', 'Cache Avalanche / Thundering Herd', 'Master-Replica Replication'],
+        goldStandardSolution: 'Distributed Cache Architecture: 1) Data Partitioning: Consistent Hashing with virtual nodes (e.g. 256 virtual nodes per physical host) to evenly distribute keys and minimize key remapping on node add/fail. 2) Eviction: Doubly Linked List + HashMap for O(1) Least Recently Used (LRU) eviction. 3) Caching Patterns: Cache-Aside (Lazy loading, resilient to cache failure), Write-Through (strong consistency), Write-Behind (high write speed via async queue). 4) Mitigating Failure: Use random jitter on TTLs to prevent Cache Avalanche, and Redis Mutex / Single-Flight queries to prevent Thundering Herd.',
+        commonPitfalls: ['Ignoring Cache Thundering Herd / Cache Stampede mitigation', 'Failing to mention Consistent Hashing for cluster node addition']
+      };
+    }
+
+    // ── Low-Level Design (LLD): Parking Lot System ──
+    if (/parking lot|parking system/i.test(qLower)) {
+      return {
+        topic: 'Low-Level Design (LLD): Parking Lot System',
+        mustHaveConcepts: ['Class Hierarchy (Vehicle, Spot, Level)', 'Strategy Pattern for Spot Assignment', 'Factory Pattern for Vehicle Creation', 'Thread-Safe Concurrency (ReentrantLock / Synchronized)', 'Payment Strategy (Hourly, Flat)', 'SOLID Principles'],
+        goldStandardSolution: 'OOP Class Design for Parking Lot: 1) Core Classes: `ParkingLot` (Singleton), `Level`, `ParkingSpot` (subclasses: `CompactSpot`, `LargeSpot`, `HandicappedSpot`), `Vehicle` (subclasses: `Car`, `Truck`, `Motorcycle`), `Ticket`, and `Payment`. 2) Design Patterns: Factory Pattern to instantiate vehicles and spots; Strategy Pattern (`ParkingStrategy`) for nearest-to-entrance or lowest-floor spot assignment; Strategy Pattern for `FeeCalculationStrategy` (hourly, daily, VIP). 3) Concurrency: Thread-safe atomic spot reservation using `ReentrantLock` or `ConcurrentHashMap` to prevent double-booking.',
+        commonPitfalls: ['Using rigid switch statements instead of Strategy Pattern for fee calculation', 'Forgetting thread safety when multiple entry gates park vehicles simultaneously']
+      };
+    }
+
+    // ── Low-Level Design (LLD): Elevator Dispatching System ──
+    if (/elevator|lift system|elevator dispatcher/i.test(qLower)) {
+      return {
+        topic: 'Low-Level Design (LLD): Elevator System',
+        mustHaveConcepts: ['Class Model (ElevatorCar, Controller, Request)', 'State Pattern (Idle, Moving_Up, Moving_Down, Maintenance)', 'LOOK / SCAN Scheduling Algorithm', 'Observer Pattern for Floor Buttons', 'Thread Safety & Mutex Locks'],
+        goldStandardSolution: 'OOP Class Design for Elevator: 1) Core Classes: `ElevatorController` (manages dispatcher), `ElevatorCar`, `Button`, `Door`, `Floor`, `Request` (Internal and External). 2) Design Patterns: State Pattern (`ElevatorState`: `IdleState`, `MovingUpState`, `MovingDownState`) to encapsulate motion behavior; Observer Pattern to notify controller when floor buttons are pressed; Strategy Pattern for scheduling algorithms (LOOK / SCAN / FCFS). 3) Concurrency: Each `ElevatorCar` runs an independent processing thread with a thread-safe `PriorityQueue` / `TreeSet` for pending floor stops.',
+        commonPitfalls: ['Using FCFS (First Come First Serve) which creates huge wait times without mentioning SCAN/LOOK algorithm', 'Failing to represent Elevator States cleanly using State Pattern']
+      };
+    }
+
+    // ── Low-Level Design (LLD): Splitwise / Expense Sharing App ──
+    if (/splitwise|expense sharing|split expense/i.test(qLower)) {
+      return {
+        topic: 'Low-Level Design (LLD): Splitwise Expense Sharing',
+        mustHaveConcepts: ['Class Model (User, Group, Expense, Split)', 'Strategy Pattern for Split Types (Equal, Exact, Percentage)', 'Factory Pattern for Expense Creation', 'Graph Debt Simplification Algorithm', 'Immutable Audit History'],
+        goldStandardSolution: 'OOP Class Design for Splitwise: 1) Core Classes: `User`, `Group`, `Expense`, `Split` (abstract class with subclasses `EqualSplit`, `ExactSplit`, `PercentageSplit`), and `BalanceSheetController`. 2) Design Patterns: Strategy Pattern (`SplitStrategy`) to calculate individual share amounts and validate total sum equals 100% or total amount; Factory Pattern to create `Expense` instances. 3) Debt Simplification: Minimize total cash flow transactions using a Directed Graph with Net Balance mapping (Greedy approach matching max creditor with max debtor).',
+        commonPitfalls: ['Not validating that percentage splits sum to exactly 100.00%', 'Omitting debt simplification algorithms for group settlement']
+      };
+    }
+
+    // ── System Design: Database Sharding & Partitioning ──
+    if (/sharding|database partitioning|consistent hashing|read replica/i.test(qLower)) {
+      return {
+        topic: 'Database Sharding & Scaling Strategies',
+        mustHaveConcepts: ['Horizontal Partitioning (Sharding)', 'Sharding Key Selection', 'Consistent Hashing & Virtual Nodes', 'Hot Spot Mitigation', 'Cross-Shard Joins & Distributed Transactions (2PC / Saga)'],
+        goldStandardSolution: 'Database Sharding partitions large tables horizontally across multiple database servers: 1) Sharding Key: Choosing an evenly distributed key (e.g., user_id or hash(org_id)) to avoid hotspot partitions. 2) Routing: Database Router / Proxy uses Consistent Hashing with virtual rings to direct queries to target shards. 3) Challenges & Solutions: Avoid Cross-Shard Joins by denormalizing read data or using global lookups; handle distributed write consistency across shards using Saga orchestration pattern or Two-Phase Commit (2PC).',
+        commonPitfalls: ['Choosing a timestamp or range-based sharding key that creates immediate write hotspots on the latest shard', 'Not addressing how to perform cross-shard queries']
+      };
+    }
+
     return null;
   }
 

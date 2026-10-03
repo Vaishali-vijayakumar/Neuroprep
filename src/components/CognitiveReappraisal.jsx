@@ -32,7 +32,7 @@ export default function CognitiveReappraisal({ selectedDistortion, setActiveTab 
         </div>
         <button 
           onClick={() => setActiveTab && setActiveTab('dashboard')}
-          className="btn-secondary-spec"
+          className="btn-back-dashboard"
           style={{ padding: '8px 18px', fontSize: '0.85rem' }}
         >
           Back to Dashboard

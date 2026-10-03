@@ -51,143 +51,156 @@ export default function PuzzlesAndSheets({ setActiveTab }) {
  const solvedCount = completed.length;
  const progressPercent = Math.round((solvedCount / TOP_PUZZLES_AND_PATTERNS.length) * 100);
 
- return (
- <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
- {/* Header */}
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
- <div>
- <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 20, padding: '4px 14px', marginBottom: 8 }}>
- <FileText size={13} color="#111827" />
- <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111827' }}>Top Interview Questions & Puzzles</span>
- </div>
- <h1 style={{ fontWeight: 900, fontSize: '1.7rem', color: '#111827', letterSpacing: '-0.5px' }}>SDE Sheet & Logic Puzzles</h1>
- <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 4 }}>
- Curated list of top coding patterns and placement interview logic puzzles asked at TCS, Infosys, Zoho & Amazon.
- </p>
- </div>
+  return (
+    <div style={{ padding: '32px 24px', maxWidth: 980, margin: '0 auto', fontFamily: 'var(--font-body)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <div className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <FileText size={13} color="var(--btn-sage)" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Top Interview Questions & Puzzles</span>
+          </div>
+          <h1 style={{ fontWeight: 800, fontSize: '2rem', color: 'var(--main-heading)', letterSpacing: '-0.5px', fontFamily: 'var(--font-heading)' }}>
+            SDE Sheet & Logic Puzzles
+          </h1>
+          <p style={{ color: 'var(--body-text)', fontSize: '0.92rem', marginTop: 4, fontFamily: 'var(--font-body)' }}>
+            Curated list of top coding patterns and placement interview logic puzzles asked at TCS, Infosys, Zoho & Amazon.
+          </p>
+        </div>
 
- <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
- {/* Progress Card */}
- <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 16, padding: '16px 24px', textAlign: 'right', minWidth: 200 }}>
- <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase' }}>Sheet Progress</div>
- <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#111827', marginTop: 2 }}>{progressPercent}%</div>
- <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{solvedCount} / {TOP_PUZZLES_AND_PATTERNS.length} Solved</div>
- <div style={{ height: 6, background: '#F3F4F6', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
- <div style={{ width: `${progressPercent}%`, height: '100%', background: '#111827', borderRadius: 3, transition: 'width 0.4s ease' }} />
- </div>
- </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* Progress Card */}
+          <div className="calm-sub-card" style={{ padding: '14px 22px', textAlign: 'right', minWidth: 210 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--accent-terracotta)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Sheet Progress</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>{progressPercent}%</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--body-text)' }}>{solvedCount} / {TOP_PUZZLES_AND_PATTERNS.length} Solved</div>
+            <div style={{ height: 6, backgroundColor: 'rgba(82, 98, 87, 0.12)', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
+              <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: 'var(--btn-sage)', borderRadius: 3, transition: 'width 0.4s ease' }} />
+            </div>
+          </div>
 
- <button 
- onClick={() => setActiveTab && setActiveTab('dashboard')} 
- style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
- >
- Back to Dashboard
- </button>
- </div>
- </div>
+          <button 
+            onClick={() => setActiveTab && setActiveTab('dashboard')} 
+            className="btn-back-dashboard"
+            style={{ padding: '9px 18px', fontSize: '0.85rem', fontWeight: 700 }}
+          >
+            ← Dashboard
+          </button>
+        </div>
+      </div>
 
- {/* Filter and Search Bar */}
- <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
- <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
- <Search size={15} color="#9CA3AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
- <input
- value={search}
- onChange={e => setSearch(e.target.value)}
- placeholder="Search problems or company tags..."
- style={{
- width: '100%', padding: '10px 14px 10px 38px', borderRadius: 10,
- border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
- }}
- />
- </div>
- {['All', 'Arrays', 'Strings', 'Linked List', 'Logic Puzzles'].map(f => (
- <button key={f} onClick={() => setCategoryFilter(f)} style={{
- padding: '8px 18px', borderRadius: 10, border: '1px solid #E5E7EB',
- background: categoryFilter === f ? '#111827' : '#fff',
- color: categoryFilter === f ? '#fff' : '#374151',
- fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer'
- }}>{f}</button>
- ))}
- </div>
+      {/* Filter and Search Bar */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+          <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search problems or company tags..."
+            style={{
+              width: '100%', padding: '10px 14px 10px 38px', borderRadius: 10,
+              border: '1px solid var(--border-color)', fontSize: '0.88rem', outline: 'none',
+              backgroundColor: 'var(--bg-card)', color: 'var(--main-heading)', fontFamily: 'var(--font-body)'
+            }}
+          />
+        </div>
+        {['All', 'Arrays', 'Strings', 'Linked List', 'Logic Puzzles'].map(f => {
+          const active = categoryFilter === f;
+          return (
+            <button
+              key={f}
+              onClick={() => setCategoryFilter(f)}
+              className={active ? 'btn-primary-spec' : 'btn-secondary-spec'}
+              style={{
+                padding: '8px 16px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700
+              }}
+            >
+              {f}
+            </button>
+          );
+        })}
+      </div>
 
- {/* Questions & Puzzles List */}
- <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
- {filtered.map(item => {
- const isDone = completed.includes(item.id);
- const isPuzzle = item.solution != null;
- const isRevealed = revealedPuzzle === item.id;
+      {/* Questions & Puzzles List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {filtered.map(item => {
+          const isDone = completed.includes(item.id);
+          const isPuzzle = item.solution != null;
+          const isRevealed = revealedPuzzle === item.id;
 
- const diffColor = item.difficulty === 'Easy' ? '#111827' : item.difficulty === 'Medium' ? '#111827' : '#111827';
+          return (
+            <div
+              key={item.id}
+              className="saas-card-spec"
+              style={{
+                borderRadius: 14, padding: '18px 22px', transition: 'all 0.15s ease',
+                backgroundColor: isDone ? 'rgba(82, 98, 87, 0.04)' : 'var(--bg-card)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+                  <button onClick={() => toggleSolved(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    {isDone ? (
+                      <CheckCircle2 size={22} color="var(--btn-sage)" />
+                    ) : (
+                      <Circle size={22} color="var(--border-color)" />
+                    )}
+                  </button>
 
- return (
- <div
- key={item.id}
- style={{
- background: '#fff', border: `1px solid ${isDone ? '#E5E7EB' : '#E5E7EB'}`,
- borderRadius: 14, padding: '18px 22px', transition: 'all 0.15s ease'
- }}
- >
- <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
- <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
- <button onClick={() => toggleSolved(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
- {isDone ? (
- <CheckCircle2 size={22} color="#111827" />
- ) : (
- <Circle size={22} color="#9CA3AF" />
- )}
- </button>
+                  <div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                      <span className="pill-tag" style={{ fontSize: '0.72rem', padding: '1px 8px' }}>{item.category}</span>
+                      <span className={item.difficulty === 'Hard' ? 'calm-pill-terracotta' : 'calm-pill-sage'} style={{ fontSize: '0.72rem', padding: '1px 8px' }}>
+                        {item.difficulty}
+                      </span>
+                    </div>
+                    <h3 style={{
+                      fontWeight: 800, fontSize: '1rem', color: isDone ? 'var(--text-muted)' : 'var(--main-heading)',
+                      fontFamily: 'var(--font-heading)',
+                      textDecoration: isDone ? 'line-through' : 'none'
+                    }}>{item.title}</h3>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--body-text)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
+                      Asked at: <strong style={{ color: 'var(--main-heading)' }}>{item.company}</strong>
+                    </div>
+                  </div>
+                </div>
 
- <div>
- <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
- <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: '#F3F4F6', color: '#374151' }}>{item.category}</span>
- <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: `${diffColor}15`, color: diffColor }}>{item.difficulty}</span>
- </div>
- <h3 style={{
- fontWeight: 700, fontSize: '0.92rem', color: isDone ? '#111827' : '#111827',
- }}>{item.title}</h3>
- <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 4 }}> Asked at: <strong>{item.company}</strong></div>
- </div>
- </div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  {isPuzzle ? (
+                    <button
+                      onClick={() => setRevealedPuzzle(isRevealed ? null : item.id)}
+                      className={isRevealed ? 'btn-primary-spec' : 'btn-secondary-spec'}
+                      style={{ padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      {isRevealed ? 'Hide Solution' : 'Reveal Solution'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab('coding')}
+                      className="btn-secondary-spec"
+                      style={{ padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      Solve in Lab →
+                    </button>
+                  )}
+                </div>
+              </div>
 
- <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
- {isPuzzle ? (
- <button
- onClick={() => setRevealedPuzzle(isRevealed ? null : item.id)}
- style={{
- padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB',
- background: isRevealed ? '#111827' : '#fff', color: isRevealed ? '#fff' : '#374151',
- fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer'
- }}
- >
- {isRevealed ? 'Hide Solution' : 'Reveal Solution '}
- </button>
- ) : (
- <button
- onClick={() => setActiveTab('coding')}
- style={{
- padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB',
- background: '#fff', color: '#111827', fontWeight: 600, fontSize: '0.78rem',
- cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
- }}
- >
- Solve in Lab <ChevronRight size={13} />
- </button>
- )}
- </div>
- </div>
-
- {/* Puzzle Solution Accordion */}
- {isPuzzle && isRevealed && (
- <div style={{ marginTop: 16, borderTop: '1px solid #F3F4F6', paddingTop: 14, background: '#F3F4F6', borderRadius: 10, padding: 14 }}>
- <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#111827', marginBottom: 4 }}> Explanation & Solution:</div>
- <p style={{ fontSize: '0.85rem', color: '#111827', lineHeight: 1.6 }}>{item.solution}</p>
- </div>
- )}
- </div>
- );
- })}
- </div>
- </div>
- );
+              {/* Puzzle Solution Accordion */}
+              {isPuzzle && isRevealed && (
+                <div className="calm-sub-card" style={{ marginTop: 14, padding: '14px 18px', backgroundColor: 'rgba(82, 98, 87, 0.06)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 4, fontFamily: 'var(--font-body)' }}>
+                    Explanation &amp; Solution:
+                  </div>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--body-text)', lineHeight: 1.6, margin: 0, fontFamily: 'var(--font-body)' }}>
+                    {item.solution}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
-

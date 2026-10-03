@@ -1,16 +1,17 @@
 import React from 'react';
-import { Sparkles, LogOut, Home, ArrowLeft } from 'lucide-react';
+import { Sparkles, LogOut, Home } from 'lucide-react';
 
 export default function Navigation({ activeTab = 'dashboard', setActiveTab, userProfile = {}, onSignOut, onGoHome }) {
 
   return (
     <header style={{
-      backgroundColor: '#FFFFFF',
-      borderBottom: '1px solid #E5E7EB',
+      backgroundColor: 'rgba(252, 249, 246, 0.94)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid #D8D2CE',
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+      boxShadow: '0 2px 16px rgba(52, 52, 58, 0.03)'
     }}>
       {/* Top Header Row */}
       <div style={{
@@ -19,7 +20,7 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid #F3F4F6'
+        borderBottom: '1px solid rgba(216, 210, 206, 0.4)'
       }}>
         {/* Logo & Title */}
         <div 
@@ -30,19 +31,20 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
             width: '36px',
             height: '36px',
             borderRadius: '10px',
-            backgroundColor: '#475569',
+            backgroundColor: '#526257',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#FFFFFF'
+            color: '#F7F3EE',
+            boxShadow: '0 3px 10px rgba(82, 98, 87, 0.25)'
           }}>
             <Sparkles size={20} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.3px' }}>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#34343A', margin: 0, letterSpacing: '-0.3px' }}>
               NeuroPrep
             </h1>
-            <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: 0 }}>
+            <p style={{ fontSize: '0.72rem', color: '#89878A', margin: 0 }}>
               Stress-Adaptive Placement Ecosystem
             </p>
           </div>
@@ -55,8 +57,8 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
               width: '34px',
               height: '34px',
               borderRadius: '50%',
-              backgroundColor: '#475569',
-              color: '#FFFFFF',
+              backgroundColor: '#9A6854',
+              color: '#F7F3EE',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -66,10 +68,10 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
               {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : (userProfile.email ? userProfile.email.charAt(0).toUpperCase() : 'U')}
             </div>
             <div style={{ display: 'none', minWidth: '100px', '@media (min-width: 768px)': { display: 'block' } }}>
-              <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+              <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34343A', margin: 0 }}>
                 {userProfile.name || (userProfile.email ? userProfile.email.split('@')[0] : 'Profile')}
               </p>
-              <p style={{ fontSize: '0.7rem', color: '#6B7280', margin: 0 }}>
+              <p style={{ fontSize: '0.7rem', color: '#89878A', margin: 0 }}>
                 {userProfile.targetCompany ? `${userProfile.targetCompany} Prep` : 'Placement Prep'}
               </p>
             </div>
@@ -78,17 +80,18 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
               onClick={onGoHome}
               title="Return Home"
               style={{
-                padding: '7px 12px',
+                padding: '7px 14px',
                 borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: '#FFFFFF',
-                color: '#374151',
+                border: '1px solid #D8D2CE',
+                backgroundColor: '#FCF9F6',
+                color: '#4F5056',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '0.78rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '4px',
+                transition: 'all 0.2s ease'
               }}
             >
               <Home size={14} /> Home
@@ -98,17 +101,18 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
               onClick={onSignOut}
               title="Sign Out"
               style={{
-                padding: '7px 12px',
+                padding: '7px 14px',
                 borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
+                border: '1px solid #D8D2CE',
+                backgroundColor: '#FCF9F6',
+                color: '#4F5056',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '0.78rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '4px',
+                transition: 'all 0.2s ease'
               }}
             >
               <LogOut size={14} /> Sign Out
@@ -120,4 +124,3 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
     </header>
   );
 }
-

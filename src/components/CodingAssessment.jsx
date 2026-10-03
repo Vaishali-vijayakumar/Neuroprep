@@ -233,7 +233,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
  <button 
  onClick={() => setActiveTab('dashboard')}
- className="btn-secondary-spec"
+ className="btn-back-dashboard"
  style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600 }}
  >
  Back to Dashboard
@@ -366,7 +366,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  fontFamily: 'var(--font-code)',
  fontSize: '0.88rem',
  lineHeight: 1.6,
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  color: '#111827',
  borderRadius: '8px',
  padding: '14px',
@@ -400,396 +400,407 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  )}
  </div>
  </div>
- ) : (
- <>
- {/* Header Banner */}
- <div className="saas-card-spec" style={{ padding: '36px', marginBottom: '32px', backgroundColor: '#FFFFFF' }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
- <div>
- <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '8px', letterSpacing: '-0.5px' }}>
- 99 DSA Patterns Progress Tracker
- </h2>
- <p style={{ color: '#4B5563', fontSize: '0.96rem', maxWidth: '820px', lineHeight: 1.65 }}>
- Practice top high-impact patterns instead of memorizing code. Click any topic category to explore its underlying patterns, solve questions, and access optimal solutions.
- </p>
- </div>
- <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: '24px', borderLeft: '1px solid #E5E7EB', flexShrink: 0 }}>
- <div style={{
- width: '80px',
- height: '80px',
- borderRadius: '50%',
- background: `conic-gradient(#111827 ${overallPercentage * 3.6}deg, #E5E7EB 0deg)`,
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center'
- }}>
- <div style={{
- width: '66px',
- height: '66px',
- borderRadius: '50%',
- backgroundColor: '#FFFFFF',
- display: 'flex',
- flexDirection: 'column',
- alignItems: 'center',
- justifyContent: 'center'
- }}>
- <span style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>{overallPercentage}%</span>
- <span style={{ fontSize: '8px', color: '#6B7280', fontWeight: 700 }}>DONE</span>
- </div>
- </div>
- <div style={{ textAlign: 'right', backgroundColor: '#F8F9FA', padding: '16px 24px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
- <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>{totalSolvedCount}</div>
- <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600, marginTop: '4px' }}>/ {totalQuestionsInDB} Solved</div>
- </div>
- </div>
- </div>
- </div>
+        ) : (
+          <>
+            {/* Header Banner */}
+            <div className="saas-card-spec" style={{ padding: '32px', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+                    99 DSA Patterns Progress Tracker
+                  </h2>
+                  <p style={{ color: 'var(--body-text)', fontSize: '0.96rem', maxWidth: '820px', lineHeight: 1.65, margin: 0 }}>
+                    Practice top high-impact patterns instead of memorizing code. Click any topic category to explore its underlying patterns, solve questions, and access optimal solutions.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: '24px', borderLeft: '1px solid #D8D2CE', flexShrink: 0 }}>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: `conic-gradient(#526257 ${overallPercentage * 3.6}deg, #D8D2CE 0deg)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 3px 10px rgba(82, 98, 87, 0.15)'
+                  }}>
+                    <div style={{
+                      width: '66px',
+                      height: '66px',
+                      borderRadius: '50%',
+                      backgroundColor: '#FCF9F6',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'inset 0 2px 4px rgba(52, 52, 58, 0.05)'
+                    }}>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--main-heading)' }}>{overallPercentage}%</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 700 }}>DONE</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', backgroundColor: '#FCF9F6', padding: '16px 24px', borderRadius: '12px', border: '1px solid #D8D2CE', boxShadow: '0 2px 6px rgba(52, 52, 58, 0.03)' }}>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--main-heading)', lineHeight: 1 }}>{totalSolvedCount}</div>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>/ {totalQuestionsInDB} Solved</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
- {/* Search, Filter, and Controls */}
- <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
- <div style={{ position: 'relative' }}>
- <input 
- type="text" 
- placeholder="Search patterns or Leetcode questions... (e.g. Kadane, Two Sum)"
- value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="saas-search-input"
- style={{ height: '48px', fontSize: '0.9rem' }}
- />
- {searchQuery && (
- <button 
- onClick={() => setSearchQuery('')}
- style={{ position: 'absolute', right: '16px', top: '15px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontWeight: 700 }}
- >
- 
- </button>
- )}
- </div>
+            {/* Search, Filter, and Controls */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="text" 
+                  placeholder="Search patterns or Leetcode questions... (e.g. Kadane, Two Sum)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="saas-search-input"
+                  style={{ height: '48px', fontSize: '0.9rem' }}
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    style={{ position: 'absolute', right: '16px', top: '15px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
- <select
- value={difficultyFilter}
- onChange={(e) => setDifficultyFilter(e.target.value)}
- className="input-field"
- style={{ height: '48px', borderRadius: '18px', padding: '0 16px', borderColor: 'var(--border-color)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
- >
- <option value="All">All Difficulties</option>
- <option value="Easy">Easy Problems</option>
- <option value="Medium">Medium Problems</option>
- <option value="Hard">Hard Problems</option>
- </select>
+              <select
+                value={difficultyFilter}
+                onChange={(e) => setDifficultyFilter(e.target.value)}
+                className="input-field"
+                style={{ height: '48px', borderRadius: '12px', padding: '0 16px', borderColor: 'var(--border-color)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                <option value="All">All Difficulties</option>
+                <option value="Easy">Easy Problems</option>
+                <option value="Medium">Medium Problems</option>
+                <option value="Hard">Hard Problems</option>
+              </select>
 
- <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: '0.85rem', color: '#6B7280', fontWeight: 600 }}>
- {searchQuery || difficultyFilter !== 'All' ? (
- <span>Showing matching results</span>
- ) : (
- <span>All 16 Categories Loaded</span>
- )}
- </div>
- </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {searchQuery || difficultyFilter !== 'All' ? (
+                  <span>Showing matching results</span>
+                ) : (
+                  <span>All 16 Categories Loaded</span>
+                )}
+              </div>
+            </div>
 
- {/* Topic Breakdown — show as full-page detail when a category is selected */}
- {expandedCategoryId && filteredCategories.find(c => c.id === expandedCategoryId) ? (() => {
- const activeCat = filteredCategories.find(c => c.id === expandedCategoryId);
- return (
- <div>
- {/* Detail page header with back button */}
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
- <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
- <button
- onClick={() => { setExpandedCategoryId(null); setSelectedPattern(null); }}
- className="btn-secondary-spec"
- style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600 }}
- >
- Back to Topics
- </button>
- <div>
- <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6B7280' }}>
- {activeCat.patterns.length} patterns
- </div>
- <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
- {activeCat.name}
- </h2>
- </div>
- </div>
- {(() => {
- const stats = getCategoryStats(activeCat);
- return (
- <div style={{ textAlign: 'right', backgroundColor: '#F8F9FA', padding: '14px 20px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
- <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>{stats.solved}/{stats.total}</div>
- <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600, marginTop: '4px' }}>Questions Done</div>
- <div style={{ marginTop: '8px', height: '5px', width: '100%', backgroundColor: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
- <div style={{ height: '100%', width: `${stats.percentage}%`, backgroundColor: '#111827', borderRadius: '3px', transition: 'width 0.3s ease' }} />
- </div>
- </div>
- );
- })()}
- </div>
+            {/* Topic Breakdown — show as full-page detail when a category is selected */}
+            {expandedCategoryId && filteredCategories.find(c => c.id === expandedCategoryId) ? (() => {
+              const activeCat = filteredCategories.find(c => c.id === expandedCategoryId);
+              return (
+                <div>
+                  {/* Detail page header with back button */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <button
+                        onClick={() => { setExpandedCategoryId(null); setSelectedPattern(null); }}
+                        className="btn-secondary-spec"
+                        style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600 }}
+                      >
+                        Back to Topics
+                      </button>
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                          {activeCat.patterns.length} patterns
+                        </div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--main-heading)', margin: 0 }}>
+                          {activeCat.name}
+                        </h2>
+                      </div>
+                    </div>
+                    {(() => {
+                      const stats = getCategoryStats(activeCat);
+                      return (
+                        <div style={{ textAlign: 'right', backgroundColor: '#FCF9F6', padding: '14px 20px', borderRadius: '12px', border: '1px solid #D8D2CE' }}>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--main-heading)', lineHeight: 1 }}>{stats.solved}/{stats.total}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>Questions Done</div>
+                          <div style={{ marginTop: '8px', height: '6px', width: '100%', backgroundColor: '#D8D2CE', borderRadius: '999px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${stats.percentage}%`, backgroundColor: '#526257', borderRadius: '999px', transition: 'width 0.3s ease' }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
 
- {/* Pattern Rows */}
- <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
- {activeCat.patterns.map((pattern) => {
- const solvedCount = pattern.questions.filter(q => solvedQuestions[q.title]).length;
- const totalCount = pattern.questions.length;
- const isOpen = selectedPattern?.id === pattern.id;
+                  {/* Pattern Rows with Numbering */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {activeCat.patterns.map((pattern, patIdx) => {
+                      const solvedCount = pattern.questions.filter(q => solvedQuestions[q.title]).length;
+                      const totalCount = pattern.questions.length;
+                      const isOpen = selectedPattern?.id === pattern.id;
+                      const patternNum = String(patIdx + 1).padStart(2, '0');
 
- return (
- <div
- key={pattern.id}
- style={{
- border: isOpen ? '2px solid #374151' : '1px solid #E5E7EB',
- borderRadius: '12px',
- overflow: 'hidden',
- transition: 'all 0.15s ease',
- backgroundColor: '#FFFFFF'
- }}
- >
- {/* Pattern Title Row */}
- <div
- onClick={() => setSelectedPattern(isOpen ? null : pattern)}
- style={{
- display: 'flex',
- justifyContent: 'space-between',
- alignItems: 'center',
- padding: '20px 24px',
- cursor: 'pointer',
- backgroundColor: isOpen ? '#F9FAFB' : '#FFFFFF'
- }}
- >
- <div style={{ flex: 1 }}>
- <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
- {pattern.name}
- </h4>
- <span style={{ fontSize: '0.8rem', color: '#6B7280', display: 'flex', gap: '12px' }}>
- <span>Time: <strong>{pattern.complexity.time}</strong></span>
- <span>•</span>
- <span>Space: <strong>{pattern.complexity.space}</strong></span>
- </span>
- </div>
+                      return (
+                        <div
+                          key={pattern.id}
+                          className="saas-card-spec"
+                          style={{
+                            padding: 0,
+                            overflow: 'hidden',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {/* Pattern Title Row */}
+                          <div
+                            onClick={() => setSelectedPattern(isOpen ? null : pattern)}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '20px 24px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                              <span className="pill-tag" style={{ fontSize: '0.78rem', fontWeight: 800 }}>
+                                {patternNum}
+                              </span>
+                              <div>
+                                <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--secondary-heading)', marginBottom: '4px', margin: 0 }}>
+                                  {pattern.name}
+                                </h4>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', marginTop: '4px' }}>
+                                  <span>Time: <strong>{pattern.complexity.time}</strong></span>
+                                  <span>•</span>
+                                  <span>Space: <strong>{pattern.complexity.space}</strong></span>
+                                </span>
+                              </div>
+                            </div>
 
- <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
- <span style={{
- fontSize: '0.82rem', fontWeight: 700,
- padding: '4px 12px', borderRadius: '20px',
- backgroundColor: solvedCount === totalCount ? '#F3F4F6' : '#F3F4F6',
- color: solvedCount === totalCount ? '#111827' : '#374151'
- }}>
- {solvedCount}/{totalCount} solved
- </span>
- <svg
- style={{
- width: '18px', height: '18px', color: '#9CA3AF',
- transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
- transition: 'transform 0.2s ease'
- }}
- fill="none" viewBox="0 0 24 24" stroke="currentColor"
- >
- <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
- </svg>
- </div>
- </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                              <span style={{
+                                fontSize: '0.82rem', fontWeight: 700,
+                                padding: '4px 12px', borderRadius: '20px',
+                                backgroundColor: solvedCount === totalCount && totalCount > 0 ? '#EAECE8' : '#FCF9F6',
+                                color: solvedCount === totalCount && totalCount > 0 ? '#68705F' : 'var(--secondary-heading)',
+                                border: '1px solid #D8D2CE'
+                              }}>
+                                {solvedCount}/{totalCount} solved
+                              </span>
+                              <svg
+                                style={{
+                                  width: '18px', height: '18px', color: 'var(--text-muted)',
+                                  transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                  transition: 'transform 0.2s ease'
+                                }}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </div>
 
- {/* Pattern Expansion details */}
- {isOpen && (
- <div style={{ padding: '20px 24px', borderTop: '1px solid #E5E7EB', backgroundColor: '#FFFFFF' }}>
- <p style={{ fontSize: '0.88rem', color: '#4B5563', lineHeight: 1.6, marginBottom: '14px' }}>
- <strong>Pattern Strategy:</strong> {pattern.description}
- </p>
- {pattern.howToIdentify && (
- <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '20px', backgroundColor: '#F9FAFB', padding: '10px 14px', borderRadius: '8px' }}>
- <strong>How to Identify:</strong> {pattern.howToIdentify}
- </p>
- )}
+                          {/* Pattern Expansion details */}
+                          {isOpen && (
+                            <div style={{ padding: '20px 24px', borderTop: '1px solid #D8D2CE' }}>
+                              <p style={{ fontSize: '0.9rem', color: 'var(--body-text)', lineHeight: 1.6, marginBottom: '14px' }}>
+                                <strong style={{ color: 'var(--main-heading)' }}>Pattern Strategy:</strong> {pattern.description}
+                              </p>
+                              {pattern.howToIdentify && (
+                                <p style={{ fontSize: '0.84rem', color: 'var(--body-text)', marginBottom: '20px', backgroundColor: '#F5EBE6', padding: '10px 14px', borderRadius: '10px', border: '1px solid #D8D2CE' }}>
+                                  <strong style={{ color: 'var(--accent-terracotta)' }}>How to Identify:</strong> {pattern.howToIdentify}
+                                </p>
+                              )}
 
- {/* LeetCode Questions checklist */}
- <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
- {pattern.questions.map((question) => {
- const isSolved = solvedQuestions[question.title];
- return (
- <div
- key={question.title}
- style={{
- display: 'flex',
- justifyContent: 'space-between',
- alignItems: 'center',
- padding: '12px 16px',
- borderRadius: '10px',
- backgroundColor: isSolved ? '#F3F4F6' : '#F9FAFB',
- border: `1px solid ${isSolved ? '#E5E7EB' : '#E5E7EB'}`,
- transition: 'all 0.1s ease'
- }}
- >
- <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
- <div
- onClick={() => handleToggleSolved(question.title)}
- style={{
- width: '20px',
- height: '20px',
- borderRadius: '5px',
- border: isSolved ? '1.5px solid #111827' : '1.5px solid #D1D5DB',
- backgroundColor: isSolved ? '#111827' : '#FFFFFF',
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center',
- cursor: 'pointer',
- flexShrink: 0,
- transition: 'all 0.15s ease'
- }}
- title={isSolved ? "Mark as unsolved" : "Mark as solved"}
- >
- {isSolved && (
- <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
- <polyline points="20 6 9 17 4 12" />
- </svg>
- )}
- </div>
- <a
- href={question.url}
- target="_blank"
- rel="noreferrer"
- style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
- >
- {question.title}
- <svg style={{ width: '12px', height: '12px', color: '#9CA3AF' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
- </svg>
- </a>
- </div>
+                              {/* LeetCode Questions checklist */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {pattern.questions.map((question) => {
+                                  const isSolved = solvedQuestions[question.title];
+                                  return (
+                                    <div
+                                      key={question.title}
+                                      style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '14px 18px',
+                                        borderRadius: '12px',
+                                        backgroundColor: isSolved ? '#EAECE8' : '#FCF9F6',
+                                        border: '1px solid #D8D2CE',
+                                        boxShadow: '0 2px 5px rgba(52, 52, 58, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                                        transition: 'all 0.1s ease'
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                        <div
+                                          onClick={() => handleToggleSolved(question.title)}
+                                          style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '6px',
+                                            border: isSolved ? '1.5px solid #526257' : '1.5px solid #D8D2CE',
+                                            backgroundColor: isSolved ? '#526257' : '#FCF9F6',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                            transition: 'all 0.15s ease'
+                                          }}
+                                          title={isSolved ? "Mark as unsolved" : "Mark as solved"}
+                                        >
+                                          {isSolved && (
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F7F3EE" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <polyline points="20 6 9 17 4 12" />
+                                            </svg>
+                                          )}
+                                        </div>
+                                        <a
+                                          href={question.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--main-heading)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        >
+                                          {question.title}
+                                          <svg style={{ width: '12px', height: '12px', color: 'var(--text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </a>
+                                      </div>
 
- <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
- <span style={{
- fontSize: '0.75rem', fontWeight: 700,
- color: question.difficulty === 'Easy' ? '#111827' : question.difficulty === 'Medium' ? '#111827' : '#111827',
- }}>
- {question.difficulty}
- </span>
- {question.approach && (
- <button
- onClick={() => {
- const meta = getProblemData(question.title, question, pattern);
- setSolutionProblem({ ...question, ...meta });
- setSolutionTab('Python');
- }}
- className="btn-secondary-spec"
- style={{ fontSize: '0.78rem', padding: '6px 12px', borderRadius: '8px' }}
- >
- Optimal Solution
- </button>
- )}
- <button
- onClick={() => handleLaunchCompiler(question, pattern)}
- className="btn-secondary-spec"
- style={{ fontSize: '0.78rem', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#374151', color: '#FFFFFF', borderColor: '#374151' }}
- >
- Solve
- </button>
- </div>
- </div>
- );
- })}
- </div>
- </div>
- )}
- </div>
- );
- })}
- </div>
- </div>
- );
- })() : (
- <div>
- <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#111827', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
- Topic Breakdown
- </h3>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{
+                                          fontSize: '0.75rem', fontWeight: 700,
+                                          color: 'var(--secondary-heading)'
+                                        }}>
+                                          {question.difficulty}
+                                        </span>
+                                        {question.approach && (
+                                          <button
+                                            onClick={() => {
+                                              const meta = getProblemData(question.title, question, pattern);
+                                              setSolutionProblem({ ...question, ...meta });
+                                              setSolutionTab('Python');
+                                            }}
+                                            className="btn-secondary-spec"
+                                            style={{ fontSize: '0.8rem', padding: '6px 12px', borderRadius: '8px' }}
+                                          >
+                                            Optimal Solution
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => handleLaunchCompiler(question, pattern)}
+                                          className="btn-primary-spec"
+                                          style={{ fontSize: '0.82rem', padding: '7px 16px', borderRadius: '10px' }}
+                                        >
+                                          Solve
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })() : (
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--secondary-heading)', marginBottom: '20px', letterSpacing: '-0.3px' }}>
+                  Topic Breakdown
+                </h3>
 
- {/* Category Cards Grid */}
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
- {filteredCategories.map((cat) => {
- const stats = getCategoryStats(cat);
+                {/* Section-Wise List for Pattern Types with Dashboard Numbering and Green Sage Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {filteredCategories.map((cat, catIdx) => {
+                    const stats = getCategoryStats(cat);
+                    const categoryNumber = String(catIdx + 1).padStart(2, '0');
 
- return (
- <div
- key={cat.id}
- className="saas-card-spec"
- style={{
- padding: '24px',
- display: 'flex',
- flexDirection: 'column',
- justifyContent: 'space-between',
- cursor: 'pointer',
- transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
- }}
- >
- <div>
- {/* Solved badge top-right */}
- <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
- <span style={{
- fontSize: '0.75rem',
- fontWeight: 700,
- padding: '3px 10px',
- borderRadius: '20px',
- backgroundColor: stats.percentage === 100 ? '#F3F4F6' : '#F3F4F6',
- color: stats.percentage === 100 ? '#111827' : '#374151'
- }}>
- {stats.solved}/{stats.total} done
- </span>
- </div>
+                    return (
+                      <div
+                        key={cat.id}
+                        className="saas-card-spec"
+                        style={{
+                          padding: '24px 28px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '24px',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <div style={{ flex: '1 1 340px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <span className="pill-tag" style={{ fontSize: '0.8rem', fontWeight: 800 }}>
+                              {categoryNumber}
+                            </span>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                              {cat.patterns.length} algorithmic patterns
+                            </span>
+                            <span style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              backgroundColor: stats.percentage === 100 ? '#EAECE8' : '#FCF9F6',
+                              color: stats.percentage === 100 ? '#68705F' : 'var(--secondary-heading)',
+                              border: '1px solid #D8D2CE'
+                            }}>
+                              {stats.solved}/{stats.total} done
+                            </span>
+                          </div>
 
- {/* Category name */}
- <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', marginBottom: '8px', lineHeight: 1.3 }}>
- {cat.name}
- </h4>
+                          <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--main-heading)', margin: '0 0 6px 0', lineHeight: 1.3 }}>
+                            {cat.name}
+                          </h4>
+                          <p style={{ fontSize: '0.88rem', color: 'var(--body-text)', margin: 0, lineHeight: 1.5 }}>
+                            {cat.patterns.slice(0, 4).map(p => p.name).join(' • ')}{cat.patterns.length > 4 ? ' • ...' : ''}
+                          </p>
+                        </div>
 
- {/* Pattern count */}
- <div style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '16px' }}>
- {cat.patterns.length} patterns
- </div>
- </div>
+                        {/* Progress Bar & Stat */}
+                        <div style={{ minWidth: '180px', flex: '0 1 220px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                              Progress
+                            </span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--main-heading)' }}>
+                              {stats.percentage}%
+                            </span>
+                          </div>
+                          <div style={{ height: '8px', width: '100%', backgroundColor: '#D8D2CE', borderRadius: '999px', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(52, 52, 58, 0.1)' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${stats.percentage}%`,
+                              backgroundColor: '#526257',
+                              borderRadius: '999px',
+                              transition: 'width 0.3s ease'
+                            }} />
+                          </div>
+                        </div>
 
- <div>
- {/* Progress Bar */}
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
- <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600 }}>Progress</span>
- <span style={{ fontSize: '0.75rem', fontWeight: 700, color: stats.percentage > 0 ? '#111827' : '#9CA3AF' }}>
- {stats.percentage}%
- </span>
- </div>
- <div style={{ height: '6px', width: '100%', backgroundColor: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
- <div style={{
- height: '100%',
- width: `${stats.percentage}%`,
- backgroundColor: '#111827',
- borderRadius: '3px',
- transition: 'width 0.3s ease'
- }} />
- </div>
-
- {/* Explore button */}
- <button
- onClick={() => { setExpandedCategoryId(cat.id); setSelectedPattern(null); }}
- className="btn-secondary-spec"
- style={{
- marginTop: '16px',
- width: '100%',
- justifyContent: 'center',
- padding: '10px',
- fontSize: '0.88rem',
- fontWeight: 600,
- backgroundColor: '#F3F4F6',
- color: '#374151',
- border: '1px solid #E5E7EB'
- }}
- >
- Explore Patterns
- </button>
- </div>
- </div>
- );
- })}
- </div>
- </div>
- )}
- </>
- )}
+                        {/* Explore Patterns Green/Dark Sage Button */}
+                        <div>
+                          <button
+                            onClick={() => { setExpandedCategoryId(cat.id); setSelectedPattern(null); }}
+                            className="btn-primary-spec"
+                            style={{
+                              padding: '12px 24px',
+                              fontSize: '0.9rem',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Explore Patterns
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
  {/* Optimal Solution Drawer Modal */}
  {solutionProblem && (
@@ -813,7 +824,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  maxHeight: '85vh',
  overflowY: 'auto',
  padding: '32px',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  position: 'relative',
  display: 'flex',
  flexDirection: 'column'
@@ -931,7 +942,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  width: '100%',
  height: '88vh',
  padding: '24px 28px',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  display: 'flex',
  flexDirection: 'column',
  gap: '14px',
@@ -986,8 +997,8 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  style={{
  padding: '4px 10px',
  borderRadius: '6px',
- border: compilerLanguage === lang ? '1px solid #475569' : '1px solid #D1D5DB',
- backgroundColor: compilerLanguage === lang ? '#475569' : '#FFFFFF',
+ border: compilerLanguage === lang ? '1px solid #66666B' : '1px solid #D1D5DB',
+ backgroundColor: compilerLanguage === lang ? '#66666B' : '#FFFFFF',
  color: compilerLanguage === lang ? '#FFFFFF' : '#374151',
  fontWeight: 600,
  fontSize: '12px',
@@ -1006,7 +1017,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  style={{
  padding: '7px 20px',
  borderRadius: '8px',
- backgroundColor: isCompiling ? '#9CA3AF' : '#475569',
+ backgroundColor: isCompiling ? '#9CA3AF' : '#66666B',
  color: '#FFFFFF',
  border: 'none',
  fontWeight: 700,
@@ -1047,9 +1058,9 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  </div>
 
  {/* Live Compiler Output Console */}
- <div style={{ height: '160px', flexShrink: 0, backgroundColor: '#0F172A', color: '#F8FAFC', borderRadius: '8px', padding: '12px 16px', display: 'flex', flexDirection: 'column', border: '1px solid #1E293B' }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '6px', marginBottom: '8px' }}>
- <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+ <div style={{ height: '160px', flexShrink: 0, backgroundColor: '#34343A', color: '#FCF9F6', borderRadius: '8px', padding: '12px 16px', display: 'flex', flexDirection: 'column', border: '1px solid #34343A' }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #4F5056', paddingBottom: '6px', marginBottom: '8px' }}>
+ <span style={{ fontSize: '11px', fontWeight: 700, color: '#89878A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
  Compiler Output Console {compilerResult?.executionTime ? `(${compilerResult.executionTime})` : ''}
  </span>
  {compilerResult && (
@@ -1062,7 +1073,7 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  )}
  </div>
 
- <pre style={{ flex: 1, overflow: 'auto', margin: 0, fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'pre-wrap', color: compilerResult?.error ? '#E5E7EB' : '#E2E8F0' }}>
+ <pre style={{ flex: 1, overflow: 'auto', margin: 0, fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'pre-wrap', color: compilerResult?.error ? '#E5E7EB' : '#D8D2CE' }}>
  {isCompiling
  ? 'Running...'
  : compilerResult

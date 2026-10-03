@@ -205,7 +205,7 @@ export class StressScorer {
         tier: 'Optimal Engagement',
         cognitiveLoad: 'Moderate',
         color: '#111827',
-        bg: '#F0F9FF',
+        bg: '#EAECE8',
         description: 'Moderate cognitive challenge — optimal focus',
       };
     }

@@ -33,13 +33,69 @@ const LEADERSHIP_STYLES = ['Transformational & Inspirational', 'Servant Leadersh
 const TESTING_TYPES   = ['UI Automation', 'REST API Testing', 'Performance & Load Testing', 'Manual & Exploratory', 'Security & Penetration Testing', 'CI/CD Regression Suite'];
 const THREAT_SCENARIOS = ['Zero-Day Web Application Exploit', 'Ransomware Attack & Data Exfiltration', 'Distributed Denial of Service (DDoS)', 'Insider Threat & Privilege Escalation', 'Cloud IAM Misconfiguration'];
 const CLOUD_GOALS     = ['High Availability & Disaster Recovery', 'Serverless Microservices Architecture', 'Legacy Monolith Cloud Migration', 'FinOps Cloud Cost Optimization'];
+const SYSTEM_DESIGN_PRESETS = [
+  'URL Shortener (TinyURL / Bitly)',
+  'Ride Sharing Service (Uber / Lyft)',
+  'Real-Time Chat & Messaging (WhatsApp / Slack)',
+  'Video Streaming Platform (Netflix / YouTube)',
+  'E-Commerce & Flash Sale (Amazon / Flipkart)',
+  'Distributed Rate Limiter & API Gateway',
+  'Distributed Cache System (Redis-like)',
+  'Parking Lot Management System (LLD / OOP)',
+  'Elevator Dispatching System (LLD / OOP)',
+  'Expense Sharing App (Splitwise LLD)',
+  'Movie Ticket Booking (BookMyShow)',
+  'Notification Dispatcher (Push / SMS / Email Queue)',
+  'Web Crawler & Search Indexer',
+  'Custom System / Architecture Problem'
+];
+const DESIGN_FOCUS_OPTIONS = [
+  'High-Level Architecture (HLD - Distributed Systems)',
+  'Low-Level Design (LLD - OOP & SOLID Patterns)',
+  'Full End-to-End System Design (HLD + LLD Combined)'
+];
+const SCALE_PROFILES = [
+  'Startup Scale (10K - 100K DAU, Single Region)',
+  'High Growth Scale (1M - 10M DAU, 5,000 QPS)',
+  'Global Hyper-Scale (100M+ DAU, 50,000+ QPS, Multi-Region Active-Active)',
+  'Heavy Write / High Event Ingestion',
+  'Ultra-Low Latency (<10ms Real-Time)'
+];
+const ARCH_PRIORITIES = [
+  'High Availability (99.999% Uptime)',
+  'Ultra-Low Latency (<10ms p99)',
+  'Strong Consistency & ACID',
+  'High Write Throughput & Partition Tolerance',
+  'Fault Tolerance & Disaster Recovery'
+];
+const SYSTEM_COMPONENTS = [
+  'PostgreSQL / Relational SQL',
+  'NoSQL (Cassandra / DynamoDB / MongoDB)',
+  'Redis / In-Memory Cache',
+  'Kafka / Event Streaming',
+  'RabbitMQ / SQS Task Queues',
+  'Elasticsearch / Log Search',
+  'WebSockets / gRPC',
+  'CDN & Load Balancer',
+  'Docker & Kubernetes Microservices'
+];
+const LLD_PATTERNS = [
+  'SOLID Principles',
+  'Factory & Builder Pattern',
+  'Strategy & State Pattern',
+  'Observer & Pub-Sub Pattern',
+  'Singleton & Concurrency Locks',
+  'Decorator & Adapter Pattern',
+  'Repository & Clean Architecture',
+  'Database Schema & Normalization'
+];
 
 // ── Track-specific configuration schema for all 12 tracks ─────────────────────
 const TRACK_FIELDS = {
   hr:                { label: 'HR Interview',         fields: ['role', 'company', 'experience', 'hrPracticeTopic', 'hrInterviewTone', 'workPreference', 'joiningTime', 'aboutUser'] },
   tech:              { label: 'Technical Interview',  fields: ['role', 'company', 'experience', 'codingLang', 'techSubjects', 'techInterviewFocus', 'techInterviewTone', 'techProjects', 'aboutUser'] },
   dsa:               { label: 'DSA & Coding',         fields: ['codingLang', 'difficulty_dsa', 'timeLimitPerProblem', 'evaluationFocus', 'complexityRequirement', 'proctoringMode'] },
-  system_design:     { label: 'System Design & Architecture (HLD & LLD)', fields: ['role', 'codingLang', 'experience', 'systemToDesign', 'expectedScale', 'preferredTech', 'designFocus'] },
+  system_design:     { label: 'System Design & Architecture (HLD & LLD)', fields: ['role', 'experience', 'designFocus', 'systemToDesign', 'expectedScale', 'archPriority', 'preferredTech', 'lldPatterns', 'codingLang', 'aboutUser'] },
   behavioral:        { label: 'Behavioral & Managerial', fields: ['role', 'company', 'experience', 'teamSize', 'leadershipStyle', 'achievements', 'resume', 'jobDescription'] },
   gd:                { label: 'Group Discussion',     fields: ['gdTopic', 'industry', 'gdParticipants', 'discussionRole'] },
   group_discussion:  { label: 'Group Discussion',     fields: ['gdTopic', 'industry', 'gdParticipants', 'discussionRole'] },
@@ -53,19 +109,20 @@ const TRACK_FIELDS = {
   custom:            { label: 'Custom Builder',       fields: ['role', 'company', 'techSubjects', 'codingLang', 'experience', 'jobDescription', 'questionCount'] },
 };
 
-// ── Design tokens — professional grey / white / border ────────────────────────
-const GREY_BTN = '#475569';
-const GREY_TEXT = '#64748B';
-const BORDER = '#CBD5E1';
-const BG     = '#F8FAFC';
-const TEXT_MAIN = '#0F172A';
+// ── Design tokens — Earthy Sage & Terracotta Dashboard Theme ──────────────────
+const GREY_BTN = 'var(--btn-sage)';
+const GREY_TEXT = 'var(--text-muted)';
+const BORDER = 'var(--border-color)';
+const BG     = 'var(--bg-page)';
+const TEXT_MAIN = 'var(--main-heading)';
 
 const inputStyle = {
-  padding: '11px 14px', fontSize: '14px', borderRadius: '8px',
-  border: `1px solid ${BORDER}`, backgroundColor: '#FFFFFF',
-  color: TEXT_MAIN, outline: 'none', width: '100%',
-  fontFamily: 'var(--font-inter)', fontWeight: 500,
-  boxSizing: 'border-box'
+  padding: '11px 14px', fontSize: '13.5px', borderRadius: '10px',
+  border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)',
+  color: 'var(--main-heading)', outline: 'none', width: '100%',
+  fontFamily: 'var(--font-body)', fontWeight: 500,
+  transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)'
 };
 const textareaStyle = { ...inputStyle, resize: 'vertical', minHeight: '90px' };
 const selectStyle   = { ...inputStyle, cursor: 'pointer' };
@@ -73,12 +130,12 @@ const selectStyle   = { ...inputStyle, cursor: 'pointer' };
 // ── Field label wrapper ───────────────────────────────────────────────────────
 const Field = ({ label, helper, children }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-    <label style={{ fontSize: '14px', fontWeight: 700, color: TEXT_MAIN, letterSpacing: '-0.2px' }}>
+    <label style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--main-heading)', letterSpacing: '-0.2px', fontFamily: 'var(--font-heading)' }}>
       {label}
     </label>
     {children}
     {helper && (
-      <span style={{ fontSize: '12.5px', color: GREY_TEXT, lineHeight: 1.4 }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4, fontFamily: 'var(--font-body)' }}>
         {helper}
       </span>
     )}
@@ -96,11 +153,13 @@ const MultiSelect = ({ options, selected, onChange }) => {
         const active = sel.includes(opt);
         return (
           <button key={opt} onClick={() => toggle(opt)} style={{
-            padding: '7px 14px', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer',
-            border: `1px solid ${active ? GREY_BTN : BORDER}`,
-            backgroundColor: active ? GREY_BTN : '#FFFFFF',
-            color: active ? '#FFFFFF' : TEXT_MAIN,
+            padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            border: `1px solid ${active ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+            backgroundColor: active ? 'var(--btn-sage)' : 'var(--bg-card)',
+            color: active ? '#FFFFFF' : 'var(--body-text)',
+            boxShadow: active ? '0 2px 8px rgba(82, 98, 87, 0.25)' : '0 1px 3px rgba(0,0,0,0.02)',
             transition: 'all 0.15s ease',
+            fontFamily: 'var(--font-body)'
           }}>
             {opt}
           </button>
@@ -114,13 +173,14 @@ const MultiSelect = ({ options, selected, onChange }) => {
 const Toggle = ({ active, onToggle, label }) => (
   <div onClick={onToggle} style={{
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '10px 14px', borderRadius: '8px', cursor: 'pointer',
-    border: `1px solid ${BORDER}`, backgroundColor: '#FFFFFF',
+    padding: '10px 14px', borderRadius: '10px', cursor: 'pointer',
+    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
   }}>
-    <span style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>{label}</span>
+    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--main-heading)', fontFamily: 'var(--font-body)' }}>{label}</span>
     <div style={{
       width: '38px', height: '22px', borderRadius: '11px',
-      backgroundColor: active ? GREY_BTN : '#CBD5E1',
+      backgroundColor: active ? 'var(--btn-sage)' : 'var(--border-color)',
       position: 'relative', transition: 'background-color 0.15s ease', flexShrink: 0,
     }}>
       <div style={{
@@ -140,11 +200,13 @@ const PillRow = ({ options, value, onChange, suffix = '' }) => (
       const active = value === opt;
       return (
         <button key={opt} onClick={() => onChange(opt)} style={{
-          padding: '8px 16px', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer',
-          border: `1px solid ${active ? GREY_BTN : BORDER}`,
-          backgroundColor: active ? GREY_BTN : '#FFFFFF',
-          color: active ? '#FFFFFF' : TEXT_MAIN,
+          padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          border: `1px solid ${active ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+          backgroundColor: active ? 'var(--btn-sage)' : 'var(--bg-card)',
+          color: active ? '#FFFFFF' : 'var(--body-text)',
+          boxShadow: active ? '0 2px 8px rgba(82, 98, 87, 0.25)' : '0 1px 3px rgba(0,0,0,0.02)',
           transition: 'all 0.15s ease',
+          fontFamily: 'var(--font-body)'
         }}>
           {opt}{suffix}
         </button>
@@ -292,21 +354,68 @@ function TrackFields({ trackId, config, set }) {
       </Field>
     ),
     systemToDesign: (
-      <Field label="System / Problem to Design">
-        <input type="text" style={inputStyle} placeholder="e.g. Food Delivery App, Parking Lot"
-          value={config.systemToDesign || ''} onChange={e => set('systemToDesign', e.target.value)} />
+      <Field label="System Archetype / Problem to Design" helper="Choose a standard industry design problem or select Custom to define your own.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <select
+            style={selectStyle}
+            value={SYSTEM_DESIGN_PRESETS.includes(config.systemToDesign) ? config.systemToDesign : 'Custom System / Architecture Problem'}
+            onChange={e => {
+              const val = e.target.value;
+              if (val === 'Custom System / Architecture Problem') {
+                set('systemToDesign', '');
+              } else {
+                set('systemToDesign', val);
+              }
+            }}
+          >
+            {SYSTEM_DESIGN_PRESETS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          {(!SYSTEM_DESIGN_PRESETS.includes(config.systemToDesign) || config.systemToDesign === '' || config.systemToDesign === 'Custom System / Architecture Problem') && (
+            <input
+              type="text"
+              style={inputStyle}
+              placeholder="e.g. Distributed Video Transcoder, Real-time Collaborative Canvas, Crypto Exchange Orderbook"
+              value={config.systemToDesign || ''}
+              onChange={e => set('systemToDesign', e.target.value)}
+            />
+          )}
+        </div>
       </Field>
     ),
     expectedScale: (
-      <Field label="Expected Scale">
-        <input type="text" style={inputStyle} placeholder="e.g. 10 million users"
-          value={config.expectedScale || ''} onChange={e => set('expectedScale', e.target.value)} />
+      <Field label="Target Scale & Traffic Profile" helper="Select the concurrency and volume requirements for this architecture.">
+        <PillRow
+          options={SCALE_PROFILES}
+          value={config.expectedScale || SCALE_PROFILES[1]}
+          onChange={v => set('expectedScale', v)}
+        />
+      </Field>
+    ),
+    archPriority: (
+      <Field label="Core Non-Functional & SLA Priorities" helper="Select the key architectural trade-offs to emphasize during evaluation.">
+        <MultiSelect
+          options={ARCH_PRIORITIES}
+          selected={config.archPriority || ['High Availability (99.999% Uptime)', 'Ultra-Low Latency (<10ms p99)']}
+          onChange={v => set('archPriority', v)}
+        />
       </Field>
     ),
     preferredTech: (
-      <Field label="Preferred Technologies">
-        <input type="text" style={inputStyle} placeholder="e.g. PostgreSQL, Redis, Kafka"
-          value={config.preferredTech || ''} onChange={e => set('preferredTech', e.target.value)} />
+      <Field label="Architectural Building Blocks & Tech Stack" helper="Choose the infrastructure primitives and data stores you prefer to utilize.">
+        <MultiSelect
+          options={SYSTEM_COMPONENTS}
+          selected={config.preferredTech || ['PostgreSQL / Relational SQL', 'Redis / In-Memory Cache', 'Kafka / Event Streaming']}
+          onChange={v => set('preferredTech', v)}
+        />
+      </Field>
+    ),
+    lldPatterns: (
+      <Field label="Low-Level Design & Pattern Emphasis" helper="Select OOP design patterns, SOLID principles, or schema designs to be evaluated on.">
+        <MultiSelect
+          options={LLD_PATTERNS}
+          selected={config.lldPatterns || ['SOLID Principles', 'Factory & Builder Pattern', 'Strategy & State Pattern']}
+          onChange={v => set('lldPatterns', v)}
+        />
       </Field>
     ),
     githubUrl: (
@@ -494,10 +603,12 @@ function TrackFields({ trackId, config, set }) {
       </Field>
     ),
     designFocus: (
-      <Field label="Architecture Focus Area">
-        <select style={selectStyle} value={config.designFocus || 'High-Level Architecture (HLD)'} onChange={e => set('designFocus', e.target.value)}>
-          {['High-Level Architecture (HLD)', 'Low-Level Design (LLD & SOLID)', 'Distributed Database & Caching', 'End-to-End Scalable System'].map(w => <option key={w}>{w}</option>)}
-        </select>
+      <Field label="System Design & Architecture Focus Scope" helper="Specify whether you want to focus on high-level distributed systems, low-level OOP/SOLID design, or both.">
+        <PillRow
+          options={DESIGN_FOCUS_OPTIONS}
+          value={config.designFocus || DESIGN_FOCUS_OPTIONS[0]}
+          onChange={v => set('designFocus', v)}
+        />
       </Field>
     ),
     leadershipStyle: (
@@ -602,38 +713,49 @@ export default function ConfigurationModule() {
   const trackId = config.trackId || 'custom';
   const trackMeta = TRACK_FIELDS[trackId] || TRACK_FIELDS['custom'];
 
+  const handleContinueToDeviceCheck = () => {
+    setConfig({
+      ...config,
+      trackId: config.trackId || 'hr',
+      trackName: config.trackName || TRACK_FIELDS[config.trackId || 'hr']?.label || 'HR Interview'
+    });
+    setPipelineState('device_check');
+  };
+
   const tabStyle = (id) => ({
-    padding: '7px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-    border: `1px solid ${activeTab === id ? GREY_BTN : BORDER}`,
-    backgroundColor: activeTab === id ? GREY_BTN : '#FFFFFF',
-    color: activeTab === id ? '#FFFFFF' : GREY_TEXT,
+    padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+    border: `1px solid ${activeTab === id ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+    backgroundColor: activeTab === id ? 'var(--btn-sage)' : 'var(--bg-card)',
+    color: activeTab === id ? '#FFFFFF' : 'var(--body-text)',
+    boxShadow: activeTab === id ? '0 2px 8px rgba(82, 98, 87, 0.25)' : 'none',
     transition: 'all 0.15s ease',
+    fontFamily: 'var(--font-body)'
   });
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
-      backgroundColor: '#FFFFFF', fontFamily: 'var(--font-inter)', overflow: 'hidden',
+      backgroundColor: 'var(--bg-page)', fontFamily: 'var(--font-body)', overflow: 'hidden',
     }}>
 
       {/* ── Header ── */}
       <div style={{
-        backgroundColor: '#FFFFFF', borderBottom: `1px solid ${BORDER}`,
-        padding: '14px 28px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0,
+        backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)',
+        padding: '12px 28px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0,
+        boxShadow: '0 1px 3px rgba(45, 58, 48, 0.03)'
       }}>
-        <button onClick={() => setPipelineState('selection')} style={{
-          background: 'none', border: 'none', color: GREY_TEXT, fontSize: '14px', cursor: 'pointer', fontWeight: 600, padding: 0,
+        <button onClick={() => setPipelineState('selection')} className="btn-secondary-spec" style={{
+          padding: '6px 14px', fontSize: '13px', borderRadius: '8px'
         }}>
-          Back
+          ← Back
         </button>
-        <span style={{ width: '1px', height: '18px', backgroundColor: BORDER }} />
-        <span style={{
-          padding: '3px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
-          backgroundColor: '#F1F5F9', color: TEXT_MAIN, border: `1px solid ${BORDER}`,
-        }}>
+        <span style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-color)' }} />
+        <span className="pill-tag" style={{ fontSize: '12px' }}>
           {trackMeta.label}
         </span>
-        <span style={{ fontSize: '16px', fontWeight: 800, color: TEXT_MAIN }}>Configure Session</span>
+        <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+          Configure Interview Session
+        </span>
 
         {/* Tabs */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
@@ -643,20 +765,19 @@ export default function ConfigurationModule() {
       </div>
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 310px' }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 330px' }}>
 
         {/* ── LEFT: Dynamic form ── */}
-        <div style={{ padding: '24px 30px', overflowY: 'auto', borderRight: `1px solid ${BORDER}` }}>
+        <div style={{ padding: '24px 30px', overflowY: 'auto', borderRight: '1px solid var(--border-color)' }}>
 
           {activeTab === 'track' ? (
             <>
               {/* Track header strip */}
-              <div style={{
-                padding: '14px 18px', borderRadius: '8px', marginBottom: '22px',
-                backgroundColor: BG, border: `1px solid ${BORDER}`,
+              <div className="calm-sub-card" style={{
+                padding: '16px 20px', marginBottom: '22px', display: 'flex', flexDirection: 'column', gap: '4px'
               }}>
-                <p style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: TEXT_MAIN }}>{trackMeta.label}</p>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: GREY_TEXT, lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>{trackMeta.label}</p>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--body-text)', lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>
                   Configure your preferences below. The AI will curate and calibrate the interview environment accordingly.
                 </p>
               </div>
@@ -666,16 +787,16 @@ export default function ConfigurationModule() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
               {/* Difficulty */}
-              <div style={{ padding: '18px 20px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div className="calm-sub-card" style={{ padding: '18px 20px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-terracotta)', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
                   Difficulty Level
                 </p>
                 <PillRow options={DIFFICULTIES} value={config.difficulty || 'Adaptive AI'} onChange={v => set('difficulty', v)} />
               </div>
 
               {/* Personality */}
-              <div style={{ padding: '18px 20px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div className="calm-sub-card" style={{ padding: '18px 20px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-terracotta)', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
                   Interviewer Personality
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -684,14 +805,15 @@ export default function ConfigurationModule() {
                     return (
                       <div key={p.id} onClick={() => set('personality', p.id)} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 14px', borderRadius: '6px', cursor: 'pointer',
-                        border: `1px solid ${active ? GREY_BTN : BORDER}`,
-                        backgroundColor: active ? GREY_BTN : '#FAFAFA',
+                        padding: '10px 14px', borderRadius: '10px', cursor: 'pointer',
+                        border: `1px solid ${active ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+                        backgroundColor: active ? 'var(--btn-sage)' : 'var(--bg-card)',
+                        boxShadow: active ? '0 2px 8px rgba(82, 98, 87, 0.25)' : 'none',
                         transition: 'all 0.15s ease',
                       }}>
                         <div>
-                          <span style={{ fontSize: '13.5px', fontWeight: 700, color: active ? '#FFFFFF' : TEXT_MAIN }}>{p.label}</span>
-                          <span style={{ fontSize: '12.5px', color: active ? '#E2E8F0' : GREY_TEXT, marginLeft: '8px' }}>{p.desc}</span>
+                          <span style={{ fontSize: '13.5px', fontWeight: 700, color: active ? '#FFFFFF' : 'var(--main-heading)' }}>{p.label}</span>
+                          <span style={{ fontSize: '12.5px', color: active ? '#EAECE8' : 'var(--text-muted)', marginLeft: '8px' }}>{p.desc}</span>
                         </div>
                         {active && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#FFFFFF', flexShrink: 0 }} />}
                       </div>
@@ -701,8 +823,8 @@ export default function ConfigurationModule() {
               </div>
 
               {/* Duration */}
-              <div style={{ padding: '18px 20px', border: `1px solid ${BORDER}`, borderRadius: '8px', backgroundColor: '#FFFFFF' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div className="calm-sub-card" style={{ padding: '18px 20px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-terracotta)', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
                   Session Duration
                 </p>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -710,11 +832,13 @@ export default function ConfigurationModule() {
                     const active = (config.duration || '30') === d;
                     return (
                       <button key={d} onClick={() => set('duration', d)} style={{
-                        flex: 1, padding: '9px 0', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer',
-                        border: `1px solid ${active ? GREY_BTN : BORDER}`,
-                        backgroundColor: active ? GREY_BTN : '#FFFFFF',
-                        color: active ? '#FFFFFF' : TEXT_MAIN,
+                        flex: 1, padding: '9px 0', borderRadius: '8px', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer',
+                        border: `1px solid ${active ? 'var(--btn-sage)' : 'var(--border-color)'}`,
+                        backgroundColor: active ? 'var(--btn-sage)' : 'var(--bg-card)',
+                        color: active ? '#FFFFFF' : 'var(--body-text)',
+                        boxShadow: active ? '0 2px 8px rgba(82, 98, 87, 0.25)' : 'none',
                         transition: 'all 0.15s ease',
+                        fontFamily: 'var(--font-body)'
                       }}>
                         {d}m
                       </button>
@@ -728,11 +852,11 @@ export default function ConfigurationModule() {
         </div>
 
         {/* ── RIGHT: Settings panel ── */}
-        <div style={{ padding: '22px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: BG, borderLeft: `1px solid ${BORDER}` }}>
+        <div style={{ padding: '20px 18px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'var(--bg-card)', borderLeft: '1px solid var(--border-color)' }}>
 
           {/* Mode & Language */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: GREY_TEXT, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Session Format</p>
+          <div className="calm-sub-card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.6px', fontFamily: 'var(--font-body)' }}>Session Format</p>
             <Field label="Interview Mode">
               <select style={selectStyle} value={config.mode || 'voice'} onChange={e => set('mode', e.target.value)}>
                 <option value="voice">Voice + Video (Live Adaptive AI)</option>
@@ -746,12 +870,10 @@ export default function ConfigurationModule() {
             </Field>
           </div>
 
-          <div style={{ height: '1px', backgroundColor: BORDER }} />
-
           {/* Feature toggles */}
-          <div>
-            <p style={{ fontSize: '12px', fontWeight: 700, color: GREY_TEXT, textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 10px 0' }}>
-              Proctoring & Support
+          <div className="calm-sub-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.6px', margin: 0, fontFamily: 'var(--font-body)' }}>
+              Proctoring & Hardware Feed
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
@@ -768,11 +890,9 @@ export default function ConfigurationModule() {
             </div>
           </div>
 
-          <div style={{ height: '1px', backgroundColor: BORDER }} />
-
           {/* Summary */}
-          <div style={{ backgroundColor: '#FFFFFF', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 16px' }}>
-            <p style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 700, color: TEXT_MAIN, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="calm-sub-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
               Session Summary
             </p>
             {[
@@ -783,9 +903,9 @@ export default function ConfigurationModule() {
               config.role    && { label: 'Role',    value: config.role },
               config.company && { label: 'Company', value: config.company },
             ].filter(Boolean).map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '13px', color: GREY_TEXT }}>{label}</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: 'var(--body-text)' }}>{label}</span>
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--main-heading)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {value}
                 </span>
               </div>
@@ -795,27 +915,26 @@ export default function ConfigurationModule() {
           <div style={{ flex: 1 }} />
 
           {/* Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
             <button
-              onClick={startDeviceCheck}
+              onClick={handleContinueToDeviceCheck}
+              className="btn-primary-spec"
               style={{
-                width: '100%', padding: '13px', backgroundColor: GREY_BTN, color: '#FFFFFF',
-                border: 'none', borderRadius: '8px', fontSize: '14.5px', fontWeight: 700, cursor: 'pointer',
-                transition: 'opacity 0.15s ease',
+                width: '100%', padding: '12px 18px', fontSize: '14px', fontWeight: 700, borderRadius: '10px',
+                justifyContent: 'center', boxShadow: 'var(--shadow-3d-btn)'
               }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
               Continue to Device Check
             </button>
             <button
               onClick={() => setPipelineState('selection')}
+              className="btn-secondary-spec"
               style={{
-                width: '100%', padding: '11px', backgroundColor: '#FFFFFF', color: TEXT_MAIN,
-                border: `1px solid ${BORDER}`, borderRadius: '8px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer',
+                width: '100%', padding: '10px 14px', fontSize: '13px', fontWeight: 700, borderRadius: '10px',
+                justifyContent: 'center'
               }}
             >
-              Back to Selection
+              Back to Track Selection
             </button>
           </div>
 

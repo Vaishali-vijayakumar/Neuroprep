@@ -152,7 +152,7 @@ export default function Gamification({
 
       {/* Hero Header & Level Banner */}
       <div style={{
-        backgroundColor: '#FFFFFF',
+        background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
         border: '1.5px solid #E5E7EB',
         borderRadius: 22,
         padding: '30px 34px',
@@ -229,7 +229,7 @@ export default function Gamification({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
           <button 
             onClick={() => setActiveTab && setActiveTab('dashboard')} 
-            className="btn-secondary-spec"
+            className="btn-back-dashboard"
             style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <ArrowLeft size={14} /> Back to Dashboard
@@ -314,8 +314,8 @@ export default function Gamification({
               borderRadius: 10,
               border: 'none',
               cursor: 'pointer',
-              background: activeTab === id ? '#111827' : '#F1F5F9',
-              color: activeTab === id ? '#FFFFFF' : '#475569',
+              background: activeTab === id ? '#111827' : '#F5EBE6',
+              color: activeTab === id ? '#FFFFFF' : '#66666B',
               fontWeight: 700,
               fontSize: '0.85rem',
               transition: 'all 0.2s ease'
@@ -331,7 +331,7 @@ export default function Gamification({
         <div>
           {/* Today's Featured Problem Card */}
           <div style={{
-            backgroundColor: '#FFFFFF',
+            background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
             border: '1px solid #E5E7EB',
             borderRadius: 18,
             padding: '24px 28px',
@@ -404,7 +404,7 @@ export default function Gamification({
                 <div 
                   key={quest.id}
                   style={{
-                    backgroundColor: '#FFFFFF',
+                    background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
                     border: quest.completed ? '1.5px solid #86EFAC' : '1px solid #E5E7EB',
                     borderRadius: 16,
                     padding: 20,
@@ -469,7 +469,7 @@ export default function Gamification({
 
           {/* 30-Day Practice Consistency Grid */}
           <div style={{
-            backgroundColor: '#FFFFFF',
+            background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
             border: '1px solid #E5E7EB',
             borderRadius: 18,
             padding: '24px 28px',
@@ -615,7 +615,7 @@ export default function Gamification({
 
       {/* TAB 3: CAMPUS LEADERBOARD */}
       {activeTab === 'leaderboard' && (
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: 18, border: '1px solid #E5E7EB', padding: 24 }}>
+        <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderRadius: 18, border: '1px solid #E5E7EB', padding: 24 }}>
           <div style={{ marginBottom: 18 }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
               Campus Placement Leaderboard
@@ -701,7 +701,7 @@ export default function Gamification({
                 <div
                   key={loot.id}
                   style={{
-                    backgroundColor: '#FFFFFF',
+                    background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
                     border: isUnlocked ? '1.5px solid #111827' : '1px solid #E5E7EB',
                     borderRadius: 16,
                     padding: 22,

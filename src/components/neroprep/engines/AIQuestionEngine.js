@@ -40,6 +40,10 @@ export class AIQuestionEngine {
    * Build curated, input-tailored question pool from the 1,400 dataset or DSA Pattern Sheet
    */
   _buildQuestionPool(cfg) {
+    if (this.trackId === 'system_design' || this.trackId === 'lld') {
+      return this._buildSystemDesignQuestionPool(cfg);
+    }
+
     if (this.trackId === 'dsa' || this.trackId === 'coding') {
       const dsaQuestions = [];
       DSA_CATEGORIES.forEach((cat) => {
@@ -147,6 +151,101 @@ export class AIQuestionEngine {
       easy: easyQs.length ? easyQs : rawBank,
       medium: medQs.length ? medQs : rawBank,
       hard: hardQs.length ? hardQs : rawBank,
+    };
+  }
+
+  /**
+   * Build curated, progressive System Design (HLD & LLD) question roadmap
+   */
+  _buildSystemDesignQuestionPool(cfg) {
+    const systemName = (cfg.systemToDesign || 'URL Shortener (TinyURL)').trim();
+    const scale = cfg.expectedScale || 'High Growth Scale (1M - 10M DAU, 5,000 QPS)';
+    const focus = cfg.designFocus || 'High-Level Architecture (HLD - Distributed Systems)';
+    const isLLDOnly = focus.includes('Low-Level Design (LLD');
+    const isHLDOnly = focus.includes('High-Level Architecture (HLD');
+    const priorities = Array.isArray(cfg.archPriority) && cfg.archPriority.length > 0 ? cfg.archPriority.join(', ') : 'High Availability and Low Latency';
+    const tech = Array.isArray(cfg.preferredTech) && cfg.preferredTech.length > 0 ? cfg.preferredTech.join(', ') : 'PostgreSQL, Redis, and Kafka';
+    const patterns = Array.isArray(cfg.lldPatterns) && cfg.lldPatterns.length > 0 ? cfg.lldPatterns.join(', ') : 'SOLID Principles, Factory Pattern, and Strategy Pattern';
+    const lang = cfg.codingLang || 'Java';
+
+    const pool = [];
+
+    // Stage 1: Requirements Gathering & Capacity Math
+    if (!isLLDOnly) {
+      pool.push({
+        id: 'sd-stage-1-reqs',
+        question: `We are designing "${systemName}" for a ${scale} profile. To start, outline the core functional vs non-functional requirements, and walk me through your back-of-the-envelope capacity estimations (Daily Active Users, Read vs Write QPS, and 5-year storage growth).`,
+        difficulty: 'Medium',
+        phase: 'Requirements & Scope',
+        adaptiveAction: 'Assess requirement completeness and capacity estimation logic.'
+      });
+    }
+
+    // Stage 2: High-Level Architecture & API Endpoints
+    if (!isLLDOnly) {
+      pool.push({
+        id: 'sd-stage-2-hld',
+        question: `Walk me through your high-level component architecture for "${systemName}". What are the key client-facing REST/gRPC API endpoints, and how do requests flow through the Load Balancer, API Gateway, and stateless microservices?`,
+        difficulty: 'Medium',
+        phase: 'High-Level Architecture',
+        adaptiveAction: 'Evaluate microservice decomposition and stateless gateway routing.'
+      });
+    }
+
+    // Stage 3: Data Modeling & Storage Strategy
+    pool.push({
+      id: 'sd-stage-3-datamodel',
+      question: `Let's deep-dive into the data modeling for "${systemName}". Given your building blocks (${tech}), which database paradigm would you choose (SQL vs NoSQL), what does the core schema/entity relationship look like, and how will you select the partition or sharding key to prevent hot spots?`,
+      difficulty: 'Hard',
+      phase: 'Data Modeling & Sharding',
+      adaptiveAction: 'Evaluate schema design, indexing, and sharding key distribution.'
+    });
+
+    // Stage 4: Low-Level Design & SOLID Patterns (LLD & Full)
+    if (!isHLDOnly || isLLDOnly) {
+      pool.push({
+        id: 'sd-stage-4-lld',
+        question: `Focusing on the low-level design (LLD) in ${lang}, how would you structure the core classes, interfaces, and apply design patterns (${patterns}) adhering to SOLID principles for "${systemName}"? How do you ensure thread-safety and concurrency handling?`,
+        difficulty: 'Hard',
+        phase: 'Low-Level Design',
+        adaptiveAction: 'Evaluate OOP class hierarchy, design pattern application, and thread safety.'
+      });
+    }
+
+    // Stage 5: Scalability, Caching & Message Queues
+    if (!isLLDOnly) {
+      pool.push({
+        id: 'sd-stage-5-caching',
+        question: `To guarantee ${priorities} at scale, explain your caching strategy (${tech}). What cache eviction policy (LRU/LFU) and write pattern (Cache-Aside, Write-Through, Write-Behind) will you use, and how do asynchronous message queues decouple heavy write spikes?`,
+        difficulty: 'Hard',
+        phase: 'Scalability & Caching',
+        adaptiveAction: 'Assess cache invalidation, thundering herd mitigation, and queue topology.'
+      });
+    }
+
+    // Stage 6: Fault Tolerance & Resiliency
+    pool.push({
+      id: 'sd-stage-6-fault-tolerance',
+      question: `Identify the critical single points of failure (SPOF) and bottlenecks in your "${systemName}" architecture. How will you implement rate limiting, circuit breakers, data replication, and multi-region disaster recovery to uphold ${priorities}?`,
+      difficulty: 'Hard',
+      phase: 'Fault Tolerance & SPOF',
+      adaptiveAction: 'Evaluate failure domain isolation, CAP trade-offs, and disaster recovery.'
+    });
+
+    // Stage 7: Architectural Trade-off Reflection
+    pool.push({
+      id: 'sd-stage-7-tradeoffs',
+      question: `Looking back across your architecture for "${systemName}", what was the most difficult architectural trade-off you made (e.g. Latency vs Consistency in the CAP theorem, or Operational Complexity vs Storage Cost), and why was it justified?`,
+      difficulty: 'Hard',
+      phase: 'Trade-off Justification',
+      adaptiveAction: 'Evaluate depth of architectural reasoning and trade-off justification.'
+    });
+
+    return {
+      all: pool,
+      easy: pool.slice(0, 2),
+      medium: pool.slice(0, 4),
+      hard: pool,
     };
   }
 

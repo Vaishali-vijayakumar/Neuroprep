@@ -30,19 +30,20 @@ DSA_CATEGORIES.forEach((cat) => {
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
- bg: '#FFFFFF',
- bgPage: '#F9FAFB',
- bgCard: '#F3F4F6',
- border: '#E5E7EB',
- borderDark: '#D1D5DB',
- textMain: '#111827',
- textBody: '#374151',
- textMuted: '#6B7280',
- textLight: '#9CA3AF',
- btnGrey: '#475569',
- btnGreyHover: '#334155',
- mono: 'JetBrains Mono, Consolas, monospace',
- sans: 'Inter, system-ui, sans-serif',
+  bg: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
+  bgPage: 'var(--bg-page)',
+  bgCard: 'var(--bg-card)',
+  border: 'var(--border-color)',
+  borderDark: '#D8D2CE',
+  textMain: 'var(--main-heading)',
+  textBody: 'var(--body-text)',
+  textMuted: 'var(--text-muted)',
+  textLight: 'var(--text-muted)',
+  btnGrey: 'var(--btn-sage)',
+  btnGreyHover: '#445148',
+  mono: 'var(--font-code)',
+  sans: 'var(--font-body)',
+  heading: 'var(--font-heading)',
 };
 
 const LANGS = ['Python', 'Java', 'C++', 'JavaScript'];
@@ -87,8 +88,8 @@ function ProblemTimer({ limitMinutes, currentIdx, onExpire }) {
  color: isWarn ? '#B45309' : C.textMain,
  padding: '4px 10px',
  borderRadius: '6px',
- backgroundColor: isWarn ? '#FFFBEB' : '#F1F5F9',
- border: `1px solid ${isWarn ? '#FDE68A' : '#CBD5E1'}`,
+ backgroundColor: isWarn ? '#FFFBEB' : '#F5EBE6',
+ border: `1px solid ${isWarn ? '#FDE68A' : '#D8D2CE'}`,
  }}>
  {m}:{s}
  </span>
@@ -705,7 +706,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  {/* ── Top Header Bar ─────────────────────────────────────────────────── */}
  <div style={{
  height: '52px',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderBottom: `1px solid ${C.border}`,
  display: 'flex',
  alignItems: 'center',
@@ -714,11 +715,11 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  flexShrink: 0,
  }}>
  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
- <span style={{ fontSize: '15px', fontWeight: 800, color: C.textMain }}>
+ <span style={{ fontSize: '15px', fontWeight: 800, color: C.textMain, fontFamily: C.heading }}>
  DSA &amp; Coding Interview
  </span>
  <span style={{ color: C.border }}>|</span>
- <span style={{ fontSize: '13.5px', fontWeight: 700, color: C.textBody }}>
+ <span style={{ fontSize: '13.5px', fontWeight: 700, color: C.textBody, fontFamily: C.sans }}>
  {currentQ?.title || 'Loading Question...'}
  </span>
  {currentQ?.difficulty && (
@@ -739,9 +740,9 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  fontWeight: 700,
  padding: '2px 8px',
  borderRadius: '4px',
- backgroundColor: '#F1F5F9',
- border: '1px solid #CBD5E1',
- color: '#334155',
+ backgroundColor: '#F5EBE6',
+ border: '1px solid #D8D2CE',
+ color: '#4F5056',
  }}>
  Focus: {evalFocus}
  </span>
@@ -774,9 +775,9 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  borderRadius: '6px',
  fontSize: '12px',
  fontWeight: 600,
- backgroundColor: '#F1F5F9',
- color: '#334155',
- border: '1px solid #CBD5E1',
+ backgroundColor: '#F5EBE6',
+ color: '#4F5056',
+ border: '1px solid #D8D2CE',
  cursor: 'pointer',
  }}
  >
@@ -792,7 +793,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <div style={{
  width: '42%',
  minWidth: '340px',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderRight: `1px solid ${C.border}`,
  display: 'flex',
  flexDirection: 'column',
@@ -802,18 +803,18 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <div style={{
  padding: '12px 20px',
  borderBottom: `1px solid ${C.border}`,
- backgroundColor: '#F8FAFC',
+ backgroundColor: '#FCF9F6',
  display: 'flex',
  alignItems: 'center',
  justifyContent: 'space-between',
  }}>
  <span style={{ fontSize: '13px', fontWeight: 700, color: C.textMain }}>Problem Statement</span>
- <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Analysis: {complexityReq}</span>
+ <span style={{ fontSize: '11px', color: '#89878A', fontWeight: 600 }}>Analysis: {complexityReq}</span>
  </div>
 
  {/* Problem Content Area */}
  <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
- <h3 style={{ fontSize: '18px', fontWeight: 800, color: C.textMain, margin: '0 0 12px 0' }}>
+ <h3 style={{ fontSize: '20px', fontWeight: 800, color: C.textMain, margin: '0 0 12px 0', fontFamily: C.heading }}>
  {currentQ?.title}
  </h3>
  <div style={{ fontSize: '14px', lineHeight: '1.7', color: C.textBody, marginBottom: '20px', whiteSpace: 'pre-line' }}>
@@ -827,7 +828,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  Examples
  </div>
  {problemData.examples.map((ex, idx) => (
- <div key={idx} style={{ padding: '12px 14px', backgroundColor: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: '8px', marginBottom: '10px', fontFamily: C.mono, fontSize: '12.5px' }}>
+ <div key={idx} style={{ padding: '12px 14px', backgroundColor: '#FCF9F6', border: `1px solid ${C.border}`, borderRadius: '8px', marginBottom: '10px', fontFamily: C.mono, fontSize: '12.5px' }}>
  <div style={{ fontWeight: 700, color: C.textMain, marginBottom: '4px', fontFamily: C.sans, fontSize: '11px' }}>Example {idx + 1}</div>
  <div style={{ color: C.textBody }}>Input: <span style={{ color: C.textMain }}>{ex.input}</span></div>
  <div style={{ color: C.textBody, marginTop: '2px' }}>Output: <span style={{ color: '#15803D', fontWeight: 700 }}>{ex.output}</span></div>
@@ -847,7 +848,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  </div>
  {Object.entries(problemData.constraints).map(([k, v]) => (
  <div key={k} style={{ fontSize: '12.5px', color: C.textMuted, marginBottom: '4px' }}>
- • <code style={{ color: C.textMain, fontFamily: C.mono, backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>{v}</code>
+ • <code style={{ color: C.textMain, fontFamily: C.mono, backgroundColor: '#F5EBE6', padding: '1px 6px', borderRadius: '4px' }}>{v}</code>
  </div>
  ))}
  </div>
@@ -859,12 +860,12 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  marginTop: '16px',
  padding: '12px 14px',
  borderRadius: '10px',
- backgroundColor: '#0F172A',
- border: '1px solid #334155',
+ backgroundColor: '#34343A',
+ border: '1px solid #4F5056',
  color: '#FFFFFF',
  }}>
  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
- <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#CBD5E1', letterSpacing: '0.3px' }}>Candidate Video Feed</span>
+ <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#D8D2CE', letterSpacing: '0.3px' }}>Candidate Video Feed</span>
  <span style={{ fontSize: '11px', fontWeight: 700, color: faceData.faceDetected ? '#4ADE80' : '#FBBF24' }}>
  ● {faceData.faceDetected ? 'Face Verified' : 'Searching Face'}
  </span>
@@ -873,7 +874,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <VideoFeed stream={sharedStream} muted={true} onVideoReady={handleVideoReady} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
  <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
  </div>
- <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94A3B8', marginTop: '8px' }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#89878A', marginTop: '8px' }}>
  <span>Stress: <strong style={{ color: '#FFFFFF' }}>{faceData.stressScore || 28}/100</strong></span>
  <span>Eye Contact: <strong style={{ color: '#FFFFFF' }}>{Math.round(faceData.eyeContact || 92)}%</strong></span>
  {phoneUseCount > 0 && <span style={{ color: '#F87171', fontWeight: 700 }}>️ {phoneUseCount} Phone Alert{phoneUseCount > 1 ? 's' : ''}</span>}
@@ -889,7 +890,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  {/* Editor Language & Action Bar */}
  <div style={{
  height: '46px',
- backgroundColor: '#F8FAFC',
+ backgroundColor: '#FCF9F6',
  borderBottom: `1px solid ${C.border}`,
  display: 'flex',
  alignItems: 'center',
@@ -909,8 +910,8 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  fontSize: '12px',
  fontWeight: 600,
  cursor: 'pointer',
- border: language === lang ? '1px solid #475569' : `1px solid ${C.border}`,
- backgroundColor: language === lang ? '#475569' : '#FFFFFF',
+ border: language === lang ? '1px solid #66666B' : `1px solid ${C.border}`,
+ backgroundColor: language === lang ? '#66666B' : '#FFFFFF',
  color: language === lang ? '#FFFFFF' : C.textBody,
  }}
  >
@@ -929,9 +930,9 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  borderRadius: '6px',
  fontSize: '12px',
  fontWeight: 600,
- backgroundColor: '#F1F5F9',
- color: running ? C.textLight : '#334155',
- border: '1px solid #CBD5E1',
+ backgroundColor: '#F5EBE6',
+ color: running ? C.textLight : '#4F5056',
+ border: '1px solid #D8D2CE',
  cursor: running ? 'not-allowed' : 'pointer',
  }}
  >
@@ -946,7 +947,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  borderRadius: '6px',
  fontSize: '12px',
  fontWeight: 700,
- backgroundColor: submitting ? '#94A3B8' : C.btnGrey,
+ backgroundColor: submitting ? '#89878A' : C.btnGrey,
  color: '#FFFFFF',
  border: 'none',
  cursor: submitting ? 'not-allowed' : 'pointer',
@@ -963,9 +964,9 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  borderRadius: '6px',
  fontSize: '12px',
  fontWeight: 600,
- backgroundColor: '#F1F5F9',
- color: '#334155',
- border: '1px solid #CBD5E1',
+ backgroundColor: '#F5EBE6',
+ color: '#4F5056',
+ border: '1px solid #D8D2CE',
  cursor: 'pointer',
  }}
  >
@@ -980,7 +981,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <Editor
  height="100%"
  language={LANG_KEY[language] || 'python'}
- theme="vs-dark"
+ theme="light"
  value={code}
  onChange={(val) => setCode(val || '')}
  onMount={(editor) => { editorRef.current = editor; }}
@@ -1000,14 +1001,14 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  {/* Bottom Test Cases & Evaluation Panel */}
  <div style={{
  height: '240px',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderTop: `1px solid ${C.border}`,
  display: 'flex',
  flexDirection: 'column',
  flexShrink: 0,
  }}>
  {/* Panel Tabs */}
- <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, padding: '0 16px', backgroundColor: '#F8FAFC' }}>
+ <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, padding: '0 16px', backgroundColor: '#FCF9F6' }}>
  {[
  { id: 'testcases', label: 'Test Cases' },
  { id: 'console', label: 'Console Output' },
@@ -1022,7 +1023,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  fontWeight: bottomTab === t.id ? 700 : 500,
  color: bottomTab === t.id ? C.textMain : C.textMuted,
  border: 'none',
- borderBottom: bottomTab === t.id ? '2px solid #0F172A' : '2px solid transparent',
+ borderBottom: bottomTab === t.id ? '2px solid #34343A' : '2px solid transparent',
  backgroundColor: 'transparent',
  cursor: 'pointer',
  }}
@@ -1050,8 +1051,8 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  fontSize: '12px',
  fontWeight: 600,
  cursor: 'pointer',
- backgroundColor: activeCaseId === tc.id ? '#F1F5F9' : '#FFFFFF',
- border: activeCaseId === tc.id ? '1px solid #334155' : `1px solid ${C.border}`,
+ backgroundColor: activeCaseId === tc.id ? '#F5EBE6' : '#FFFFFF',
+ border: activeCaseId === tc.id ? '1px solid #4F5056' : `1px solid ${C.border}`,
  color: res ? (res.passed ? '#15803D' : '#DC2626') : C.textBody,
  }}
  >
@@ -1064,15 +1065,15 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  {/* Active Case Details */}
  {activeTestCase && (
  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px', fontFamily: C.mono }}>
- <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: '6px' }}>
+ <div style={{ padding: '8px 10px', backgroundColor: '#FCF9F6', border: `1px solid ${C.border}`, borderRadius: '6px' }}>
  <div style={{ fontWeight: 700, color: C.textMuted, fontFamily: C.sans, marginBottom: '2px' }}>Input</div>
  <div style={{ color: C.textMain }}>{activeTestCase.input}</div>
  </div>
- <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: '6px' }}>
+ <div style={{ padding: '8px 10px', backgroundColor: '#FCF9F6', border: `1px solid ${C.border}`, borderRadius: '6px' }}>
  <div style={{ fontWeight: 700, color: C.textMuted, fontFamily: C.sans, marginBottom: '2px' }}>Expected</div>
  <div style={{ color: '#15803D', fontWeight: 700 }}>{activeTestCase.expected}</div>
  </div>
- <div style={{ padding: '8px 10px', backgroundColor: activeResult ? (activeResult.passed ? '#F0FDF4' : '#FEF2F2') : '#F8FAFC', border: `1px solid ${activeResult ? (activeResult.passed ? '#BBF7D0' : '#FECDD3') : C.border}`, borderRadius: '6px' }}>
+ <div style={{ padding: '8px 10px', backgroundColor: activeResult ? (activeResult.passed ? '#F0FDF4' : '#FEF2F2') : '#FCF9F6', border: `1px solid ${activeResult ? (activeResult.passed ? '#BBF7D0' : '#FECDD3') : C.border}`, borderRadius: '6px' }}>
  <div style={{ fontWeight: 700, color: activeResult ? (activeResult.passed ? '#15803D' : '#DC2626') : C.textMuted, fontFamily: C.sans, marginBottom: '2px' }}>
  Actual Got {activeResult ? (activeResult.passed ? '(Passed)' : '(Failed)') : ''}
  </div>
@@ -1104,7 +1105,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <div style={{
  padding: '30px 20px',
  textAlign: 'center',
- backgroundColor: '#F8FAFC',
+ backgroundColor: '#FCF9F6',
  borderRadius: '8px',
  border: `1px dashed ${C.border}`,
  }}>
@@ -1122,7 +1123,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  borderRadius: '6px',
  fontSize: '13px',
  fontWeight: 700,
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  color: '#FFFFFF',
  border: 'none',
  cursor: submitting ? 'not-allowed' : 'pointer',
@@ -1158,13 +1159,13 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  padding: '20px',
  }}>
  <div style={{
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderRadius: '12px',
  maxWidth: '500px',
  width: '100%',
  padding: '28px 30px',
  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
- border: '1px solid #E2E8F0',
+ border: '1px solid #D8D2CE',
  textAlign: 'center',
  }}>
  {/* Header Badge */}
@@ -1183,7 +1184,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  {isTerminated ? '' : '️'}
  </div>
 
- <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '0 0 8px 0' }}>
+ <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#34343A', margin: '0 0 8px 0' }}>
  {isTerminated ? 'Assessment Terminated: Tab Violations Exceeded' : 'Security Warning: Tab Switch Detected'}
  </h3>
 
@@ -1200,7 +1201,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  Violation {Math.min(tabSwitchCount, 3)} of 3
  </div>
 
- <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.55, margin: '0 0 18px 0' }}>
+ <p style={{ fontSize: '13.5px', color: '#66666B', lineHeight: 1.55, margin: '0 0 18px 0' }}>
  {isTerminated
  ? 'You have exceeded the maximum allowed tab switch and defocus violations. Your session has been automatically flagged and locked per examination security guidelines.'
  : 'Tab switching, window defocusing, and navigating away from the active interview window are strictly prohibited. All window state transitions are recorded in your security audit trail.'}
@@ -1210,14 +1211,14 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  <div style={{
  padding: '12px 14px',
  borderRadius: '8px',
- backgroundColor: '#F8FAFC',
- border: '1px solid #E2E8F0',
+ backgroundColor: '#FCF9F6',
+ border: '1px solid #D8D2CE',
  fontSize: '12.5px',
- color: '#64748B',
+ color: '#89878A',
  marginBottom: '22px',
  textAlign: 'left',
  }}>
- <strong style={{ color: '#0F172A' }}>Policy Reminder:</strong> Reaching 3 violations will immediately auto-submit and disqualify your examination. You currently have <strong>{3 - tabSwitchCount}</strong> warning(s) remaining.
+ <strong style={{ color: '#34343A' }}>Policy Reminder:</strong> Reaching 3 violations will immediately auto-submit and disqualify your examination. You currently have <strong>{3 - tabSwitchCount}</strong> warning(s) remaining.
  </div>
  )}
 
@@ -1228,7 +1229,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  style={{
  width: '100%',
  padding: '12px',
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  color: '#FFFFFF',
  border: 'none',
  borderRadius: '8px',
@@ -1245,7 +1246,7 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  style={{
  width: '100%',
  padding: '12px',
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  color: '#FFFFFF',
  border: 'none',
  borderRadius: '8px',

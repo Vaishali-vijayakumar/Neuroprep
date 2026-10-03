@@ -162,39 +162,40 @@ export default function MonacoEditorPanel({ onCodeChange, onRun, compileError })
   }, [onCodeChange]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#1E1E1E' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#FCF9F6' }}>
 
       {/* Toolbar */}
       <div style={{
         height: '44px', display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '0 14px', borderBottom: '1px solid #333',
-        backgroundColor: '#252526', flexShrink: 0,
+        padding: '0 14px', borderBottom: '1px solid #D8D2CE',
+        backgroundColor: '#F5EBE6', flexShrink: 0,
       }}>
-        <span style={{ fontSize: '11px', fontWeight: 700, color: '#858585', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-          Editor
+        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+          Code Editor
         </span>
-        <div style={{ width: '1px', height: '14px', backgroundColor: '#444' }} />
+        <div style={{ width: '1px', height: '14px', backgroundColor: '#D8D2CE' }} />
         <select
           value={language}
           onChange={(e) => handleLanguageChange(e.target.value)}
           style={{
-            padding: '3px 8px', borderRadius: '4px',
-            backgroundColor: '#3C3C3C', color: '#CCCCCC',
-            border: '1px solid #555', fontSize: '12px', outline: 'none',
+            padding: '4px 10px', borderRadius: '6px',
+            backgroundColor: '#FCF9F6', color: 'var(--main-heading)',
+            border: '1px solid #D8D2CE', fontSize: '12px', outline: 'none',
+            fontWeight: 600, cursor: 'pointer'
           }}
         >
           {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
         </select>
         <div style={{ flex: 1 }} />
         {lineCount > 0 && (
-          <span style={{ fontSize: '11px', color: '#858585' }}>{lineCount} lines</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{lineCount} lines</span>
         )}
         {onRun && (
           <button
             onClick={() => onRun(code, language)}
+            className="btn-primary-spec"
             style={{
-              padding: '4px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
-              backgroundColor: '#475569', color: '#FFFFFF', border: 'none', cursor: 'pointer',
+              padding: '4px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700,
             }}
           >
             ▶ Run (Ctrl+↵)
@@ -203,11 +204,11 @@ export default function MonacoEditorPanel({ onCodeChange, onRun, compileError })
       </div>
 
       {/* Monaco Editor */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', backgroundColor: '#FCF9F6' }}>
         <Editor
           height="100%"
           language={language}
-          theme="vs-dark"
+          theme="light"
           value={code}
           onChange={handleCodeChange}
           onMount={(editor, monaco) => {

@@ -359,6 +359,12 @@ export default function App() {
     setJournalEntries(updated);
   };
 
+  // Journal clear all handler
+  const handleClearAllJournalEntries = () => {
+    const updated = dbService.clearAllJournalsForUser(userEmail);
+    setJournalEntries(updated);
+  };
+
   // Event listener for navigation from sidebar
   useEffect(() => {
     const handleNavEvent = (e) => {
@@ -390,7 +396,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh', color: 'var(--text-body)' }}>
+    <div style={{ minHeight: '100vh', color: 'var(--text-body)' }}>
       <Navigation 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -453,6 +459,7 @@ export default function App() {
             journalEntries={journalEntries} 
             onSaveEntry={handleSaveJournalEntry}
             onDeleteEntry={handleDeleteJournalEntry}
+            onClearAllEntries={handleClearAllJournalEntries}
             setActiveTab={setActiveTab} 
             setSelectedDistortion={setSelectedDistortion}
             userEmail={userEmail}

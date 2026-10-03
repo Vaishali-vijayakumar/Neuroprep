@@ -84,7 +84,7 @@ export default function UserProfile({ profile, setProfile, setActiveTab }) {
  </div>
  <button 
  onClick={() => setActiveTab && setActiveTab('dashboard')} 
- className="btn-secondary-spec"
+ className="btn-back-dashboard"
  style={{ padding: '8px 18px', fontSize: '0.85rem' }}
  >
  Back to Dashboard
@@ -372,8 +372,7 @@ export default function UserProfile({ profile, setProfile, setActiveTab }) {
  alignItems: 'center',
  gap: '16px',
  flexWrap: 'wrap'
- }}>
- <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+ }}> <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
  <CheckCircle2 size={18} color="#111827" />
  <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
  All details and test credentials are automatically synchronized and persisted to the database.
@@ -397,5 +396,4 @@ export default function UserProfile({ profile, setProfile, setActiveTab }) {
  </div>
  </div>
  );
-}
-
+};

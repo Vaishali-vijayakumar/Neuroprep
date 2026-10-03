@@ -135,6 +135,7 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
       isPassed,
       timeSpentSeconds: totalTimeSpentSeconds,
       sectionalScores,
+      userAnswers: { ...userAnswers },
       completedAt: new Date().toISOString()
     };
 
@@ -164,6 +165,28 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     setTestState('results');
   };
 
+  // Open review for a specific past attempt record
+  const handleReviewAttempt = (attempt) => {
+    let matched = MOCK_TESTS_CATALOG.find((t) => t.id === attempt.mockTestId);
+    if (!matched && attempt.mockTestTitle) {
+      const numMatch = attempt.mockTestTitle.match(/Mock Test (\d+)/i);
+      if (numMatch) {
+        const idx = parseInt(numMatch[1], 10) - 1;
+        matched = MOCK_TESTS_CATALOG[idx];
+      } else {
+        matched = MOCK_TESTS_CATALOG.find((t) => t.title.toLowerCase() === attempt.mockTestTitle.toLowerCase());
+      }
+    }
+    if (!matched) {
+      matched = MOCK_TESTS_CATALOG[0];
+    }
+
+    setSelectedMockTest(matched);
+    setUserAnswers(attempt.userAnswers || {});
+    setReviewFilter('ALL');
+    setTestState('results');
+  };
+
   // Format seconds mm:ss
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -186,11 +209,11 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     const isMrk = !!markedForReview[q.id];
     const isVis = !!visitedQs[q.id];
 
-    if (isAns && isMrk) return { bg: '#111827', color: '#FFF', label: 'Ans & Marked' };
-    if (isMrk) return { bg: '#111827', color: '#FFF', label: 'Marked' };
-    if (isAns) return { bg: '#111827', color: '#FFF', label: 'Answered' };
-    if (isVis) return { bg: '#111827', color: '#FFF', label: 'Not Ans' };
-    return { bg: '#F3F4F6', color: '#374151', label: 'Not Visited' };
+    if (isAns && isMrk) return { bg: 'var(--secondary-olive)', color: 'var(--btn-text)', label: 'Ans & Marked' };
+    if (isMrk) return { bg: 'var(--accent-terracotta)', color: '#FFFFFF', label: 'Marked' };
+    if (isAns) return { bg: 'var(--btn-sage)', color: 'var(--btn-text)', label: 'Answered' };
+    if (isVis) return { bg: '#EAECE8', color: 'var(--secondary-heading)', label: 'Not Ans' };
+    return { bg: '#FCF9F6', color: 'var(--text-muted)', label: 'Not Visited' };
   };
 
   useEffect(() => {
@@ -200,13 +223,13 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
   }, [testState, viewMode, selectedMockTest?.id]);
 
   return (
-    <div style={{ flex: 1, padding: '36px 32px', maxWidth: '1280px', margin: '0 auto', width: '100%', fontFamily: 'var(--font-inter)' }}>
+    <div style={{ flex: 1, padding: '36px 32px', maxWidth: '1280px', margin: '0 auto', width: '100%', fontFamily: 'var(--font-main)' }}>
       
       {/* Navigation Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <button 
           onClick={() => setActiveTab('dashboard')}
-          className="btn-secondary-spec"
+          className="btn-back-dashboard"
           style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600 }}
         >
           Back to Dashboard
@@ -214,19 +237,20 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
         {/* View Mode Switcher */}
         {testState === 'catalog' && (
-          <div style={{ display: 'flex', gap: '6px', backgroundColor: '#E5E7EB', padding: '4px', borderRadius: '10px' }}>
+          <div style={{ display: 'flex', gap: '6px', backgroundColor: '#F5EBE6', padding: '5px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
             <button
               onClick={() => setViewMode('mocktests')}
               style={{
                 padding: '10px 22px',
-                borderRadius: '8px',
+                borderRadius: '9px',
                 border: 'none',
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: '0.88rem',
                 cursor: 'pointer',
-                backgroundColor: viewMode === 'mocktests' ? '#475569' : 'transparent',
-                color: viewMode === 'mocktests' ? '#FFFFFF' : '#4B5563',
-                transition: 'all 0.15s ease'
+                backgroundColor: viewMode === 'mocktests' ? 'var(--btn-sage)' : 'transparent',
+                color: viewMode === 'mocktests' ? 'var(--btn-text)' : 'var(--secondary-heading)',
+                boxShadow: viewMode === 'mocktests' ? 'var(--shadow-3d-btn)' : 'none',
+                transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)'
               }}
             >
               Mock Tests
@@ -235,14 +259,15 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
               onClick={() => setViewMode('formulas')}
               style={{
                 padding: '10px 22px',
-                borderRadius: '8px',
+                borderRadius: '9px',
                 border: 'none',
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: '0.88rem',
                 cursor: 'pointer',
-                backgroundColor: viewMode === 'formulas' ? '#475569' : 'transparent',
-                color: viewMode === 'formulas' ? '#FFFFFF' : '#4B5563',
-                transition: 'all 0.15s ease'
+                backgroundColor: viewMode === 'formulas' ? 'var(--btn-sage)' : 'transparent',
+                color: viewMode === 'formulas' ? 'var(--btn-text)' : 'var(--secondary-heading)',
+                boxShadow: viewMode === 'formulas' ? 'var(--shadow-3d-btn)' : 'none',
+                transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)'
               }}
             >
               Formulas & Speed Rules Reference
@@ -260,96 +285,26 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
           {testState === 'catalog' && (
             <div>
               {/* Header Banner */}
-              <div className="saas-card-spec" style={{ padding: '36px', marginBottom: '32px', backgroundColor: '#FFFFFF' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="saas-card-spec" style={{ padding: '32px 36px', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-                      Mock Tests
+                    <span className="pill-tag" style={{ marginBottom: '10px' }}>Comprehensive Preparation</span>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--main-heading)', margin: '4px 0 8px 0', letterSpacing: '-0.3px', fontFamily: 'var(--font-heading)' }}>
+                      Placement Aptitude Mock Tests
                     </h2>
-                    <p style={{ color: '#4B5563', fontSize: '0.96rem', maxWidth: '820px', lineHeight: 1.65 }}>
-                      Comprehensive examination papers containing 40 questions each across Quantitative Aptitude, Logical Reasoning, Verbal Ability, Non-Verbal Reasoning, and Data Interpretation.
+                    <p style={{ color: 'var(--body-text)', fontSize: '0.94rem', maxWidth: '820px', lineHeight: 1.6, margin: 0 }}>
+                      Full-length practice examinations (40 questions each) covering Quantitative Aptitude, Logical Reasoning, Verbal Ability, Non-Verbal Reasoning, and Data Interpretation.
                     </p>
                   </div>
-                  <div style={{ textAlign: 'right', backgroundColor: '#F8F9FA', padding: '16px 24px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>800</div>
-                    <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600, marginTop: '4px' }}>Total Questions</div>
+                  <div style={{ textAlign: 'center', backgroundColor: 'var(--bg-card-solid)', padding: '16px 28px', borderRadius: '16px', border: '1.5px solid var(--border-color)', boxShadow: '0 2px 8px rgba(52, 52, 58, 0.04)', minWidth: '150px' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--main-heading)', lineHeight: 1, fontFamily: 'var(--font-heading)' }}>800</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '4px', textTransform: 'uppercase' }}>Total Questions</div>
                   </div>
                 </div>
               </div>
 
-              {/* Past Performance Summary */}
-              {pastAttempts.length > 0 && (
-                <div style={{ marginBottom: '32px', backgroundColor: '#FFFFFF', padding: '24px', borderRadius: '16px', border: '1.5px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                      Recent Examination Records
-                    </h4>
-                    <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>
-                      {pastAttempts.length} Completed {pastAttempts.length === 1 ? 'Attempt' : 'Attempts'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '6px' }}>
-                    {pastAttempts.slice(0, 4).map((att) => {
-                      const matched = MOCK_TESTS_CATALOG.find((t) => t.id === att.mockTestId);
-                      let displayTitle = matched?.title;
-                      if (!displayTitle && att.mockTestTitle) {
-                        const numMatch = att.mockTestTitle.match(/Mock Test (\d+)/i);
-                        if (numMatch) {
-                          const idx = parseInt(numMatch[1], 10) - 1;
-                          displayTitle = MOCK_TESTS_CATALOG[idx]?.title;
-                        }
-                      }
-                      if (!displayTitle) displayTitle = att.mockTestTitle || 'Placement Test';
-
-                      return (
-                        <div 
-                          key={att.id} 
-                          style={{ 
-                            minWidth: '260px', 
-                            backgroundColor: '#F8FAFC', 
-                            padding: '16px 18px', 
-                            borderRadius: '12px', 
-                            border: '1.5px solid #E2E8F0',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between'
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0F172A', marginBottom: '6px' }}>
-                              {displayTitle}
-                            </div>
-                            <div style={{ fontSize: '0.76rem', color: '#64748B', marginBottom: '10px' }}>
-                              {new Date(att.completedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            backgroundColor: att.isPassed ? '#F0FDF4' : '#FFFBEB',
-                            border: `1px solid ${att.isPassed ? '#BBF7D0' : '#FDE68A'}`
-                          }}>
-                            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: att.isPassed ? '#15803D' : '#B45309' }}>
-                              Score: {att.score}/{att.totalQuestions} ({att.accuracyPercent}%)
-                            </span>
-                            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: att.isPassed ? '#15803D' : '#B45309' }}>
-                              {att.isPassed ? 'Passed' : 'Below Cutoff'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Section-based Mock Tests Catalog */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
                 {MOCK_TEST_CATEGORIES.map((category) => {
                   const categoryTests = MOCK_TESTS_CATALOG.filter((t) => t.sectionId === category.id);
                   if (categoryTests.length === 0) return null;
@@ -359,79 +314,104 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                       {/* Section Header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '8px', paddingBottom: '4px' }}>
                         <div>
-                          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.3px' }}>
+                          <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--secondary-heading)', margin: 0, letterSpacing: '-0.2px', fontFamily: 'var(--font-heading)' }}>
                             {category.title}
                           </h3>
-                          <p style={{ fontSize: '0.86rem', color: '#64748B', margin: '4px 0 0 0', maxWidth: '820px', lineHeight: 1.5 }}>
+                          <p style={{ fontSize: '0.88rem', color: 'var(--body-text)', margin: '4px 0 0 0', maxWidth: '820px', lineHeight: 1.5 }}>
                             {category.desc}
                           </p>
                         </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', color: '#334155', padding: '3px 10px', borderRadius: '12px' }}>
+                        <span className="pill-tag">
                           {categoryTests.length} Tests Available
                         </span>
                       </div>
 
                       {/* Section Table / Structured Row List */}
-                      <div style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)' }}>
+                      <div className="saas-card-spec" style={{ padding: 0, overflow: 'hidden' }}>
                         {categoryTests.map((test, tIdx) => {
-                          const testAttempt = pastAttempts.find((a) => a.mockTestId === test.id);
+                          const testAttempt = pastAttempts.find((a) => a.mockTestId === test.id || (a.mockTestTitle && a.mockTestTitle.toLowerCase().includes(test.title.toLowerCase())));
                           const isLast = tIdx === categoryTests.length - 1;
 
                           return (
                             <div 
                               key={test.id}
                               style={{
-                                padding: '20px 24px',
+                                padding: '20px 28px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 gap: '20px',
                                 flexWrap: 'wrap',
-                                borderBottom: isLast ? 'none' : '1px solid #F1F5F9',
-                                backgroundColor: '#FFFFFF',
-                                transition: 'background-color 0.15s ease'
+                                borderBottom: isLast ? 'none' : '1px solid #F5EBE6',
+                                transition: 'background-color 0.18s ease'
                               }}
                             >
                               {/* Left Info: Title and Focus */}
                               <div style={{ flex: '1 1 360px' }}>
-                                <h4 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0', letterSpacing: '-0.2px' }}>
-                                  {test.title}
-                                </h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--main-heading)', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                                    {test.title}
+                                  </h4>
+                                  {testAttempt && (
+                                    <span style={{
+                                      fontSize: '0.7rem',
+                                      fontWeight: 800,
+                                      padding: '2px 8px',
+                                      borderRadius: '12px',
+                                      backgroundColor: testAttempt.isPassed ? '#EAECE8' : '#F5EBE6',
+                                      color: testAttempt.isPassed ? '#526257' : '#9A6854',
+                                      border: '1px solid var(--border-color)'
+                                    }}>
+                                      {testAttempt.isPassed ? 'PASSED' : 'ATTEMPTED'}
+                                    </span>
+                                  )}
+                                </div>
 
                                 {test.focus && (
-                                  <div style={{ fontSize: '0.84rem', color: '#64748B', fontWeight: 500 }}>
+                                  <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                     Focus: {test.focus}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Right: Duration & Cutoff side by side, Best attempt & Action Button */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', flexShrink: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.82rem', color: '#64748B' }}>
-                                  <span>Duration: <strong style={{ color: '#0F172A' }}>45 Mins</strong></span>
-                                  <span style={{ color: '#CBD5E1' }}>|</span>
-                                  <span>Cutoff: <strong style={{ color: '#0F172A' }}>28 Marks</strong></span>
+                              {/* Right: Duration & Cutoff side by side, Best attempt & Action Buttons */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                                  <span>Duration: <strong style={{ color: 'var(--main-heading)' }}>45 Mins</strong></span>
+                                  <span style={{ color: 'var(--border-color)' }}>|</span>
+                                  <span>Cutoff: <strong style={{ color: 'var(--main-heading)' }}>28 Marks</strong></span>
                                 </div>
 
                                 {testAttempt && (
                                   <div style={{ 
                                     padding: '5px 12px', 
-                                    backgroundColor: testAttempt.isPassed ? '#F0FDF4' : '#FFFBEB', 
-                                    borderRadius: '6px', 
-                                    border: `1px solid ${testAttempt.isPassed ? '#BBF7D0' : '#FDE68A'}`, 
-                                    fontSize: '0.78rem', 
-                                    fontWeight: 700,
-                                    color: testAttempt.isPassed ? '#15803D' : '#B45309',
-                                    textAlign: 'center'
+                                    backgroundColor: testAttempt.isPassed ? '#EAECE8' : '#F5EBE6', 
+                                    borderRadius: '8px', 
+                                    border: '1px solid var(--border-color)', 
+                                    fontSize: '0.82rem', 
+                                    fontWeight: 800,
+                                    color: testAttempt.isPassed ? '#526257' : '#9A6854',
+                                    textAlign: 'center',
+                                    fontFamily: 'var(--font-heading)'
                                   }}>
                                     Score: {testAttempt.score}/40
                                   </div>
                                 )}
 
+                                {testAttempt && (
+                                  <button
+                                    onClick={() => handleReviewAttempt(testAttempt)}
+                                    className="btn-secondary-spec"
+                                    style={{ padding: '9px 18px', fontSize: '0.84rem', fontWeight: 700, borderRadius: '10px' }}
+                                  >
+                                    Review
+                                  </button>
+                                )}
+
                                 <button
                                   onClick={() => handleStartMockTest(test)}
                                   className="btn-primary-spec"
-                                  style={{ padding: '10px 22px', fontSize: '0.86rem', fontWeight: 700, borderRadius: '8px', minWidth: '130px', justifyContent: 'center' }}
+                                  style={{ padding: '10px 22px', fontSize: '0.86rem', fontWeight: 700, borderRadius: '10px', minWidth: '130px', justifyContent: 'center' }}
                                 >
                                   {testAttempt ? 'Re-attempt' : 'Start Test'}
                                 </button>
@@ -451,31 +431,33 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
           {testState === 'testing' && selectedMockTest && (
             <div>
               {/* Test Navigation Bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 28px', backgroundColor: '#FFFFFF', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '14px', marginBottom: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+              <div className="saas-card-spec" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 28px', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
                     {selectedMockTest.title}
                   </h3>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '4px' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                     Question {currentQIndex + 1} of {selectedMockTest.totalQuestions}
                   </div>
                 </div>
 
                 {/* Section Filter Tabs */}
-                <div style={{ display: 'flex', gap: '4px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', padding: '4px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', gap: '4px', backgroundColor: '#F5EBE6', border: '1px solid var(--border-color)', padding: '4px', borderRadius: '10px' }}>
                   {['ALL', 'Quant', 'Logical', 'Verbal', 'NonVerbal', 'DI'].map((sec) => (
                     <button
                       key={sec}
                       onClick={() => setActiveSectionFilter(sec)}
                       style={{
                         padding: '6px 14px',
-                        borderRadius: '6px',
+                        borderRadius: '7px',
                         border: 'none',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
                         cursor: 'pointer',
-                        backgroundColor: activeSectionFilter === sec ? '#475569' : 'transparent',
-                        color: activeSectionFilter === sec ? '#FFFFFF' : '#64748B'
+                        backgroundColor: activeSectionFilter === sec ? 'var(--btn-sage)' : 'transparent',
+                        color: activeSectionFilter === sec ? 'var(--btn-text)' : 'var(--secondary-heading)',
+                        boxShadow: activeSectionFilter === sec ? 'var(--shadow-3d-btn)' : 'none',
+                        transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)'
                       }}
                     >
                       {sec}
@@ -483,27 +465,19 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                   ))}
                 </div>
 
-                {/* Countdown Timer */}
+                {/* Countdown Timer & Submit */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#9CA3AF', letterSpacing: '0.5px' }}>Time Remaining</div>
-                    <div style={{ fontSize: '1.35rem', fontWeight: 700, color: timeLeft < 300 ? '#111827' : '#111827', fontFamily: 'var(--font-code)' }}>
+                    <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', fontWeight: 700 }}>Time Remaining</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: timeLeft < 300 ? 'var(--accent-terracotta)' : 'var(--main-heading)', fontFamily: 'var(--font-code)' }}>
                       {formatTime(timeLeft)}
                     </div>
                   </div>
 
                   <button
                     onClick={handleFinishMockTest}
-                    style={{
-                      backgroundColor: '#475569',
-                      color: '#FFF',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer'
-                    }}
+                    className="btn-primary-spec"
+                    style={{ padding: '10px 22px', fontSize: '0.88rem', fontWeight: 700, borderRadius: '10px' }}
                   >
                     Submit Test
                   </button>
@@ -515,15 +489,18 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                 
                 {/* Left Pane: Question Card */}
                 {currentQuestion && (
-                  <div className="saas-card-spec" style={{ padding: '36px', backgroundColor: '#FFF', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '540px' }}>
+                  <div className="saas-card-spec" style={{ padding: '36px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '540px' }}>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#111827', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+                        <span className="pill-tag">
                           Section: {currentQuestion.section}
+                        </span>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          1 Mark per Question &bull; No Negative Marking
                         </span>
                       </div>
 
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#111827', marginBottom: '28px', lineHeight: 1.65, whiteSpace: 'pre-line' }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--main-heading)', marginBottom: '28px', lineHeight: 1.65, whiteSpace: 'pre-line', fontFamily: 'var(--font-heading)' }}>
                         Question {currentQIndex + 1}. {currentQuestion.question}
                       </h3>
 
@@ -537,31 +514,33 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                               onClick={() => handleSelectMockAnswer(currentQuestion.id, oIdx)}
                               style={{
                                 padding: '16px 20px',
-                                borderRadius: '10px',
-                                border: `1.5px solid ${isSelected ? '#111827' : '#E5E7EB'}`,
-                                backgroundColor: isSelected ? '#F8F9FA' : '#FFFFFF',
-                                color: '#111827',
+                                borderRadius: '12px',
+                                border: isSelected ? '2px solid var(--btn-sage)' : '1.5px solid var(--border-color)',
+                                backgroundColor: isSelected ? '#EAECE8' : 'var(--bg-card-solid)',
+                                color: isSelected ? 'var(--main-heading)' : 'var(--body-text)',
                                 fontWeight: isSelected ? 700 : 500,
                                 fontSize: '0.95rem',
                                 textAlign: 'left',
                                 cursor: 'pointer',
-                                transition: 'all 0.15s ease',
+                                transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '14px'
+                                gap: '14px',
+                                boxShadow: isSelected ? '0 3px 10px rgba(82, 98, 87, 0.14)' : 'none'
                               }}
                             >
                               <span style={{
-                                width: '28px',
-                                height: '28px',
+                                width: '30px',
+                                height: '30px',
                                 borderRadius: '50%',
-                                backgroundColor: isSelected ? '#111827' : '#F3F4F6',
-                                color: isSelected ? '#FFF' : '#374151',
+                                backgroundColor: isSelected ? 'var(--btn-sage)' : '#F5EBE6',
+                                color: isSelected ? 'var(--btn-text)' : 'var(--secondary-heading)',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontSize: '0.85rem',
-                                fontWeight: 700
+                                fontWeight: 800,
+                                flexShrink: 0
                               }}>
                                 {String.fromCharCode(65 + oIdx)}
                               </span>
@@ -573,19 +552,17 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                     </div>
 
                     {/* Controls */}
-                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleToggleReview(currentQuestion.id)}
+                          className="btn-secondary-spec"
                           style={{
                             padding: '10px 18px',
-                            borderRadius: '8px',
-                            border: '1px solid #475569',
-                            backgroundColor: markedForReview[currentQuestion.id] ? '#475569' : '#F3F4F6',
-                            color: markedForReview[currentQuestion.id] ? '#FFF' : '#1E293B',
-                            fontWeight: 600,
-                            fontSize: '0.88rem',
-                            cursor: 'pointer'
+                            borderRadius: '10px',
+                            backgroundColor: markedForReview[currentQuestion.id] ? 'var(--accent-terracotta)' : 'var(--bg-card-solid)',
+                            color: markedForReview[currentQuestion.id] ? '#FFF' : 'var(--secondary-heading)',
+                            borderColor: markedForReview[currentQuestion.id] ? 'var(--accent-terracotta)' : 'var(--border-color)'
                           }}
                         >
                           {markedForReview[currentQuestion.id] ? 'Marked for Review' : 'Mark for Review'}
@@ -594,16 +571,8 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                         {userAnswers[currentQuestion.id] !== undefined && (
                           <button
                             onClick={() => handleClearMockAnswer(currentQuestion.id)}
-                            style={{
-                              padding: '10px 18px',
-                              borderRadius: '8px',
-                              border: '1px solid #D1D5DB',
-                              backgroundColor: '#FFF',
-                              color: '#6B7280',
-                              fontWeight: 500,
-                              fontSize: '0.88rem',
-                              cursor: 'pointer'
-                            }}
+                            className="btn-secondary-spec"
+                            style={{ padding: '10px 18px', borderRadius: '10px' }}
                           >
                             Clear Response
                           </button>
@@ -615,7 +584,7 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                           onClick={() => setCurrentQIndex((prev) => Math.max(0, prev - 1))}
                           disabled={currentQIndex === 0}
                           className="btn-secondary-spec"
-                          style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600 }}
+                          style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600, opacity: currentQIndex === 0 ? 0.5 : 1 }}
                         >
                           Previous
                         </button>
@@ -623,7 +592,7 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                           onClick={() => setCurrentQIndex((prev) => Math.min(selectedMockTest.questions.length - 1, prev + 1))}
                           disabled={currentQIndex === selectedMockTest.questions.length - 1}
                           className="btn-primary-spec"
-                          style={{ padding: '10px 24px', fontSize: '0.88rem', fontWeight: 600 }}
+                          style={{ padding: '10px 24px', fontSize: '0.88rem', fontWeight: 600, opacity: currentQIndex === selectedMockTest.questions.length - 1 ? 0.5 : 1 }}
                         >
                           Next Question
                         </button>
@@ -633,27 +602,27 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                 )}
 
                 {/* Right Pane: Question Palette */}
-                <div className="saas-card-spec" style={{ padding: '24px', backgroundColor: '#FFF', height: 'fit-content' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div className="saas-card-spec" style={{ padding: '24px', height: 'fit-content' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--main-heading)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-heading)' }}>
                     Question Palette ({filteredQuestions.length})
                   </h4>
 
                   {/* Legend */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px', fontSize: '0.78rem', fontWeight: 600, color: '#4B5563' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--body-text)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#111827' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--btn-sage)' }}></span>
                       <span>Answered ({Object.keys(userAnswers).length})</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#111827' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--accent-terracotta)' }}></span>
                       <span>Marked ({Object.values(markedForReview).filter(Boolean).length})</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#111827' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--secondary-olive)' }}></span>
                       <span>Ans & Marked</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#F3F4F6', border: '1px solid #D1D5DB' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#FCF9F6', border: '1px solid var(--border-color)' }}></span>
                       <span>Not Visited</span>
                     </div>
                   </div>
@@ -671,13 +640,14 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                           onClick={() => setCurrentQIndex(idx)}
                           style={{
                             height: '38px',
-                            borderRadius: '6px',
-                            border: isCurrent ? '2px solid #111827' : '1px solid #E5E7EB',
+                            borderRadius: '8px',
+                            border: isCurrent ? '2px solid var(--btn-sage)' : '1px solid var(--border-color)',
                             backgroundColor: status.bg,
                             color: status.color,
                             fontWeight: isCurrent ? 800 : 600,
                             fontSize: '0.85rem',
                             cursor: 'pointer',
+                            boxShadow: isCurrent ? '0 0 0 2px rgba(82, 98, 87, 0.25)' : 'none',
                             transition: 'all 0.15s ease'
                           }}
                         >
@@ -697,93 +667,190 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
             <div>
               {(() => {
                 let totalScore = 0;
-                const secBreakdown = { Quant: 0, Logical: 0, Verbal: 0, NonVerbal: 0, DI: 0 };
+                let answeredCount = 0;
+                let unattemptedCount = 0;
+                let incorrectCount = 0;
+                const totalQuestions = selectedMockTest.questions?.length || selectedMockTest.totalQuestions || 40;
+
+                const secBreakdown = {
+                  Quant: { correct: 0, total: 12, attempted: 0 },
+                  Logical: { correct: 0, total: 10, attempted: 0 },
+                  Verbal: { correct: 0, total: 10, attempted: 0 },
+                  NonVerbal: { correct: 0, total: 4, attempted: 0 },
+                  DI: { correct: 0, total: 4, attempted: 0 }
+                };
+
                 selectedMockTest.questions.forEach((q) => {
-                  if (userAnswers[q.id] === q.correctIndex) {
-                    totalScore += 1;
-                    secBreakdown[q.section] = (secBreakdown[q.section] || 0) + 1;
+                  const userSel = userAnswers[q.id];
+                  const sec = q.section || 'Quant';
+                  if (!secBreakdown[sec]) {
+                    secBreakdown[sec] = { correct: 0, total: 0, attempted: 0 };
+                  }
+
+                  if (userSel !== undefined) {
+                    answeredCount += 1;
+                    secBreakdown[sec].attempted += 1;
+                    if (userSel === q.correctIndex) {
+                      totalScore += 1;
+                      secBreakdown[sec].correct += 1;
+                    } else {
+                      incorrectCount += 1;
+                    }
+                  } else {
+                    unattemptedCount += 1;
                   }
                 });
 
-                const accuracy = Math.round((totalScore / selectedMockTest.totalQuestions) * 100);
-                const isPassed = totalScore >= selectedMockTest.passingScore;
+                const accuracy = Math.round((totalScore / totalQuestions) * 100);
+                const accuracyOnAttempted = answeredCount > 0 ? Math.round((totalScore / answeredCount) * 100) : 0;
+                const isPassed = totalScore >= (selectedMockTest.passingScore || 28);
 
                 return (
                   <div>
                     {/* Top Result Banner */}
-                    <div style={{ padding: '32px', marginBottom: '32px', backgroundColor: isPassed ? '#F0FDF4' : '#FFFBEB', border: `1.5px solid ${isPassed ? '#BBF7D0' : '#FDE68A'}`, borderRadius: '18px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-                        <div>
-                          <span style={{ 
-                            backgroundColor: isPassed ? '#DCFCE7' : '#FEF3C7', 
-                            color: isPassed ? '#14532D' : '#92400E', 
-                            border: `1px solid ${isPassed ? '#86EFAC' : '#FCD34D'}`,
-                            padding: '4px 12px',
-                            borderRadius: '20px',
-                            fontSize: '0.76rem',
-                            fontWeight: 800, 
-                            display: 'inline-block',
+                    <div className="saas-card-spec" style={{ padding: '36px', marginBottom: '32px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                        <div style={{ flex: '1 1 420px' }}>
+                          <span className="pill-tag" style={{
+                            backgroundColor: isPassed ? '#EAECE8' : '#F5EBE6', 
+                            color: isPassed ? '#526257' : '#9A6854', 
+                            borderColor: 'var(--border-color)',
                             marginBottom: '12px' 
                           }}>
-                            {isPassed ? 'PASSED' : 'BELOW CUTOFF'}
+                            {isPassed ? 'PASSED - CUTOFF MET' : 'BELOW CUTOFF (28/40 REQUIRED)'}
                           </span>
-                          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.5px' }}>
+                          <h2 style={{ fontSize: '1.85rem', fontWeight: 700, color: 'var(--main-heading)', margin: '4px 0 8px 0', letterSpacing: '-0.3px', fontFamily: 'var(--font-heading)' }}>
                             {selectedMockTest.title} - Performance Report
                           </h2>
-                          <p style={{ color: '#475569', fontSize: '0.94rem', lineHeight: 1.6, margin: 0 }}>
+                          <p style={{ color: 'var(--body-text)', fontSize: '0.94rem', lineHeight: 1.6, margin: 0 }}>
                             {isPassed 
-                              ? `Achieved a score of ${totalScore}/40 (${accuracy}%), meeting the passing requirement.`
-                              : `Achieved a score of ${totalScore}/40 (${accuracy}%). A minimum score of 28 marks (70%) is required.`}
+                              ? `You answered ${answeredCount} of ${totalQuestions} questions and scored ${totalScore}/40 (${accuracy}%), successfully meeting the required cutoff.`
+                              : `You answered ${answeredCount} of ${totalQuestions} questions and scored ${totalScore}/40 (${accuracy}%). Cutoff requirement is 28 marks (70%).`}
                           </p>
                         </div>
 
-                        <div style={{ textAlign: 'center', backgroundColor: '#FFFFFF', padding: '20px 32px', borderRadius: '14px', border: `1.5px solid ${isPassed ? '#BBF7D0' : '#FDE68A'}`, minWidth: '150px' }}>
-                          <div style={{ fontSize: '2.5rem', fontWeight: 900, color: isPassed ? '#15803D' : '#B45309', lineHeight: 1 }}>
-                            {totalScore}<span style={{ fontSize: '1.1rem', color: '#64748B', fontWeight: 600 }}>/40</span>
+                        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                          <div style={{ textAlign: 'center', backgroundColor: 'var(--bg-card-solid)', padding: '18px 26px', borderRadius: '16px', border: '1.5px solid var(--border-color)', boxShadow: '0 2px 8px rgba(52, 52, 58, 0.04)', minWidth: '135px' }}>
+                            <div style={{ fontSize: '2.4rem', fontWeight: 800, color: isPassed ? '#526257' : '#9A6854', lineHeight: 1, fontFamily: 'var(--font-heading)' }}>
+                              {totalScore}<span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{totalQuestions}</span>
+                            </div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '6px', textTransform: 'uppercase' }}>
+                              Net Score
+                            </div>
                           </div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginTop: '6px' }}>
-                            Accuracy: {accuracy}%
+
+                          <div style={{ textAlign: 'center', backgroundColor: 'var(--bg-card-solid)', padding: '18px 26px', borderRadius: '16px', border: '1.5px solid var(--border-color)', boxShadow: '0 2px 8px rgba(52, 52, 58, 0.04)', minWidth: '135px' }}>
+                            <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--main-heading)', lineHeight: 1, fontFamily: 'var(--font-heading)' }}>
+                              {accuracy}%
+                            </div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '6px', textTransform: 'uppercase' }}>
+                              Accuracy
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Sectional Breakdown Metrics in Pastel Cards */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px', marginTop: '28px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '24px' }}>
-                        <div style={{ backgroundColor: '#F0F9FF', padding: '16px', borderRadius: '12px', textAlign: 'center', border: '1.5px solid #BAE6FD' }}>
-                          <div style={{ fontSize: '0.78rem', color: '#0369A1', fontWeight: 700 }}>Quantitative</div>
-                          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0C4A6E', marginTop: '4px' }}>{secBreakdown.Quant}/12</div>
+                      {/* Primary Attempt Summary Cards */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px', marginTop: '26px' }}>
+                        <div style={{ backgroundColor: 'var(--bg-card-solid)', padding: '18px 20px', borderRadius: '14px', border: '1.5px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Questions Attempted</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+                            {answeredCount} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>/ {totalQuestions} ({Math.round((answeredCount / totalQuestions) * 100)}%)</span>
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>Total responses submitted</div>
                         </div>
-                        <div style={{ backgroundColor: '#FAF5FF', padding: '16px', borderRadius: '12px', textAlign: 'center', border: '1.5px solid #E9D5FF' }}>
-                          <div style={{ fontSize: '0.78rem', color: '#7E22CE', fontWeight: 700 }}>Logical</div>
-                          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#581C87', marginTop: '4px' }}>{secBreakdown.Logical}/10</div>
+
+                        <div style={{ backgroundColor: 'var(--bg-card-solid)', padding: '18px 20px', borderRadius: '14px', border: '1.5px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.74rem', color: '#526257', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Correct Answers</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#526257', fontFamily: 'var(--font-heading)' }}>
+                            {totalScore} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>({accuracyOnAttempted}% on attempted)</span>
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>+1 mark per question</div>
                         </div>
-                        <div style={{ backgroundColor: '#ECFDF5', padding: '16px', borderRadius: '12px', textAlign: 'center', border: '1.5px solid #A7F3D0' }}>
-                          <div style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 700 }}>Verbal</div>
-                          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#064E3B', marginTop: '4px' }}>{secBreakdown.Verbal}/10</div>
+
+                        <div style={{ backgroundColor: 'var(--bg-card-solid)', padding: '18px 20px', borderRadius: '14px', border: '1.5px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.74rem', color: '#9A6854', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Incorrect Answers</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#9A6854', fontFamily: 'var(--font-heading)' }}>
+                            {incorrectCount} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Questions</span>
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>0 marks awarded</div>
                         </div>
-                        <div style={{ backgroundColor: '#FFFBEB', padding: '16px', borderRadius: '12px', textAlign: 'center', border: '1.5px solid #FDE68A' }}>
-                          <div style={{ fontSize: '0.78rem', color: '#B45309', fontWeight: 700 }}>Non-Verbal</div>
-                          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350F', marginTop: '4px' }}>{secBreakdown.NonVerbal}/4</div>
+
+                        <div style={{ backgroundColor: 'var(--bg-card-solid)', padding: '18px 20px', borderRadius: '14px', border: '1.5px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--secondary-heading)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Unattempted (Skipped)</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--secondary-heading)', fontFamily: 'var(--font-heading)' }}>
+                            {unattemptedCount} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Questions</span>
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>Left blank</div>
                         </div>
-                        <div style={{ backgroundColor: '#F0FDFA', padding: '16px', borderRadius: '12px', textAlign: 'center', border: '1.5px solid #99F6E4' }}>
-                          <div style={{ fontSize: '0.78rem', color: '#0F766E', fontWeight: 700 }}>Data Interpretation</div>
-                          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#134E4A', marginTop: '4px' }}>{secBreakdown.DI}/4</div>
+                      </div>
+
+                      {/* Sectional Breakdown Metrics */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                        <div style={{ backgroundColor: '#EAECE8', padding: '16px', borderRadius: '14px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#526257', fontWeight: 800, textTransform: 'uppercase' }}>Quantitative</div>
+                          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: '4px', fontFamily: 'var(--font-heading)' }}>
+                            {secBreakdown.Quant.correct}/{secBreakdown.Quant.total}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {secBreakdown.Quant.attempted}/{secBreakdown.Quant.total} attempted
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#F5EBE6', padding: '16px', borderRadius: '14px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#9A6854', fontWeight: 800, textTransform: 'uppercase' }}>Logical</div>
+                          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: '4px', fontFamily: 'var(--font-heading)' }}>
+                            {secBreakdown.Logical.correct}/{secBreakdown.Logical.total}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {secBreakdown.Logical.attempted}/{secBreakdown.Logical.total} attempted
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#EAECE8', padding: '16px', borderRadius: '14px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#526257', fontWeight: 800, textTransform: 'uppercase' }}>Verbal</div>
+                          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: '4px', fontFamily: 'var(--font-heading)' }}>
+                            {secBreakdown.Verbal.correct}/{secBreakdown.Verbal.total}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {secBreakdown.Verbal.attempted}/{secBreakdown.Verbal.total} attempted
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#F5EBE6', padding: '16px', borderRadius: '14px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#9A6854', fontWeight: 800, textTransform: 'uppercase' }}>Non-Verbal</div>
+                          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: '4px', fontFamily: 'var(--font-heading)' }}>
+                            {secBreakdown.NonVerbal.correct}/{secBreakdown.NonVerbal.total}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {secBreakdown.NonVerbal.attempted}/{secBreakdown.NonVerbal.total} attempted
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#EAECE8', padding: '16px', borderRadius: '14px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#526257', fontWeight: 800, textTransform: 'uppercase' }}>Data Interpretation</div>
+                          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--main-heading)', marginTop: '4px', fontFamily: 'var(--font-heading)' }}>
+                            {secBreakdown.DI.correct}/{secBreakdown.DI.total}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {secBreakdown.DI.attempted}/{secBreakdown.DI.total} attempted
+                          </div>
                         </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                      <div style={{ marginTop: '28px', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => setTestState('catalog')}
                           className="btn-primary-spec"
-                          style={{ fontSize: '0.88rem', padding: '12px 24px', fontWeight: 700, borderRadius: '10px' }}
+                          style={{ fontSize: '0.88rem', padding: '12px 26px', fontWeight: 700, borderRadius: '10px' }}
                         >
                           Back to Mock Tests
                         </button>
                         <button
                           onClick={() => handleStartMockTest(selectedMockTest)}
                           className="btn-secondary-spec"
-                          style={{ fontSize: '0.88rem', padding: '12px 24px', fontWeight: 700, borderRadius: '10px' }}
+                          style={{ fontSize: '0.88rem', padding: '12px 26px', fontWeight: 700, borderRadius: '10px' }}
                         >
                           Re-attempt Test
                         </button>
@@ -791,31 +858,58 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                     </div>
 
                     {/* Solutions Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.3px' }}>
-                        Question Analysis and Solutions (40 Questions)
-                      </h3>
-
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {['ALL', 'CORRECT', 'INCORRECT', 'UNATTEMPTED'].map((f) => (
-                          <button
-                            key={f}
-                            onClick={() => setReviewFilter(f)}
-                            style={{
-                              padding: '8px 16px',
-                              borderRadius: '6px',
-                              border: reviewFilter === f ? '1px solid #475569' : '1px solid #D1D5DB',
-                              fontWeight: 600,
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              backgroundColor: reviewFilter === f ? '#475569' : '#FFF',
-                              color: reviewFilter === f ? '#FFF' : '#374151'
-                            }}
-                          >
-                            {f}
-                          </button>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
+                      <div>
+                        <span className="pill-tag" style={{ marginBottom: '8px' }}>Detailed Audit</span>
+                        <h3 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--main-heading)', letterSpacing: '-0.3px', margin: '4px 0', fontFamily: 'var(--font-heading)' }}>
+                          Question Analysis & Detailed Solutions
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--body-text)' }}>
+                          Review all 40 questions, your selected responses, verified solutions, and step-by-step mathematical reasoning.
+                        </p>
                       </div>
+
+                      {(() => {
+                        let correctCount = 0;
+                        let incorrectCount = 0;
+                        let unattemptedCount = 0;
+                        selectedMockTest.questions.forEach((q) => {
+                          const userSel = userAnswers[q.id];
+                          if (userSel === undefined) unattemptedCount++;
+                          else if (userSel === q.correctIndex) correctCount++;
+                          else incorrectCount++;
+                        });
+
+                        return (
+                          <div style={{ display: 'flex', gap: '6px', backgroundColor: '#F5EBE6', padding: '5px', borderRadius: '12px', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
+                            {[
+                              { id: 'ALL', label: `ALL (${selectedMockTest.questions.length})` },
+                              { id: 'CORRECT', label: `CORRECT (${correctCount})` },
+                              { id: 'INCORRECT', label: `INCORRECT (${incorrectCount})` },
+                              { id: 'UNATTEMPTED', label: `UNATTEMPTED (${unattemptedCount})` }
+                            ].map((f) => (
+                              <button
+                                key={f.id}
+                                onClick={() => setReviewFilter(f.id)}
+                                style={{
+                                  padding: '8px 16px',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  fontWeight: 700,
+                                  fontSize: '0.82rem',
+                                  cursor: 'pointer',
+                                  backgroundColor: reviewFilter === f.id ? 'var(--btn-sage)' : 'transparent',
+                                  color: reviewFilter === f.id ? 'var(--btn-text)' : 'var(--secondary-heading)',
+                                  boxShadow: reviewFilter === f.id ? 'var(--shadow-3d-btn)' : 'none',
+                                  transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                                }}
+                              >
+                                {f.label}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Question Breakdown List */}
@@ -829,46 +923,71 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                         if (reviewFilter === 'INCORRECT' && (isCorrect || isUnattempted)) return null;
                         if (reviewFilter === 'UNATTEMPTED' && !isUnattempted) return null;
 
+                        const leftBorderColor = isCorrect ? 'var(--btn-sage)' : isUnattempted ? 'var(--border-color)' : 'var(--accent-terracotta)';
+
                         return (
-                          <div key={q.id} className="saas-card-spec" style={{ padding: '28px', backgroundColor: '#FFF', borderLeft: `5px solid ${isCorrect ? '#111827' : isUnattempted ? '#9CA3AF' : '#111827'}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                              <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
-                                Question {idx + 1} [{q.section}]
+                          <div 
+                            key={q.id} 
+                            className="saas-card-spec" 
+                            style={{ 
+                              padding: '30px', 
+                              borderLeft: `6px solid ${leftBorderColor}`
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                              <span className="pill-tag">
+                                Question {idx + 1} &bull; Section: {q.section}
                               </span>
                               <span style={{
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                backgroundColor: isCorrect ? '#F3F4F6' : isUnattempted ? '#F3F4F6' : '#F3F4F6',
-                                color: isCorrect ? '#111827' : isUnattempted ? '#4B5563' : '#111827'
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                padding: '4px 14px',
+                                borderRadius: '10px',
+                                backgroundColor: isCorrect ? '#EAECE8' : isUnattempted ? 'var(--bg-card-solid)' : '#F5EBE6',
+                                color: isCorrect ? '#526257' : isUnattempted ? 'var(--text-muted)' : '#9A6854',
+                                border: '1px solid var(--border-color)'
                               }}>
                                 {isCorrect ? 'Correct (+1 Mark)' : isUnattempted ? 'Unattempted (0 Marks)' : 'Incorrect (0 Marks)'}
                               </span>
                             </div>
 
-                            <h4 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111827', marginBottom: '20px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                            <h4 style={{ fontSize: '1.14rem', fontWeight: 600, color: 'var(--main-heading)', marginBottom: '22px', lineHeight: 1.65, whiteSpace: 'pre-line', fontFamily: 'var(--font-heading)' }}>
                               {q.question}
                             </h4>
 
                             {/* Options */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '22px' }}>
                               {q.options.map((opt, oIdx) => {
                                 const isCorrectOption = oIdx === q.correctIndex;
                                 const isUserOption = oIdx === userSel;
 
-                                let border = '#E5E7EB';
-                                let bg = '#FFF';
-                                let color = '#374151';
+                                let border = 'var(--border-color)';
+                                let bg = 'var(--bg-card-solid)';
+                                let color = 'var(--body-text)';
+                                let badgeText = null;
+                                let badgeBg = '#EAECE8';
+                                let badgeColor = '#526257';
 
                                 if (isCorrectOption) {
-                                  border = '#111827';
-                                  bg = '#F3F4F6';
-                                  color = '#111827';
+                                  border = '2px solid var(--btn-sage)';
+                                  bg = '#EAECE8';
+                                  color = 'var(--main-heading)';
+                                  if (isUserOption) {
+                                    badgeText = 'Your Choice (Correct)';
+                                    badgeBg = 'var(--btn-sage)';
+                                    badgeColor = 'var(--btn-text)';
+                                  } else {
+                                    badgeText = 'Correct Answer';
+                                    badgeBg = 'var(--btn-sage)';
+                                    badgeColor = 'var(--btn-text)';
+                                  }
                                 } else if (isUserOption && !isCorrectOption) {
-                                  border = '#111827';
-                                  bg = '#F3F4F6';
-                                  color = '#111827';
+                                  border = '2px solid var(--accent-terracotta)';
+                                  bg = '#F5EBE6';
+                                  color = 'var(--main-heading)';
+                                  badgeText = 'Your Choice (Incorrect)';
+                                  badgeBg = 'var(--accent-terracotta)';
+                                  badgeColor = '#FFFFFF';
                                 }
 
                                 return (
@@ -876,25 +995,65 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                                     key={oIdx}
                                     style={{
                                       padding: '14px 18px',
-                                      borderRadius: '8px',
-                                      border: `1.5px solid ${border}`,
+                                      borderRadius: '12px',
+                                      border,
                                       backgroundColor: bg,
                                       color,
-                                      fontSize: '0.9rem',
+                                      fontSize: '0.92rem',
                                       fontWeight: (isCorrectOption || isUserOption) ? 700 : 500,
-                                      lineHeight: 1.5
+                                      lineHeight: 1.5,
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      gap: '10px'
                                     }}
                                   >
-                                    {String.fromCharCode(65 + oIdx)}. {opt} {isCorrectOption && ' [Correct Answer]'} {isUserOption && !isCorrectOption && ' [Your Selection]'}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                      <span style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        backgroundColor: isCorrectOption ? 'var(--btn-sage)' : (isUserOption ? 'var(--accent-terracotta)' : '#F5EBE6'),
+                                        color: (isCorrectOption || isUserOption) ? 'var(--btn-text)' : 'var(--secondary-heading)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 800,
+                                        flexShrink: 0
+                                      }}>
+                                        {String.fromCharCode(65 + oIdx)}
+                                      </span>
+                                      <span>{opt}</span>
+                                    </div>
+
+                                    {badgeText && (
+                                      <span style={{
+                                        fontSize: '0.74rem',
+                                        fontWeight: 800,
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: badgeBg,
+                                        color: badgeColor,
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        {badgeText}
+                                      </span>
+                                    )}
                                   </div>
                                 );
                               })}
                             </div>
 
                             {/* Explanation */}
-                            <div style={{ padding: '18px', borderRadius: '8px', backgroundColor: '#F8F9FA', border: '1px solid #E5E7EB', fontSize: '0.9rem', color: '#374151', lineHeight: 1.65 }}>
-                              <strong style={{ color: '#111827', display: 'block', marginBottom: '4px' }}>Solution Steps:</strong>
-                              {q.explanation}
+                            <div style={{ padding: '22px 24px', borderRadius: '12px', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', fontSize: '0.92rem', color: 'var(--body-text)', lineHeight: 1.65 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <strong style={{ color: 'var(--main-heading)', fontSize: '0.96rem', fontFamily: 'var(--font-heading)' }}>Step-by-Step Solution & Rationale:</strong>
+                              </div>
+                              <div style={{ whiteSpace: 'pre-line' }}>
+                                {q.explanation}
+                              </div>
                             </div>
                           </div>
                         );
@@ -914,11 +1073,12 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
       {viewMode === 'formulas' && (
         <div>
           {/* Header Banner */}
-          <div className="saas-card-spec" style={{ padding: '36px', marginBottom: '32px', backgroundColor: '#FFFFFF' }}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+          <div className="saas-card-spec" style={{ padding: '36px', marginBottom: '32px' }}>
+            <span className="pill-tag" style={{ marginBottom: '10px' }}>Reference Handbook</span>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--main-heading)', margin: '4px 0 8px 0', letterSpacing: '-0.3px', fontFamily: 'var(--font-heading)' }}>
               Quantitative & Logical Formula Reference
             </h2>
-            <p style={{ color: '#4B5563', fontSize: '0.96rem', lineHeight: 1.65, maxWidth: '850px' }}>
+            <p style={{ color: 'var(--body-text)', fontSize: '0.96rem', lineHeight: 1.65, maxWidth: '850px', margin: 0 }}>
               Standard mathematical identities, analytical reasoning guidelines, grammatical conventions, and execution constraints required for aptitude examinations.
             </p>
           </div>
@@ -945,7 +1105,7 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
               value={formulaSearchQuery}
               onChange={(e) => setFormulaSearchQuery(e.target.value)}
               className="saas-search-input"
-              style={{ height: '50px', fontSize: '0.95rem' }}
+              style={{ height: '52px', fontSize: '0.95rem' }}
             />
           </div>
 
@@ -957,16 +1117,16 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                 item.formulas.some((f) => f.toLowerCase().includes(formulaSearchQuery.toLowerCase()))
               )
               .map((item, idx) => (
-                <div key={idx} className="saas-card-spec" style={{ padding: '32px', backgroundColor: '#FFFFFF' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #F3F4F6', paddingBottom: '16px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+                <div key={idx} className="saas-card-spec" style={{ padding: '32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--main-heading)', margin: 0, fontFamily: 'var(--font-heading)' }}>
                       {item.topic}
                     </h3>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span className="pill-tag" style={{ backgroundColor: '#EAECE8', color: '#526257' }}>
                         {item.importance}
                       </span>
-                      <span className="pill-tag" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB', fontWeight: 600 }}>
+                      <span className="pill-tag" style={{ backgroundColor: '#F5EBE6', color: '#9A6854' }}>
                         Time Target: {item.timeLimit}
                       </span>
                     </div>
@@ -974,13 +1134,47 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
                   {/* Formulas Section */}
                   <div style={{ marginBottom: '24px' }}>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Core Mathematical Identities & Rules
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {item.formulas.map((f, fIdx) => (
-                        <div key={fIdx} style={{ padding: '14px 18px', backgroundColor: '#F8F9FA', borderRadius: '8px', borderLeft: '4px solid #111827', fontSize: '0.92rem', color: '#1F2937', lineHeight: 1.6, fontWeight: 500 }}>
-                          {f}
+                        <div 
+                          key={fIdx} 
+                          style={{ 
+                            padding: '14px 18px', 
+                            backgroundColor: 'var(--bg-card-solid)', 
+                            borderRadius: '12px', 
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            fontSize: '0.92rem', 
+                            color: 'var(--body-text)', 
+                            lineHeight: 1.6, 
+                            fontWeight: 500,
+                            boxShadow: '0 1px 3px rgba(52, 52, 58, 0.03)'
+                          }}
+                        >
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '26px',
+                            height: '26px',
+                            borderRadius: '6px',
+                            backgroundColor: '#EAECE8',
+                            color: '#526257',
+                            fontWeight: 800,
+                            fontSize: '0.78rem',
+                            flexShrink: 0,
+                            marginTop: '2px'
+                          }}>
+                            {fIdx + 1}
+                          </span>
+                          <div style={{ flex: 1 }}>
+                            {f}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -988,21 +1182,55 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
                   {/* Speed Tricks Section */}
                   <div style={{ marginBottom: '24px' }}>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Calculation Shortcuts & Methodologies
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {item.speedTricks.map((st, stIdx) => (
-                        <div key={stIdx} style={{ padding: '14px 18px', backgroundColor: '#F8F9FA', borderRadius: '8px', borderLeft: '4px solid #4B5563', fontSize: '0.92rem', color: '#374151', lineHeight: 1.6, fontWeight: 500 }}>
-                          {st}
+                        <div 
+                          key={stIdx} 
+                          style={{ 
+                            padding: '14px 18px', 
+                            backgroundColor: 'var(--bg-card-solid)', 
+                            borderRadius: '12px', 
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            fontSize: '0.92rem', 
+                            color: 'var(--body-text)', 
+                            lineHeight: 1.6, 
+                            fontWeight: 500,
+                            boxShadow: '0 1px 3px rgba(52, 52, 58, 0.03)'
+                          }}
+                        >
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '26px',
+                            height: '26px',
+                            borderRadius: '6px',
+                            backgroundColor: '#F5EBE6',
+                            color: '#9A6854',
+                            fontWeight: 800,
+                            fontSize: '0.78rem',
+                            flexShrink: 0,
+                            marginTop: '2px'
+                          }}>
+                            {stIdx + 1}
+                          </span>
+                          <div style={{ flex: 1 }}>
+                            {st}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Examination Guidance */}
-                  <div style={{ padding: '16px 20px', backgroundColor: '#F8F9FA', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '0.9rem', color: '#374151', lineHeight: 1.6 }}>
-                    <strong style={{ color: '#111827' }}>Examination Note:</strong> {item.proTip}
+                  <div style={{ padding: '16px 20px', backgroundColor: '#F5EBE6', borderRadius: '12px', border: '1px dashed #9A6854', fontSize: '0.9rem', color: 'var(--body-text)', lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--main-heading)' }}>Examination Note:</strong> {item.proTip}
                   </div>
                 </div>
               ))}

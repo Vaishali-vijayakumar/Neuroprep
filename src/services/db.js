@@ -130,16 +130,30 @@ export const dbService = {
  return merged;
  },
 
- clearAllUsers() {
- try {
- localStorage.removeItem(REGISTERED_USERS_KEY);
- localStorage.removeItem('neuroprep_user_session');
- localStorage.removeItem('neuroprep_db_profiles');
- db.from('profiles').update([]);
- } catch (e) {
- console.error('Error clearing users from db:', e);
- }
- },
+  clearAllUsers() {
+    this.clearAllUserData();
+  },
+
+  clearAllUserData() {
+    try {
+      localDb.clearAllTables();
+      if (typeof localStorage !== 'undefined') {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('neuroprep_') || key.startsWith('np_') || key.includes('placement'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      }
+      try {
+        window.dispatchEvent(new CustomEvent('neuroprep-data-cleared'));
+      } catch (_) {}
+    } catch (e) {
+      console.error('Error clearing all user and practice data:', e);
+    }
+  },
 
  // Profiles
  async getProfile() {
@@ -269,6 +283,16 @@ export const dbService = {
  const updated = existing.filter(e => e.id !== entryId);
  localStorage.setItem(key, JSON.stringify(updated));
  return updated;
+ } catch (e) {
+ return [];
+ }
+ },
+
+ clearAllJournalsForUser(userEmail) {
+ try {
+ const key = getUserJournalKey(userEmail);
+ localStorage.setItem(key, JSON.stringify([]));
+ return [];
  } catch (e) {
  return [];
  }

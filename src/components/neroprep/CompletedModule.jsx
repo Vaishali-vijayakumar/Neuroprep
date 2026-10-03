@@ -67,6 +67,24 @@ export default function CompletedModule({ userEmail = 'guest' }) {
   const trackDef = getTrackConfig(currentConfig.trackId || currentReport.trackId || 'hr');
   const trackName = currentConfig.trackName || trackDef.name;
 
+  const formatTime = (secs) => {
+    const total = Number.isFinite(Number(secs)) ? Math.max(0, Math.round(Number(secs))) : 0;
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}m ${s}s`;
+  };
+
+  // Derive score & grade
+  const displayScore = currentReport.overall_score !== undefined
+    ? currentReport.overall_score
+    : (currentReport.overall !== undefined ? currentReport.overall : (currentReport.score !== undefined ? currentReport.score : null));
+  const noData = displayScore === null;
+
+  const derivedGrade = currentReport.grade ||
+    (displayScore !== null ? (displayScore >= 90 ? 'A+' : displayScore >= 80 ? 'A' : displayScore >= 70 ? 'B+' : displayScore >= 60 ? 'B' : displayScore >= 45 ? 'C' : 'D') : '—');
+  const derivedHireRec = currentReport.hire_recommendation ||
+    (displayScore !== null ? (displayScore >= 75 ? 'Yes — Recommended for Hire' : displayScore >= 60 ? 'Consider — With Targeted Mentorship' : 'No — Needs Fundamental Improvement') : '—');
+
   // Auto-save interview session and live scores on mount
   useEffect(() => {
     if (report && config) {
@@ -85,24 +103,6 @@ export default function CompletedModule({ userEmail = 'guest' }) {
       }
     }
   }, [report, config, elapsedSeconds, userEmail, displayScore, derivedGrade, trackName]);
-
-  const formatTime = (secs) => {
-    const total = Number.isFinite(Number(secs)) ? Math.max(0, Math.round(Number(secs))) : 0;
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}m ${s}s`;
-  };
-
-  // Derive score & grade
-  const displayScore = currentReport.overall_score !== undefined
-    ? currentReport.overall_score
-    : (currentReport.overall !== undefined ? currentReport.overall : (currentReport.score !== undefined ? currentReport.score : null));
-  const noData = displayScore === null;
-
-  const derivedGrade = currentReport.grade ||
-    (displayScore !== null ? (displayScore >= 90 ? 'A+' : displayScore >= 80 ? 'A' : displayScore >= 70 ? 'B+' : displayScore >= 60 ? 'B' : displayScore >= 45 ? 'C' : 'D') : '—');
-  const derivedHireRec = currentReport.hire_recommendation ||
-    (displayScore !== null ? (displayScore >= 75 ? 'Yes — Recommended for Hire' : displayScore >= 60 ? 'Consider — With Targeted Mentorship' : 'No — Needs Fundamental Improvement') : '—');
 
   const uniqueStrengths = Array.from(new Set(currentReport.strengths || [])).filter(Boolean);
   const uniqueWeaknesses = Array.from(new Set(currentReport.weaknesses || currentReport.weak_areas || [])).filter(Boolean);
@@ -155,13 +155,14 @@ export default function CompletedModule({ userEmail = 'guest' }) {
   });
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-page)', fontFamily: 'var(--font-inter)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-page)', fontFamily: 'var(--font-body)' }}>
 
       {/* Header Bar */}
-      <div style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid var(--border-color)', padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderBottom: '1px solid var(--border-color)', padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={exitInterview}
+            className="btn-secondary-spec"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -169,21 +170,17 @@ export default function CompletedModule({ userEmail = 'guest' }) {
               fontSize: '12.5px',
               fontWeight: 700,
               cursor: 'pointer',
-              backgroundColor: '#F8FAFC',
-              color: 'var(--text-main)',
-              border: '1px solid var(--border-color)',
               borderRadius: '6px',
-              transition: 'all 0.15s ease',
             }}
           >
             Back to Interview Selection
           </button>
           <span style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-color)' }}></span>
-          <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.3px', color: 'var(--text-main)' }}>Neroprep Adaptive Engine</span>
+          <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.3px', color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>NeuroPrep Adaptive Engine</span>
           <span style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-color)' }}></span>
           <span className="pill-tag" style={{ fontSize: '12px' }}>{trackName} Evaluation Scorecard</span>
         </div>
-        <button onClick={exitInterview} style={{ padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', backgroundColor: '#475569', color: '#FFFFFF', border: 'none', borderRadius: '8px' }}>
+        <button onClick={exitInterview} className="btn-primary-spec" style={{ padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px' }}>
           Start New Interview
         </button>
       </div>
@@ -196,16 +193,16 @@ export default function CompletedModule({ userEmail = 'guest' }) {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
               <span className="pill-tag" style={{ fontSize: '12px' }}>AI Adaptive Evaluation</span>
             </div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0', letterSpacing: '-0.4px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--main-heading)', margin: '0 0 6px 0', letterSpacing: '-0.4px', fontFamily: 'var(--font-heading)' }}>
               {currentConfig.trackName || 'DSA & Coding Interview'} — {currentConfig.role || 'Software Engineer'}
             </h1>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-body)' }}>
               Difficulty: {currentConfig.difficulty || 'Adaptive AI'} · Duration: {formatTime(elapsedSeconds || (currentReport.sessionDuration ? currentReport.sessionDuration * 60 : 0) || 0)}
             </p>
           </div>
 
           <div style={{ textAlign: 'center', flexShrink: 0 }}>
-            <div style={{ fontSize: '52px', fontWeight: 900, color: GRADE_COLOR[derivedGrade] || '#111827', lineHeight: 1 }}>
+            <div style={{ fontSize: '52px', fontWeight: 900, color: GRADE_COLOR[derivedGrade] || '#34343A', lineHeight: 1, fontFamily: 'var(--font-heading)' }}>
               {displayScore !== null ? displayScore : '—'}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>/ 100</div>
@@ -370,7 +367,7 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                   ].map((m, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F3F4F6', fontSize: '13px' }}>
                       <span style={{ color: 'var(--text-body)' }}>{m.label}</span>
-                      <span style={{ fontWeight: 700, color: m.label.includes('Final') ? '#1D4ED8' : m.warn ? '#111827' : 'var(--text-main)' }}>{m.value}</span>
+                      <span style={{ fontWeight: 700, color: m.label.includes('Final') ? '#526257' : m.warn ? '#111827' : 'var(--text-main)' }}>{m.value}</span>
                     </div>
                   ))}
                 </div>
@@ -426,8 +423,8 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                         style={{
                           padding: '20px 22px',
                           borderRadius: '12px',
-                          border: '1px solid #E2E8F0',
-                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #D8D2CE',
+                          background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
                           boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
                         }}
                       >
@@ -437,9 +434,9 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                             <span style={{
                               padding: '4px 10px',
                               borderRadius: '6px',
-                              backgroundColor: '#EEF2FF',
-                              color: '#3730A3',
-                              border: '1px solid #C7D2FE',
+                              backgroundColor: '#EAECE8',
+                              color: '#526257',
+                              border: '1px solid #D8D2CE',
                               fontSize: '12.5px',
                               fontWeight: 800,
                               flexShrink: 0,
@@ -447,38 +444,37 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                             }}>
                               Q{rev.question_number || idx + 1}
                             </span>
-                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', lineHeight: 1.45 }}>
+                            <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--main-heading)', lineHeight: 1.45 }}>
                               {rev.question}
                             </span>
                           </div>
-
-                          <span style={{
-                            fontSize: '13px',
-                            fontWeight: 800,
-                            padding: '5px 12px',
+                          <div style={{
+                            padding: '4px 12px',
                             borderRadius: '8px',
+                            backgroundColor: rev.score >= 80 ? '#EAECE8' : rev.score >= 50 ? '#F5EBE6' : '#F5EBE6',
+                            color: rev.score >= 80 ? '#526257' : rev.score >= 50 ? '#9A6854' : '#9A6854',
+                            border: '1px solid #D8D2CE',
+                            fontSize: '12px',
+                            fontWeight: 800,
                             flexShrink: 0,
-                            backgroundColor: isHigh ? '#ECFDF5' : isMed ? '#FFFBEB' : '#FEF2F2',
-                            color: isHigh ? '#065F46' : isMed ? '#92400E' : '#991B1B',
-                            border: `1px solid ${isHigh ? '#A7F3D0' : isMed ? '#FDE68A' : '#FECACA'}`,
                           }}>
                             {rev.verdict || `${rev.score}/100`}
-                          </span>
+                          </div>
                         </div>
 
                         {/* Candidate Response Box */}
                         <div style={{
                           fontSize: '14.5px',
-                          color: '#1E293B',
+                          color: '#34343A',
                           padding: '14px 16px',
-                          backgroundColor: '#F8FAFC',
+                          backgroundColor: '#FCF9F6',
                           borderRadius: '10px',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid #D8D2CE',
                           marginBottom: '12px',
                           lineHeight: 1.6,
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <strong style={{ color: '#0F172A', fontSize: '13.5px' }}>Candidate Response:</strong>
+                            <strong style={{ color: '#34343A', fontSize: '13.5px' }}>Candidate Response:</strong>
                             {rev.emotion && (
                               <span style={{
                                 fontSize: '12px',
@@ -493,7 +489,7 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                               </span>
                             )}
                           </div>
-                          <div style={{ fontStyle: rev.user_answer ? 'normal' : 'italic', color: rev.user_answer ? '#1E293B' : '#64748B' }}>
+                          <div style={{ fontStyle: rev.user_answer ? 'normal' : 'italic', color: rev.user_answer ? '#34343A' : '#89878A' }}>
                             {rev.user_answer || '(No verbal response recorded before question progression)'}
                           </div>
                         </div>
@@ -533,15 +529,15 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                         {rev.emotion?.coachingAdvice && (
                           <div style={{
                             fontSize: '13.5px',
-                            color: '#0369A1',
+                            color: '#526257',
                             padding: '12px 14px',
-                            backgroundColor: '#F0F9FF',
+                            backgroundColor: '#EAECE8',
                             borderRadius: '10px',
-                            border: '1px solid #BAE6FD',
+                            border: '1px solid #D8D2CE',
                             marginBottom: '10px',
                             lineHeight: 1.55,
                           }}>
-                            <strong style={{ color: '#0C4A6E' }}>Tone & Communication Coaching: </strong>
+                            <strong style={{ color: '#34343A' }}>Tone & Communication Coaching: </strong>
                             {rev.emotion.coachingAdvice}
                           </div>
                         )}
@@ -577,9 +573,9 @@ export default function CompletedModule({ userEmail = 'guest' }) {
               display: 'inline-flex',
               alignItems: 'center',
               padding: '12px 26px',
-              backgroundColor: '#F1F5F9',
-              color: '#1E293B',
-              border: '1px solid #CBD5E1',
+              backgroundColor: '#F5EBE6',
+              color: '#34343A',
+              border: '1px solid #D8D2CE',
               borderRadius: '8px',
               fontSize: '14px',
               fontWeight: 700,
@@ -593,7 +589,7 @@ export default function CompletedModule({ userEmail = 'guest' }) {
             onClick={exitInterview}
             style={{
               padding: '12px 32px',
-              backgroundColor: '#475569',
+              backgroundColor: '#66666B',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '8px',

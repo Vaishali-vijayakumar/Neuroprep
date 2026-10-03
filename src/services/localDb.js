@@ -100,5 +100,27 @@ export const localDb = {
       dump[k] = getLocalTable(STORAGE_KEYS[k], []);
     });
     return dump;
+  },
+
+  clearAllTables() {
+    if (typeof localStorage === 'undefined') return;
+    Object.keys(STORAGE_KEYS).forEach(k => {
+      try {
+        localStorage.removeItem(STORAGE_KEYS[k]);
+      } catch (e) {}
+    });
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('neuroprep_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e) {
+      console.error("Error clearing all tables:", e);
+    }
   }
 };
+

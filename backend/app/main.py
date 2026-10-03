@@ -20,6 +20,8 @@ from app.routers import stress_analysis as stress_router
 from app.routers import dsa_interview as dsa_router  # Live DSA compiler + AI code review
 from app.routers import ws_interview
 from app.routers import ws_audio          # Hybrid audio pipeline WebSocket
+from app.routers import chat as chat_router
+from app.routers import rag as rag_router
 
 app = FastAPI(
     title="Neroprep — AI Placement Platform",
@@ -49,6 +51,8 @@ app.include_router(evaluate_router.router, prefix="/api/evaluate")
 app.include_router(report_router.router,   prefix="/api/report")
 app.include_router(code_router.router,     prefix="/api/code")
 app.include_router(dsa_router.router,      prefix="/api/dsa")   # Live DSA compiler
+app.include_router(chat_router.router,     prefix="/api/chat")  # Emotional Placement Mentor
+app.include_router(rag_router.router,      prefix="/api/rag")   # Hybrid YouTube Video RAG Engine
 app.include_router(stress_router.router)    # Spatiotemporal & rPPG Stress API
 app.include_router(ws_interview.router)   # WebSocket at /ws/{session_id}
 app.include_router(ws_audio.router)       # Audio pipeline at /ws/audio/{session_id}

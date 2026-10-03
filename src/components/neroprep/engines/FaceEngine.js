@@ -18,6 +18,7 @@
  */
 
 import { FaceStressModel } from './FaceStressModel';
+import { PhoneDetector } from './PhoneDetector';
 
 export class FaceEngine {
   constructor(videoEl, canvasEl, { onTelemetry } = {}) {
@@ -28,6 +29,9 @@ export class FaceEngine {
 
     // Spatiotemporal + rPPG model
     this.stressModel = new FaceStressModel({ windowSeconds: 4, fps: 30 });
+
+    // Dual-Modality Phone Usage & Distraction Detector (COCO-SSD Object Detector + 40s Downward Gaze)
+    this.phoneDetector = new PhoneDetector();
 
     // Blink tracking
     this.eyeOpenPrev     = true;
@@ -48,7 +52,6 @@ export class FaceEngine {
   async _init() {
     try {
       const { FaceMesh } = await import('@mediapipe/face_mesh');
-      const { Camera }   = await import('@mediapipe/camera_utils');
 
       this.faceMesh = new FaceMesh({
         locateFile: (file) =>
@@ -64,21 +67,22 @@ export class FaceEngine {
 
       this.faceMesh.onResults((res) => this._processResults(res));
 
-      this.camera = new Camera(this.videoEl, {
-        onFrame: async () => {
-          if (this.running && this.videoEl.readyState >= 2) {
-            // Sync canvas pixel size to video display size once
-            this._syncCanvasSize();
-            await this.faceMesh.send({ image: this.videoEl });
-          }
-        },
-        width: 1280, height: 720,   // request HD from camera
-      });
-
       this.running = true;
-      this.camera.start();
+
+      const processLoop = async () => {
+        if (!this.running) return;
+        if (this.videoEl && this.videoEl.readyState >= 2 && !this.videoEl.paused) {
+          this._syncCanvasSize();
+          try {
+            await this.faceMesh.send({ image: this.videoEl });
+          } catch (_) {}
+        }
+        this._animId = requestAnimationFrame(processLoop);
+      };
+
+      processLoop();
     } catch (err) {
-      console.warn('[FaceEngine] MediaPipe failed to load:', err.message);
+      console.warn('[FaceEngine] MediaPipe notice:', err.message);
     }
   }
 
@@ -198,20 +202,40 @@ export class FaceEngine {
       const leftIrisDown  = (lm[468].y - lm[159].y) / (lm[145].y - lm[159].y + 1e-6);
       const rightIrisDown = (lm[473].y - lm[386].y) / (lm[374].y - lm[386].y + 1e-6);
       const avgIrisDown   = (leftIrisDown + rightIrisDown) / 2;
-      // High threshold (0.74) to avoid false positives from natural laptop camera angle
-      if (avgIrisDown > 0.74) isGazeDown = true;
+      // Sensitive threshold (0.58) to detect looking down at phone or reading notes
+      if (avgIrisDown > 0.58) isGazeDown = true;
     }
 
     let headPose = 'forward';
-    if (Math.abs(dx) > 0.18) {
+    if (Math.abs(dx) > 0.16) {
       headPose = dx < 0 ? 'right' : 'left';
-    } else if (dy > 0.16 || verticalRatio > 0.76 || isGazeDown) {
+    } else if (dy > 0.11 || verticalRatio > 0.62 || isGazeDown) {
       headPose = 'down';
-    } else if (dy < -0.14 || verticalRatio < 0.28) {
+    } else if (dy < -0.13 || verticalRatio < 0.28) {
       headPose = 'up';
     }
 
     const isLookingDown = headPose === 'down' || isGazeDown;
+
+    // ── Phone Usage / Downward Reading Detection (Object Detection + 40s Continuous Gaze) ──
+    let phoneRes = {
+      phoneDetected: false,
+      phoneReadingDetected: false,
+      phoneObjectVisible: false,
+      downwardSeconds: 0,
+      isDownwardOver40s: false,
+      reason: '',
+      phoneAlerts: 0
+    };
+
+    if (this.phoneDetector) {
+      this.phoneDetector.process(this.videoEl, isLookingDown).then((res) => {
+        if (res) this.lastPhoneResult = res;
+      }).catch(() => {});
+      if (this.lastPhoneResult) {
+        phoneRes = this.lastPhoneResult;
+      }
+    }
 
     // ── 4. Rolling Window Eye Contact (Last 60 frames ~2s sensitivity) ──
     const isForwardFocus = headPose === 'forward' && !isLookingDown;
@@ -235,42 +259,70 @@ export class FaceEngine {
     );
 
     this._emit({
-      faceDetected:    true,
+      faceDetected:         true,
       blinkRate,
       headPose,
       isLookingDown,
       isGazeDown,
+      phoneReadingDetected: phoneRes.phoneDetected || false,
+      phoneObjectVisible:   phoneRes.phoneObjectVisible || false,
+      downwardSeconds:      phoneRes.downwardSeconds || 0,
+      isDownwardOver40s:    phoneRes.isDownwardOver40s || false,
+      phoneAlertReason:     phoneRes.reason || '',
+      phoneAlerts:          phoneRes.phoneAlerts || 0,
       eyeContact,
       stressScore,
-      hrBpm:           out.physiological.hrBpm,
-      hrvMs:           out.physiological.hrvMs,
-      actionUnits:     out.actionUnits,
-      cognitiveLoad:   out.cognitiveLoad,
-      microExpression: out.temporal.microExpressionIntensity,
-      stressMarkers:   out.stressMarkers,
+      fearScore:            out.fearScore || 0,
+      rawFearScore:         out.rawFearScore || 0,
+      facialStressScore:    out.facialStressScore || 0,
+      primaryEmotion:       out.primaryEmotion || 'Calm',
+      maskedPanicDetected:  out.maskedPanicDetected || false,
+      forcedSmileMask:      out.forcedSmileMask || false,
+      emotionProbabilities: out.emotionProbabilities || {},
+      hrBpm:                out.physiological.hrBpm,
+      hrvMs:                out.physiological.hrvMs,
+      baselineCalibration:  out.baselineCalibration,
+      actionUnits:          out.actionUnits,
+      cognitiveLoad:        out.cognitiveLoad,
+      microExpression:      out.temporal.microExpressionIntensity,
+      stressMarkers:        out.stressMarkers,
     });
   }
 
   _emit(data) {
     this.onTelemetry({
       // Structural defaults — all zero / null until model detects real data
-      faceDetected:    false,
-      blinkRate:       0,
-      headPose:        null,      // null = no face detected
-      isLookingDown:   false,
-      isGazeDown:      false,
-      eyeContact:      0,
-      stressScore:     0,
-      hrBpm:           null,      // null = rPPG not yet ready
-      hrvMs:           null,      // null = rPPG not yet ready
-      cognitiveLoad:   null,      // null = not enough data
-      microExpression: 0,
-      stressMarkers:   [],
-      rppgReady:       false,
+      faceDetected:         false,
+      blinkRate:            0,
+      headPose:             null,      // null = no face detected
+      isLookingDown:        false,
+      isGazeDown:           false,
+      phoneReadingDetected: false,
+      phoneObjectVisible:   false,
+      downwardSeconds:      0,
+      isDownwardOver40s:    false,
+      phoneAlertReason:     '',
+      phoneAlerts:          0,
+      eyeContact:           0,
+      stressScore:          0,
+      fearScore:            0,
+      rawFearScore:         0,
+      facialStressScore:    0,
+      primaryEmotion:       'Calm',
+      maskedPanicDetected:  false,
+      forcedSmileMask:      false,
+      emotionProbabilities: { fear: 0, stress: 0, focus: 0, calm: 100, smile: 0 },
+      hrBpm:                null,      // null = rPPG not yet ready
+      hrvMs:                null,      // null = rPPG not yet ready
+      cognitiveLoad:        null,      // null = not enough data
+      microExpression:      0,
+      stressMarkers:        [],
+      rppgReady:            false,
+      baselineCalibration:  { isCalibrated: false, progress: 0, baseline: { hr: 72, hrv: 45 } },
       actionUnits: {
-        au1: 0, au2: 0, au4: 0, au7: 0,
-        au9: 0, au12: 0, au17: 0, au25: 0,
-        composite: 0
+        au1: 0, au2: 0, au4: 0, au5: 0, au6: 0, au7: 0,
+        au9: 0, au12: 0, au17: 0, au20: 0, au25: 0,
+        fearScore: 0, facialStressScore: 0
       },
       ...data,
     });
@@ -278,8 +330,9 @@ export class FaceEngine {
 
   destroy() {
     this.running = false;
-    try { this.camera?.stop();    } catch (_) {}
+    try { this.camera?.stop(); } catch (_) {}
     try { this.faceMesh?.close(); } catch (_) {}
+    try { this.stressModel?.destroy(); } catch (_) {}
   }
 }
 

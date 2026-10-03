@@ -86,24 +86,24 @@ export default function SelectionModule({ setActiveTab }) {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh', fontFamily: 'var(--font-inter)' }}>
+    <div style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
 
       {/* Page Header */}
-      <div style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid var(--border-color)', padding: '28px 32px' }}>
+      <div style={{ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', borderBottom: '1px solid var(--border-color)', padding: '28px 32px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <span className="pill-tag" style={{ marginBottom: '10px', display: 'inline-block' }}>Adaptive Mock Interview</span>
-            <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--main-heading)', margin: '0 0 6px 0', letterSpacing: '-0.5px', fontFamily: 'var(--font-heading)' }}>
               Select Your Interview Track
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0, fontFamily: 'var(--font-body)' }}>
               Choose from 12 industry-grade interview tracks. Each session is powered by adaptive AI.
             </p>
           </div>
 
           <button
             onClick={() => setActiveTab && setActiveTab('dashboard')}
-            className="btn-secondary-spec"
+            className="btn-back-dashboard"
             style={{ padding: '9px 18px', fontSize: '0.88rem', fontWeight: 600 }}
           >
             Back to Dashboard
@@ -122,14 +122,14 @@ export default function SelectionModule({ setActiveTab }) {
               placeholder="Search interview track by name or skills..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', margin: 0 }}
+              style={{ width: '100%', margin: 0, fontFamily: 'var(--font-body)' }}
             />
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <select
               value={selectedDomain}
               onChange={(e) => setSelectedDomain(e.target.value)}
-              style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '14px', color: 'var(--text-body)', backgroundColor: '#FFFFFF', outline: 'none', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '14px', color: 'var(--text-body)', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', outline: 'none', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
             >
               <option value="All">All Focus Areas</option>
               {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -139,10 +139,10 @@ export default function SelectionModule({ setActiveTab }) {
 
         {/* Section Title */}
         <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px 0' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--main-heading)', margin: '0 0 4px 0', fontFamily: 'var(--font-heading)' }}>
             Interview Categories
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0, fontFamily: 'var(--font-body)' }}>
             {filtered.length} tracks available
           </p>
         </div>
@@ -157,10 +157,10 @@ export default function SelectionModule({ setActiveTab }) {
               onClick={() => handleSelect(cat)}
             >
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 6px 0' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--main-heading)', margin: '0 0 6px 0', fontFamily: 'var(--font-heading)' }}>
                   {cat.name}
                 </h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6, fontFamily: 'var(--font-body)' }}>
                   {cat.desc}
                 </p>
               </div>

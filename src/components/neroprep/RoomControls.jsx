@@ -18,7 +18,7 @@ export default function RoomControls() {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 24px', height: '64px', fontFamily: 'var(--font-inter)'
+      padding: '0 24px', height: '64px', fontFamily: 'var(--font-body)'
     }}>
 
       {/* Left: Dev simulation tools */}
@@ -61,7 +61,7 @@ export default function RoomControls() {
           onClick={exitInterview}
           style={{
             padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-            backgroundColor: '#FFFFFF', color: 'var(--text-muted)', border: '1px solid var(--border-color)',
+            background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', color: 'var(--text-muted)', border: '1px solid var(--border-color)',
             borderRadius: '8px', transition: 'all 0.15s ease'
           }}
         >
@@ -71,7 +71,7 @@ export default function RoomControls() {
           onClick={endInterview}
           style={{
             padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-            backgroundColor: '#475569', color: '#FFFFFF', border: 'none',
+            backgroundColor: '#66666B', color: '#FFFFFF', border: 'none',
             borderRadius: '8px', transition: 'background-color 0.15s ease'
           }}
         >

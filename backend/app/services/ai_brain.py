@@ -224,10 +224,13 @@ def _build_prompt(
     tech_stack      = config.get("techStack", "")
     user_role_proj  = config.get("userRole", "")
     deployment_info = config.get("deploymentInfo", "")
-    # System Design fields
+    # System Design & Architecture fields
     system_to_design= config.get("systemToDesign", "")
     expected_scale  = config.get("expectedScale", "")
-    preferred_tech  = config.get("preferredTech", "")
+    preferred_tech  = config.get("preferredTech") or []
+    design_focus    = config.get("designFocus", "")
+    arch_priority   = config.get("archPriority") or []
+    lld_patterns    = config.get("lldPatterns") or []
     # Group Discussion / Communication
     gd_topic        = config.get("gdTopic", "")
     gd_participants = config.get("gdParticipants", "3")
@@ -371,8 +374,11 @@ def _build_prompt(
     if qa_tools:         profile_parts.append(f"QA Tools: {', '.join(qa_tools)}")
     if aptitude_topics:  profile_parts.append(f"Aptitude Topics: {', '.join(aptitude_topics)}")
     if system_to_design: profile_parts.append(f"System to Design: {system_to_design}")
-    if expected_scale:   profile_parts.append(f"Expected Scale: {expected_scale}")
-    if preferred_tech:   profile_parts.append(f"Preferred Tech: {preferred_tech}")
+    if design_focus:     profile_parts.append(f"Architecture Focus Scope: {design_focus}")
+    if expected_scale:   profile_parts.append(f"Expected Scale & Volume: {expected_scale}")
+    if arch_priority:    profile_parts.append(f"Core SLA & Non-Functional Priorities: {', '.join(arch_priority) if isinstance(arch_priority, list) else arch_priority}")
+    if preferred_tech:   profile_parts.append(f"Preferred Tech Stack: {', '.join(preferred_tech) if isinstance(preferred_tech, list) else preferred_tech}")
+    if lld_patterns:     profile_parts.append(f"LLD & OOP Patterns: {', '.join(lld_patterns) if isinstance(lld_patterns, list) else lld_patterns}")
     if project_name:     profile_parts.append(f"Project: {project_name}")
     if github_url:       profile_parts.append(f"GitHub: {github_url}")
     if tech_stack:       profile_parts.append(f"Tech Stack: {tech_stack}")

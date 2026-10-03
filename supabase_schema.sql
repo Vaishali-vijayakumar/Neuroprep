@@ -93,6 +93,33 @@ CREATE TABLE IF NOT EXISTS public.readiness_scores (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8. AI Learning Resources Table (Curated Placement & Technical Database)
+CREATE TABLE IF NOT EXISTS public.learning_resources (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic TEXT NOT NULL,
+  subtopic TEXT NOT NULL,
+  category TEXT NOT NULL, -- CSE / APTITUDE
+  subject TEXT NOT NULL,  -- Programming / DSA / Core CS / Web / Quantitative / Logical / Verbal
+  website TEXT NOT NULL,  -- GeeksforGeeks, LeetCode, Scaler, InterviewBit, etc.
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
+  difficulty TEXT DEFAULT 'Medium', -- Beginner / Intermediate / Advanced / Interview / Placement
+  learning_level TEXT DEFAULT 'Interview', -- Beginner / Interview / Problem Solving / Placement
+  resource_type TEXT DEFAULT 'Article',   -- Article / Coding Problem / Interactive Tutorial / Mock Set
+  description TEXT,
+  reason TEXT,                            -- Best for: Concepts + Interviews
+  quality_score NUMERIC(3, 2) DEFAULT 4.80,
+  verified BOOLEAN DEFAULT TRUE,
+  last_verified TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indices for fast classification & semantic lookup
+CREATE INDEX IF NOT EXISTS idx_learning_resources_topic ON public.learning_resources (topic);
+CREATE INDEX IF NOT EXISTS idx_learning_resources_category ON public.learning_resources (category, subject);
+CREATE INDEX IF NOT EXISTS idx_learning_resources_website ON public.learning_resources (website);
+CREATE INDEX IF NOT EXISTS idx_learning_resources_quality ON public.learning_resources (quality_score DESC);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mood_logs ENABLE ROW LEVEL SECURITY;
@@ -101,6 +128,7 @@ ALTER TABLE public.cbt_reappraisals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mock_interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coding_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.readiness_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.learning_resources ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS Policies (Users can read and write their own data)
 CREATE POLICY "Users can access own profile" ON public.profiles FOR ALL USING (auth.uid() = id);
@@ -110,3 +138,5 @@ CREATE POLICY "Users can access own CBT exercises" ON public.cbt_reappraisals FO
 CREATE POLICY "Users can access own mock interviews" ON public.mock_interviews FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can access own coding submissions" ON public.coding_submissions FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can access own readiness scores" ON public.readiness_scores FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can view verified learning resources" ON public.learning_resources FOR SELECT USING (verified = true);
+

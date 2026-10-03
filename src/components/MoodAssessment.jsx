@@ -111,7 +111,7 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
       <div style={{ marginBottom: '20px' }}>
         <button 
           onClick={() => setActiveTab && setActiveTab('dashboard')}
-          className="btn-secondary-spec"
+          className="btn-back-dashboard"
           style={{ padding: '8px 18px', fontSize: '0.88rem' }}
         >
           Back to Dashboard
@@ -265,21 +265,21 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+            <div style={{ padding: '18px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB', textAlign: 'center' }}>
               <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Calculated Stress Index</span>
               <p style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginTop: '4px' }}>
                 {analysisReport.computedStressScore} / 10
               </p>
             </div>
 
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+            <div style={{ padding: '18px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB', textAlign: 'center' }}>
               <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Derived Confidence Score</span>
               <p style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginTop: '4px' }}>
                 {analysisReport.computedConfidence} / 10
               </p>
             </div>
 
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+            <div style={{ padding: '18px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB', textAlign: 'center' }}>
               <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Logged Emotional State</span>
               <p style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginTop: '4px' }}>
                 {analysisReport.moodLabel}
@@ -288,7 +288,7 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
           </div>
 
           {/* Primary Driver */}
-          <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+          <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB' }}>
             <strong style={{ fontSize: '0.9rem', color: '#111827', display: 'block', marginBottom: '4px' }}>
               Identified Primary Driver:
             </strong>
@@ -300,7 +300,7 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
           {/* Coping Recommendations & Adaptive Pacing */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
             
-            <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+            <div style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB' }}>
               <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', marginBottom: '12px' }}>
                 Recommended Actionable Coping Steps
               </h4>
@@ -311,7 +311,7 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
               </ul>
             </div>
 
-            <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+            <div style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #E5E7EB' }}>
               <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', marginBottom: '12px' }}>
                 Adaptive Engine Pacing Directive
               </h4>
@@ -321,7 +321,7 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
 
               <button 
                 onClick={() => setActiveTab && setActiveTab('dashboard')} 
-                className="btn-primary-spec" 
+                className="btn-back-dashboard" 
                 style={{ width: '100%', justifyContent: 'center', marginTop: '16px', padding: '10px' }}
               >
                 Apply to Dashboard & Practice Hubs

@@ -202,12 +202,12 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  };
 
  return (
- <div style={{ flex: 1, backgroundColor: '#F8FAFC', minHeight: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-inter)' }}>
+ <div style={{ flex: 1, backgroundColor: '#FCF9F6', minHeight: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-inter)' }}>
  
  {/* Top Header Bar */}
  <header style={{
- backgroundColor: '#FFFFFF',
- borderBottom: '1px solid #E2E8F0',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
+ borderBottom: '1px solid #D8D2CE',
  padding: '14px 28px',
  display: 'flex',
  justifyContent: 'space-between',
@@ -217,13 +217,13 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
  <button
  onClick={() => setActiveTab('dashboard')}
- className="btn-secondary-spec"
+ className="btn-back-dashboard"
  style={{ padding: '7px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}
  >
  <ArrowLeft size={14} /> Back to Dashboard
  </button>
 
- <div style={{ height: 24, width: 1, backgroundColor: '#E2E8F0' }} />
+ <div style={{ height: 24, width: 1, backgroundColor: '#D8D2CE' }} />
 
  <div>
  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -239,7 +239,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  </span>
  )}
  </div>
- <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: '2px 0 0 0' }}>
+ <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#34343A', margin: '2px 0 0 0' }}>
  {challenge.title}
  </h1>
  </div>
@@ -248,7 +248,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {/* Right Header Actions */}
  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
  <div style={{ textAlign: 'right', marginRight: 8 }}>
- <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, display: 'block' }}>REWARD</span>
+ <span style={{ fontSize: '0.72rem', color: '#89878A', fontWeight: 600, display: 'block' }}>REWARD</span>
  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827' }}>+{challenge.xpReward} XP</span>
  </div>
 
@@ -258,9 +258,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  style={{
  padding: '8px 18px',
  borderRadius: 8,
- border: '1px solid #CBD5E1',
- backgroundColor: '#FFFFFF',
- color: '#334155',
+ border: '1px solid #D8D2CE',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
+ color: '#4F5056',
  fontSize: '0.85rem',
  fontWeight: 700,
  cursor: (isRunning || isSubmitting) ? 'not-allowed' : 'pointer',
@@ -279,7 +279,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '8px 22px',
  borderRadius: 8,
  border: 'none',
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  color: '#FFFFFF',
  fontSize: '0.85rem',
  fontWeight: 700,
@@ -306,8 +306,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  alignItems: 'center'
  }}>
  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
- <CheckCircle2 size={18} color="#475569" />
- <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B' }}>
+ <CheckCircle2 size={18} color="#66666B" />
+ <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#34343A' }}>
  Challenge Completed! All test cases passed. +{challenge.xpReward} XP has been awarded.
  </span>
  </div>
@@ -317,7 +317,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '6px 14px',
  fontSize: '0.8rem',
  fontWeight: 700,
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  color: '#FFFFFF',
  border: 'none',
  borderRadius: 6,
@@ -335,9 +335,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {/* Left Side: Problem & Approach Tabs */}
  <div style={{
  flex: 1,
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderRadius: 14,
- border: '1px solid #E2E8F0',
+ border: '1px solid #D8D2CE',
  display: 'flex',
  flexDirection: 'column',
  overflow: 'hidden',
@@ -346,8 +346,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {/* Left Panel Tabs */}
  <div style={{
  display: 'flex',
- borderBottom: '1px solid #E2E8F0',
- backgroundColor: '#F8FAFC',
+ borderBottom: '1px solid #D8D2CE',
+ backgroundColor: '#FCF9F6',
  padding: '0 16px'
  }}>
  {[
@@ -362,7 +362,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '12px 18px',
  fontSize: '0.85rem',
  fontWeight: activeTabLeft === id ? 700 : 500,
- color: activeTabLeft === id ? '#111827' : '#64748B',
+ color: activeTabLeft === id ? '#111827' : '#89878A',
  borderBottom: activeTabLeft === id ? '2px solid #111827' : '2px solid transparent',
  borderTop: 'none',
  borderLeft: 'none',
@@ -383,35 +383,35 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {activeTabLeft === 'description' && (
  <div>
  <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
- <span style={{ fontSize: '0.78rem', color: '#475569', backgroundColor: '#F1F5F9', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>
+ <span style={{ fontSize: '0.78rem', color: '#66666B', backgroundColor: '#F5EBE6', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>
  Topic: {challenge.category}
  </span>
- <span style={{ fontSize: '0.78rem', color: '#475569', backgroundColor: '#F1F5F9', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>
+ <span style={{ fontSize: '0.78rem', color: '#66666B', backgroundColor: '#F5EBE6', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>
  Frequent In: {challenge.company || 'Top Tech Companies'}
  </span>
  </div>
 
- <div style={{ fontSize: '0.92rem', color: '#334155', lineHeight: 1.7, marginBottom: 24, whiteSpace: 'pre-line' }}>
+ <div style={{ fontSize: '0.92rem', color: '#4F5056', lineHeight: 1.7, marginBottom: 24, whiteSpace: 'pre-line' }}>
  {problemMeta.description}
  </div>
 
  {/* Examples */}
  {problemMeta.examples && problemMeta.examples.length > 0 && (
  <div style={{ marginBottom: 24 }}>
- <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
+ <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34343A', marginBottom: 12 }}>
  Examples
  </h3>
  {problemMeta.examples.map((ex, idx) => (
- <div key={idx} style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14, marginBottom: 12 }}>
- <div style={{ fontSize: '0.85rem', color: '#0F172A', fontWeight: 700, marginBottom: 4 }}>Example {idx + 1}:</div>
- <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#334155', marginBottom: 4 }}>
+ <div key={idx} style={{ backgroundColor: '#FCF9F6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+ <div style={{ fontSize: '0.85rem', color: '#34343A', fontWeight: 700, marginBottom: 4 }}>Example {idx + 1}:</div>
+ <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#4F5056', marginBottom: 4 }}>
  <strong>Input:</strong> {ex.input}
  </div>
- <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#334155', marginBottom: 4 }}>
+ <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#4F5056', marginBottom: 4 }}>
  <strong>Output:</strong> {ex.output}
  </div>
  {ex.explanation && (
- <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 4 }}>
+ <div style={{ fontSize: '0.8rem', color: '#89878A', marginTop: 4 }}>
  <strong>Explanation:</strong> {ex.explanation}
  </div>
  )}
@@ -423,10 +423,10 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {/* Constraints */}
  {problemMeta.constraints && (
  <div>
- <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginBottom: 10 }}>
+ <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34343A', marginBottom: 10 }}>
  Constraints
  </h3>
- <ul style={{ paddingLeft: 20, fontSize: '0.82rem', color: '#475569', lineHeight: 1.8 }}>
+ <ul style={{ paddingLeft: 20, fontSize: '0.82rem', color: '#66666B', lineHeight: 1.8 }}>
  {problemMeta.constraints.map((c, idx) => (
  <li key={idx} style={{ fontFamily: 'var(--font-code)' }}>{c}</li>
  ))}
@@ -450,21 +450,21 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  </div>
 
  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
- <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
- <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Time Complexity</div>
- <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginTop: 4 }}>O(N) Optimal</div>
+ <div style={{ backgroundColor: '#FCF9F6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 14 }}>
+ <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#89878A', textTransform: 'uppercase' }}>Time Complexity</div>
+ <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#34343A', marginTop: 4 }}>O(N) Optimal</div>
  </div>
- <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
- <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Space Complexity</div>
- <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginTop: 4 }}>O(1) Auxiliary</div>
+ <div style={{ backgroundColor: '#FCF9F6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 14 }}>
+ <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#89878A', textTransform: 'uppercase' }}>Space Complexity</div>
+ <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#34343A', marginTop: 4 }}>O(1) Auxiliary</div>
  </div>
  </div>
 
  <div>
- <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>
+ <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34343A', marginBottom: 8 }}>
  Important Edge Cases
  </h3>
- <ul style={{ paddingLeft: 20, fontSize: '0.85rem', color: '#475569', lineHeight: 1.8 }}>
+ <ul style={{ paddingLeft: 20, fontSize: '0.85rem', color: '#66666B', lineHeight: 1.8 }}>
  <li>Empty or single-element inputs</li>
  <li>Negative numbers and zero</li>
  <li>Duplicate values matching target sums</li>
@@ -477,7 +477,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {activeTabLeft === 'solution' && (
  <div>
  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
- <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+ <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34343A', margin: 0 }}>
  Reference {language} Solution
  </h3>
  <button
@@ -490,12 +490,12 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  </button>
  </div>
 
- <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 16 }}>
+ <div style={{ backgroundColor: '#FCF9F6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 16 }}>
  <pre style={{
  margin: 0,
  fontSize: '0.82rem',
  fontFamily: 'var(--font-code)',
- color: '#0F172A',
+ color: '#34343A',
  lineHeight: 1.6,
  whiteSpace: 'pre-wrap'
  }}>
@@ -511,9 +511,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  {/* Right Side: Code Editor & Execution Results */}
  <div style={{
  flex: 1.1,
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderRadius: 14,
- border: '1px solid #E2E8F0',
+ border: '1px solid #D8D2CE',
  display: 'flex',
  flexDirection: 'column',
  overflow: 'hidden',
@@ -524,8 +524,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  display: 'flex',
  justifyContent: 'space-between',
  alignItems: 'center',
- backgroundColor: '#F8FAFC',
- borderBottom: '1px solid #E2E8F0',
+ backgroundColor: '#FCF9F6',
+ borderBottom: '1px solid #D8D2CE',
  padding: '8px 16px'
  }}>
  {/* Language Selector */}
@@ -538,9 +538,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '6px 12px',
  borderRadius: 6,
  border: '1px solid',
- borderColor: language === lang ? '#475569' : '#E2E8F0',
- backgroundColor: language === lang ? '#475569' : '#FFFFFF',
- color: language === lang ? '#FFFFFF' : '#475569',
+ borderColor: language === lang ? '#66666B' : '#D8D2CE',
+ backgroundColor: language === lang ? '#66666B' : '#FFFFFF',
+ color: language === lang ? '#FFFFFF' : '#66666B',
  fontSize: '0.78rem',
  fontWeight: 700,
  cursor: 'pointer'
@@ -562,9 +562,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  style={{
  padding: '6px 10px',
  borderRadius: 6,
- border: '1px solid #E2E8F0',
- backgroundColor: '#FFFFFF',
- color: '#64748B',
+ border: '1px solid #D8D2CE',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
+ color: '#89878A',
  fontSize: '0.75rem',
  fontWeight: 600,
  cursor: 'pointer',
@@ -585,8 +585,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '6px 12px',
  borderRadius: 6,
  border: 'none',
- backgroundColor: activeTabRight === 'code' ? '#E2E8F0' : 'transparent',
- color: '#0F172A',
+ backgroundColor: activeTabRight === 'code' ? '#D8D2CE' : 'transparent',
+ color: '#34343A',
  fontSize: '0.78rem',
  fontWeight: 600,
  cursor: 'pointer'
@@ -600,8 +600,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '6px 12px',
  borderRadius: 6,
  border: 'none',
- backgroundColor: activeTabRight === 'results' ? '#E2E8F0' : 'transparent',
- color: '#0F172A',
+ backgroundColor: activeTabRight === 'results' ? '#D8D2CE' : 'transparent',
+ color: '#34343A',
  fontSize: '0.78rem',
  fontWeight: 600,
  cursor: 'pointer'
@@ -630,8 +630,8 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  resize: 'none',
  fontSize: '0.9rem',
  fontFamily: 'var(--font-code)',
- color: '#0F172A',
- backgroundColor: '#FFFFFF',
+ color: '#34343A',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  lineHeight: 1.6
  }}
  />
@@ -655,9 +655,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  padding: '6px 14px',
  borderRadius: 6,
  border: '1px solid',
- borderColor: activeCaseIdx === idx ? '#111827' : '#E2E8F0',
- backgroundColor: activeCaseIdx === idx ? '#F3F4F6' : '#F8FAFC',
- color: res ? (res.passed ? '#111827' : '#111827') : (activeCaseIdx === idx ? '#111827' : '#475569'),
+ borderColor: activeCaseIdx === idx ? '#111827' : '#D8D2CE',
+ backgroundColor: activeCaseIdx === idx ? '#F3F4F6' : '#FCF9F6',
+ color: res ? (res.passed ? '#111827' : '#111827') : (activeCaseIdx === idx ? '#111827' : '#66666B'),
  fontSize: '0.8rem',
  fontWeight: 700,
  cursor: 'pointer'
@@ -678,9 +678,9 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  style={{
  padding: '5px 10px',
  borderRadius: 6,
- border: '1px solid #E2E8F0',
- backgroundColor: '#FFFFFF',
- color: '#64748B',
+ border: '1px solid #D8D2CE',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
+ color: '#89878A',
  fontSize: '0.75rem',
  fontWeight: 600,
  cursor: 'pointer',
@@ -694,21 +694,21 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  </div>
 
  {/* Selected Case Breakdown */}
- <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 16, marginBottom: 16 }}>
- <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B', marginBottom: 4 }}>INPUT:</div>
- <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#0F172A', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', padding: 10, borderRadius: 6, marginBottom: 12 }}>
+ <div style={{ backgroundColor: '#FCF9F6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+ <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#89878A', marginBottom: 4 }}>INPUT:</div>
+ <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#34343A', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #D8D2CE', padding: 10, borderRadius: 6, marginBottom: 12 }}>
  {testCases[activeCaseIdx]?.input}
  </div>
 
- <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B', marginBottom: 4 }}>EXPECTED OUTPUT:</div>
- <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#0F172A', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', padding: 10, borderRadius: 6 }}>
+ <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#89878A', marginBottom: 4 }}>EXPECTED OUTPUT:</div>
+ <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-code)', color: '#34343A', background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: '1px solid #D8D2CE', padding: 10, borderRadius: 6 }}>
  {testCases[activeCaseIdx]?.expected}
  </div>
  </div>
 
  {/* Console Output Block */}
- <div style={{ flex: 1, backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
- <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>
+ <div style={{ flex: 1, backgroundColor: '#F5EBE6', border: '1px solid #D8D2CE', borderRadius: 10, padding: 14 }}>
+ <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#66666B', marginBottom: 8 }}>
  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
  <Terminal size={14} /> EXECUTION DETAILS
  </div>
@@ -718,7 +718,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  style={{
  background: 'none',
  border: 'none',
- color: '#64748B',
+ color: '#89878A',
  cursor: 'pointer',
  fontSize: '0.72rem',
  fontWeight: 600
@@ -732,7 +732,7 @@ export default function DailyChallengeArena({ userEmail = 'guest', setActiveTab,
  margin: 0,
  fontSize: '0.82rem',
  fontFamily: 'var(--font-code)',
- color: '#1E293B',
+ color: '#34343A',
  lineHeight: 1.5,
  whiteSpace: 'pre-wrap'
  }}>

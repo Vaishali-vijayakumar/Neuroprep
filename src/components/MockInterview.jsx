@@ -139,7 +139,7 @@ function InterviewSelection({ onSelect, setActiveTab }) {
  </div>
  <button 
  onClick={() => setActiveTab && setActiveTab('dashboard')} 
- className="btn-secondary-spec"
+ className="btn-back-dashboard"
  style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600 }}
  >
  Back to Dashboard
@@ -222,7 +222,7 @@ function InterviewConfigModal({ interviewType, onClose, onStart }) {
  maxHeight: '90vh',
  display: 'flex',
  flexDirection: 'column',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  borderRadius: '12px',
  padding: '32px 36px',
  position: 'relative',
@@ -380,7 +380,7 @@ function InterviewConfigModal({ interviewType, onClose, onStart }) {
  border: '1px solid #D1D5DB', 
  borderRadius: '6px', 
  padding: '2px', 
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  height: '35px',
  boxSizing: 'border-box'
  }}>
@@ -444,7 +444,7 @@ function InterviewConfigModal({ interviewType, onClose, onStart }) {
  width: '100%', 
  borderRadius: '6px', 
  border: '1px solid #D1D5DB',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  color: '#111827',
  outline: 'none',
  textAlign: 'center'
@@ -467,7 +467,7 @@ function InterviewConfigModal({ interviewType, onClose, onStart }) {
  width: '100%', 
  borderRadius: '6px', 
  border: '1px solid #D1D5DB',
- backgroundColor: '#FFFFFF',
+ background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)',
  color: '#111827',
  outline: 'none',
  textAlign: 'center'
@@ -529,7 +529,7 @@ function InterviewConfigModal({ interviewType, onClose, onStart }) {
  fontSize: '0.9rem', 
  fontWeight: 600,
  color: '#FFFFFF',
- backgroundColor: '#475569',
+ backgroundColor: '#66666B',
  borderRadius: '6px',
  border: 'none',
  cursor: 'pointer',
@@ -834,7 +834,7 @@ function InterviewEngine({ interviewType, config, onFinish }) {
  <button 
  onClick={() => onFinish({ answers, skipped, timeTaken: config.duration * 60 - timeLeft })} 
  className="btn-primary-spec"
- style={{ backgroundColor: '#475569', borderColor: '#475569', color: '#FFFFFF' }}
+ style={{ backgroundColor: '#66666B', borderColor: '#66666B', color: '#FFFFFF' }}
  >
  Finish and View AI Analysis
  </button>
@@ -1035,7 +1035,7 @@ function AIEvaluationEngine({ interviewType, config, result, onNext }) {
  </div>
 
  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
- <button onClick={onNext} className="btn-primary-spec" style={{ padding: '12px 28px' }}>
+ <button onClick={onNext} className="btn-back-dashboard" style={{ padding: '12px 28px' }}>
  View Detailed Feedback Dashboard
  </button>
  </div>

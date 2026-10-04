@@ -253,14 +253,22 @@ export class AIQuestionEngine {
    * Universal Loop: Choose next question with Adaptive Difficulty and No-Repetition checks
    */
   getNextQuestion(stressIndex = 0) {
-    // Stress-Adaptive fallback
-    if (stressIndex > 70) {
+    // Three-tier Affective Biometric State Machine
+    if (stressIndex >= 75) {
       this.onAdaptation({
         type: 'stress_high',
-        message: 'High cognitive stress detected. Adapting question difficulty to baseline.'
+        message: 'Biometric panic spike detected. De-escalating question complexity and providing supportive scaffolding.'
       });
       this.currentDifficulty = 'Easy';
       this.consecutiveStrong = 0;
+    } else if (stressIndex >= 50) {
+      if (this.currentDifficulty === 'Hard') {
+        this.currentDifficulty = 'Medium';
+      }
+      this.onAdaptation({
+        type: 'stress_moderate',
+        message: 'Moderate cognitive load detected. Maintaining focused, collaborative pacing.'
+      });
     }
 
     let candidateList = this.questionPool[this.currentDifficulty.toLowerCase()] || this.questionPool.all;
@@ -362,20 +370,44 @@ export class AIQuestionEngine {
     // 2. Fetch the next question strictly from the 1,400 Question Bank dataset for this track
     const nextDatasetQuestion = this.getNextQuestion(stressIndex);
 
-    // 3. Conversational bridging prefixes (Engine 1: Orchestrator & Fast Transition)
+    // 3. Conversational bridging prefixes with three-tier affective awareness
     const words = (answerText || '').trim().split(/\s+/).filter(Boolean).length;
-    const bridges = words > 15
-      ? [
-          `Great perspective on that. Moving forward: `,
-          `Thank you for explaining that. Let's delve into: `,
-          `Solid explanation. Shifting our focus: `,
-          `Understood. Next question: `,
-        ]
-      : [
-          `Thank you. Let's move on: `,
-          `Got it. Next: `,
-          `Moving forward: `,
-        ];
+    let bridges;
+
+    if (stressIndex >= 75) {
+      bridges = [
+        `Take your time—let's reset with a simpler angle: `,
+        `Fair point. That was a dense scenario, so let's step back: `,
+        `No worries at all, take a breath. Looking at this from another side: `,
+      ];
+    } else if (stressIndex >= 50) {
+      bridges = [
+        `Got it, that makes sense. Building on that: `,
+        `Understood. Shifting our focus slightly: `,
+        `Makes sense. Let's look at the next piece: `,
+      ];
+    } else if (stressIndex < 35 && words > 25) {
+      bridges = [
+        `Sharp analysis. Pushing this one step further: `,
+        `Fair point on that trade-off. Now under tighter constraints: `,
+        `Good breakdown. Let's probe an edge case: `,
+        `Solid reasoning. Let's test that under scale: `,
+      ];
+    } else if (words > 15) {
+      bridges = [
+        `Fair point. `,
+        `Got it, that makes sense. `,
+        `Understood. `,
+        `Makes sense. `,
+      ];
+    } else {
+      bridges = [
+        `Got it. `,
+        `Understood. `,
+        `Moving on: `,
+      ];
+    }
+
     const bridge = bridges[Math.floor(Math.random() * bridges.length)];
 
     return `${bridge}${nextDatasetQuestion}`;

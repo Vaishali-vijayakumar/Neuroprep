@@ -126,3 +126,101 @@ export function computeTrimmedMean(arr, trimFraction = 0.1) {
   if (trimmed.length === 0) return sorted[Math.floor(sorted.length / 2)];
   return trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
 }
+
+/**
+ * Compute robust median of an array of numbers
+ */
+export function computeMedian(arr) {
+  if (!arr || arr.length === 0) return 0;
+  const valid = arr.filter(v => v !== null && !isNaN(v));
+  if (valid.length === 0) return 0;
+  const sorted = [...valid].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Autocorrelation-Based Dominant Cardiac Frequency Estimator
+ * Immune to false peak double-counting in low lighting conditions.
+ * @param {Array<number>} signal BVP signal
+ * @param {number} fs Sampling rate (FPS, default 30)
+ * @param {number} minBpm Minimum physiological heart rate (default 48 BPM)
+ * @param {number} maxBpm Maximum physiological heart rate (default 180 BPM)
+ * @returns {{ hrBpm: number|null, confidence: number }}
+ */
+export function estimateDominantFrequency(signal, fs = 30, minBpm = 48, maxBpm = 180) {
+  if (!signal || signal.length < 40) return { hrBpm: null, confidence: 0 };
+  const N = signal.length;
+
+  const minLag = Math.max(2, Math.round((60 * fs) / maxBpm));
+  const maxLag = Math.min(Math.floor(N * 0.65), Math.round((60 * fs) / minBpm));
+
+  if (maxLag <= minLag) return { hrBpm: null, confidence: 0 };
+
+  // Calculate zero-mean signal
+  let sum = 0;
+  for (let i = 0; i < N; i++) sum += signal[i];
+  const mean = sum / N;
+
+  const zeroMean = new Float64Array(N);
+  let varSum = 0;
+  for (let i = 0; i < N; i++) {
+    zeroMean[i] = signal[i] - mean;
+    varSum += zeroMean[i] * zeroMean[i];
+  }
+
+  if (varSum < 1e-7) return { hrBpm: null, confidence: 0 };
+
+  // Autocorrelation across physiological lags
+  let bestLag = -1;
+  let maxCorr = -Infinity;
+
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let num = 0;
+    let den1 = 0;
+    let den2 = 0;
+    const len = N - lag;
+
+    for (let i = 0; i < len; i++) {
+      const a = zeroMean[i];
+      const b = zeroMean[i + lag];
+      num += a * b;
+      den1 += a * a;
+      den2 += b * b;
+    }
+
+    const den = Math.sqrt(den1 * den2) + 1e-9;
+    const corr = num / den;
+
+    // Check if this lag is a local peak
+    if (corr > maxCorr) {
+      maxCorr = corr;
+      bestLag = lag;
+    }
+  }
+
+  if (bestLag > 0 && maxCorr >= 0.22) {
+    const rawBpm = (60 * fs) / bestLag;
+    const clampedBpm = Math.min(maxBpm, Math.max(minBpm, Math.round(rawBpm)));
+    const confidence = Math.min(1.0, Math.max(0, (maxCorr - 0.20) / 0.60));
+    return { hrBpm: clampedBpm, confidence };
+  }
+
+  return { hrBpm: null, confidence: 0 };
+}
+
+/**
+ * Physiological Slew-Rate Limiter
+ * Clamps maximum instantaneous rate of change to physiological human limits
+ */
+export function slewRateLimit(currentVal, previousVal, maxStep = 2.0, smoothingAlpha = 0.30) {
+  if (previousVal == null || isNaN(previousVal)) return currentVal;
+  if (currentVal == null || isNaN(currentVal)) return previousVal;
+
+  const delta = currentVal - previousVal;
+  const clampedDelta = Math.max(-maxStep, Math.min(maxStep, delta));
+  const target = previousVal + clampedDelta;
+
+  return previousVal + (target - previousVal) * smoothingAlpha;
+}
+

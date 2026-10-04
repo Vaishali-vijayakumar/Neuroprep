@@ -43,8 +43,10 @@ export class FaceEngine {
     this.totalFrames      = 0;
     this.gazeWindow       = [];
 
-    // Smoothing
+    // Smoothing rings for stress, fear, and facial strain
     this.stressHistory = [];
+    this.fearHistory = [];
+    this.facialStressHistory = [];
 
     this._init();
   }
@@ -256,11 +258,25 @@ export class FaceEngine {
     // ── 6. Spatiotemporal model (FACS + rPPG + ConvLSTM attention) ──
     const out = this.stressModel.processFrame(lm, rgbRoi, { isLookingDown });
 
-    // Smooth stressIndex over last 30 frames (~1s)
+    // Smooth stressIndex over last 24 frames (~0.8s)
     this.stressHistory.push(out.stressIndex);
-    if (this.stressHistory.length > 30) this.stressHistory.shift();
+    if (this.stressHistory.length > 24) this.stressHistory.shift();
     const stressScore = Math.round(
       this.stressHistory.reduce((a, b) => a + b, 0) / this.stressHistory.length
+    );
+
+    // Smooth fearScore over last 20 frames to eliminate single-frame light spikes
+    this.fearHistory.push(out.fearScore || 0);
+    if (this.fearHistory.length > 20) this.fearHistory.shift();
+    const fearScore = Math.round(
+      this.fearHistory.reduce((a, b) => a + b, 0) / this.fearHistory.length
+    );
+
+    // Smooth facialStressScore over last 20 frames
+    this.facialStressHistory.push(out.facialStressScore || 0);
+    if (this.facialStressHistory.length > 20) this.facialStressHistory.shift();
+    const facialStressScore = Math.round(
+      this.facialStressHistory.reduce((a, b) => a + b, 0) / this.facialStressHistory.length
     );
 
     this._emit({
@@ -282,9 +298,9 @@ export class FaceEngine {
       phoneConfidence:      phoneRes.confidence || 0,
       eyeContact,
       stressScore,
-      fearScore:            out.fearScore || 0,
+      fearScore,
       rawFearScore:         out.rawFearScore || 0,
-      facialStressScore:    out.facialStressScore || 0,
+      facialStressScore,
       primaryEmotion:       out.primaryEmotion || 'Calm',
       maskedPanicDetected:  out.maskedPanicDetected || false,
       forcedSmileMask:      out.forcedSmileMask || false,

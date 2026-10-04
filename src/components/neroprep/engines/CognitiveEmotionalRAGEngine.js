@@ -8,7 +8,7 @@
  * 5. Interactive Somatic Grounding Triggers (Box Breathing Links)
  */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function pickRandom(arr) {
   if (!arr || arr.length === 0) return '';

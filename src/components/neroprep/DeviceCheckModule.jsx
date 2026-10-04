@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import useInterviewStore from '../../store/interviewStore';
-import { Mic, MicOff, Video, VideoOff, CheckCircle2, ArrowLeft, Play, Sparkles, Volume2, ShieldCheck } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, CheckCircle2, ArrowLeft, Play, Volume2 } from 'lucide-react';
 
 const TRACK_NAMES = {
   hr: 'HR Interview',

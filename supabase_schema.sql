@@ -117,8 +117,41 @@ CREATE TABLE IF NOT EXISTS public.learning_resources (
 -- Indices for fast classification & semantic lookup
 CREATE INDEX IF NOT EXISTS idx_learning_resources_topic ON public.learning_resources (topic);
 CREATE INDEX IF NOT EXISTS idx_learning_resources_category ON public.learning_resources (category, subject);
+-- 9. Company Interview Experiences Table (Community Archive)
+CREATE TABLE IF NOT EXISTS public.company_experiences (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  author_name TEXT DEFAULT 'Anonymous Student',
+  college TEXT,
+  role TEXT,
+  overall_outcome TEXT DEFAULT 'Offered',
+  difficulty TEXT DEFAULT 'Medium',
+  rounds JSONB DEFAULT '[]'::jsonb,
+  tips TEXT,
+  published_date TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Aptitude Mock Test Attempts Table
+CREATE TABLE IF NOT EXISTS public.aptitude_mock_attempts (
+  id TEXT PRIMARY KEY,
+  user_email TEXT NOT NULL,
+  test_id TEXT NOT NULL,
+  test_title TEXT NOT NULL,
+  score INT NOT NULL,
+  total_questions INT NOT NULL,
+  correct_count INT NOT NULL,
+  incorrect_count INT NOT NULL,
+  time_spent_seconds INT DEFAULT 0,
+  breakdown JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_learning_resources_website ON public.learning_resources (website);
 CREATE INDEX IF NOT EXISTS idx_learning_resources_quality ON public.learning_resources (quality_score DESC);
+CREATE INDEX IF NOT EXISTS idx_company_experiences_company ON public.company_experiences (company_id);
+CREATE INDEX IF NOT EXISTS idx_aptitude_mock_attempts_user ON public.aptitude_mock_attempts (user_email);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -129,6 +162,8 @@ ALTER TABLE public.mock_interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coding_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.readiness_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learning_resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_experiences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aptitude_mock_attempts ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS Policies (Users can read and write their own data)
 CREATE POLICY "Users can access own profile" ON public.profiles FOR ALL USING (auth.uid() = id);
@@ -139,4 +174,7 @@ CREATE POLICY "Users can access own mock interviews" ON public.mock_interviews F
 CREATE POLICY "Users can access own coding submissions" ON public.coding_submissions FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can access own readiness scores" ON public.readiness_scores FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Anyone can view verified learning resources" ON public.learning_resources FOR SELECT USING (verified = true);
+CREATE POLICY "Anyone can view published company experiences" ON public.company_experiences FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can publish company experiences" ON public.company_experiences FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can access own aptitude attempts" ON public.aptitude_mock_attempts FOR ALL USING (true);
 

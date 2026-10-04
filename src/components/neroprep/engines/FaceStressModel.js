@@ -23,7 +23,7 @@
  *    StressIndex = 0.20*FACS_fear + 0.15*Micro_bursts + 0.35*(ΔHR_ratio + HRV_drop_ratio)*50 + 0.30*FacialStrain
  */
 
-import { computeAffineTransform, ButterworthFilter, detrendSignal, computeTrimmedMean } from './dspFilters.js';
+import { computeAffineTransform, ButterworthFilter, detrendSignal } from './dspFilters.js';
 import { CandidateBaselineTracker } from './CandidateBaselineTracker.js';
 
 export class FaceStressModel {

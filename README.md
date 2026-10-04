@@ -150,10 +150,6 @@ placement-aider/
 │   └── run_server.py                # Backend startup script
 ├── public/
 │   └── bg.png                       # Assets & background art
-├── scripts/                         # Mock bank generation & test builders
-│   ├── generate_all_20_tests.py
-│   ├── master_dataset_builder.py
-│   └── ...
 ├── src/
 │   ├── components/
 │   │   ├── AptitudePractice.jsx     # Quantitative, Logical & Verbal quizzes
@@ -165,7 +161,6 @@ placement-aider/
 │   │   ├── Dashboard.jsx            # Main student overview & telemetry
 │   │   ├── Gamification.jsx         # Badges, XP & leaderboards
 │   │   ├── LandingPage.jsx          # Interactive product hero landing
-│   │   ├── MockInterview.jsx        # Interview configuration & launcher
 │   │   ├── MoodAssessment.jsx       # Daily affective check-in
 │   │   ├── Navigation.jsx           # Responsive header & tab navigation
 │   │   ├── PlacementFlashGauntlet.jsx # Timed technical flashcards
@@ -180,23 +175,25 @@ placement-aider/
 │   │   └── neroprep/                # Core biometric AI interview suite
 │   │       ├── InterviewRoom.jsx    # Real-time interview chamber
 │   │       ├── CodingRoom.jsx       # Technical assessment chamber
-│   │       ├── Realistic3DHumanAvatar.jsx # Three.js animated interviewer
-│   │       ├── SadTalkerVideoAvatar.jsx
-│   │       ├── TalkingHeadAvatar.jsx
+│   │       ├── SadTalkerRealHumanAvatar.jsx # Real human interviewer avatar
+│   │       ├── VideoFeed.jsx        # Camera stream & face mesh overlay
+│   │       ├── MonacoEditorPanel.jsx # Code editor panel
+│   │       ├── SidePanel.jsx        # Metrics & live telemetry sidebar
 │   │       └── engines/
 │   │           ├── AIQuestionEngine.js        # Adaptive question generator
 │   │           ├── CognitiveEmotionalRAGEngine.js # CBT distortion detector
 │   │           ├── FaceEngine.js              # MediaPipe landmark processor
 │   │           ├── FaceStressModel.js         # Facial stress classifier
 │   │           ├── PhoneDetector.js           # TensorFlow object detection
-│   │           ├── RealisticHumanEngine.js    # 3D avatar animation driver
 │   │           ├── StressScorer.js            # Composite biometric scoring
 │   │           ├── VoiceEngine.js             # Speech recognition & synthesis
 │   │           ├── WebRAGEvaluationEngine.js  # Live answer evaluation
 │   │           ├── dspFilters.js              # Butterworth bandpass filters
 │   │           └── rppgWorker.js              # Heart rate Web Worker
 │   ├── data/
-│   │   └── mockTestsData.js         # Curated 800+ aptitude questions
+│   │   ├── adaptiveQuestionBank1400.json # Curated 1,400+ interview questions
+│   │   ├── mockTestsData.js         # Curated 800+ aptitude questions
+│   │   └── dsaPatternsData.js       # Core DSA pattern taxonomy
 │   ├── services/
 │   │   ├── db.js                    # Supabase client & sync
 │   │   └── localDb.js               # Resilient offline local storage

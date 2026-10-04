@@ -2,9 +2,9 @@
 Stress Analysis Router — Spatiotemporal & rPPG Continuous Video Stress Pipeline
 """
 import numpy as np
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import Optional
 
 from app.services.face_stress_model import stress_model_service
 

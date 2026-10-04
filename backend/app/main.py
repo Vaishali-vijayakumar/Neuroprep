@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from fastapi import FastAPI, UploadFile, File, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from pydantic import BaseModel
+from typing import List
 
 # ── Existing ATS services ──────────────────────────────────────────────────────
 from app.services.pdf_extractor import extract_pdf_text
@@ -40,6 +40,7 @@ app.add_middleware(
         "http://127.0.0.1:3001",
         "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

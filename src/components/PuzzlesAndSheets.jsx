@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, CheckCircle2, Circle, Search, ChevronRight, ExternalLink, Bookmark, Filter, Award } from 'lucide-react';
+import { FileText, CheckCircle2, Circle, Search, Filter } from 'lucide-react';
 
 const TOP_PUZZLES_AND_PATTERNS = [
  { id: 'p1', category: 'SDE Sheet - Arrays', title: "Kadane's Algorithm (Max Subarray Sum)", difficulty: 'Medium', company: 'Amazon, Microsoft, TCS', link: 'coding' },

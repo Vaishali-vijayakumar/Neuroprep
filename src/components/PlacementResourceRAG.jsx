@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Play, RefreshCw,
-  Clock, Eye, Sparkles, Flame, CheckCircle2, ExternalLink, Video,
-  X, Tv, Bookmark, FileText, Globe, Download, Star, Presentation
+  Eye, Flame, CheckCircle2, ExternalLink, Video,
+  X, Globe, Star, Presentation
 } from 'lucide-react';
 import { fetchSlideSharePresentations } from '../services/aiPdfSynthesisEngine';
 

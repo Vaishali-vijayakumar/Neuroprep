@@ -4,7 +4,7 @@ import { getGamificationData } from '../services/gamificationService';
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
-import { Flame, Trophy, Zap, Target, Code2, Award, CheckCircle2, Check, X, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Check, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function Dashboard({ 
   profile = {}, 

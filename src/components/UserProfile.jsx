@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, FileText, Target, CheckCircle2, AlertCircle, Upload, Plus, Trash2, Award, Save } from 'lucide-react';
+import { User, FileText, Target, CheckCircle2, Upload, Plus, Trash2, Award, Save } from 'lucide-react';
 import { dbService } from '../services/db';
 
 export default function UserProfile({ profile, setProfile, setActiveTab }) {

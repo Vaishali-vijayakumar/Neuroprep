@@ -19,7 +19,7 @@ import PlacementRoadmap from './components/PlacementRoadmap';
 import PuzzlesAndSheets from './components/PuzzlesAndSheets';
 import PlacementResourceRAG from './components/PlacementResourceRAG';
 import { DISTORTIONS } from './services/aiEngine';
-import { dbService } from './services/db';
+import { dbService, supabase } from './services/db';
 import { recordActivity } from './services/gamificationService';
 
 const SESSION_STORAGE_KEY = 'neuroprep_user_session';
@@ -331,6 +331,9 @@ export default function App() {
   const handleSignOut = () => {
     try {
       localStorage.removeItem(SESSION_STORAGE_KEY);
+      if (supabase?.auth) {
+        supabase.auth.signOut().catch(() => {});
+      }
     } catch (e) {}
     setIsAuthenticated(false);
     setIsLanding(true);

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: neuroprep-backend
+    env: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: APILAYER_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MAX_QUESTIONS_PER_SESSION
+        value: "15"
+      - key: SESSION_TIMEOUT_MINUTES
+        value: "90"

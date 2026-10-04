@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, CheckCircle2, Zap, ArrowRight, RefreshCw } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { recordActivity } from '../services/gamificationService';
 
 const DAILY_GAUNTLET_SCENARIOS = [

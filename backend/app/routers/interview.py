@@ -2,7 +2,7 @@
 Interview Router — REST endpoints for session management.
 """
 from fastapi import APIRouter, HTTPException
-from app.models.schemas import StartSessionRequest, StartSessionResponse, ReportRequest
+from app.models.schemas import StartSessionRequest, StartSessionResponse
 from app.services import interview_memory, ai_brain
 
 router = APIRouter(tags=["interview"])

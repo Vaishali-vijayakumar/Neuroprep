@@ -4,8 +4,8 @@ import { getDailyChallenge, recordActivity } from '../services/gamificationServi
 import { getProblemData } from '../data/problemData';
 import { dbService } from '../services/db';
 import { 
- Code2, Play, CheckCircle2, BookOpen, Lightbulb, 
- Clock, Shield, Award, Sparkles, Check, Copy, Terminal, Zap, ArrowLeft, XCircle, RotateCcw, Trash2
+ Play, CheckCircle2, Lightbulb, 
+ Check, Copy, Terminal, ArrowLeft, RotateCcw, Trash2
 } from 'lucide-react';
 
 const LANG_STARTER_KEYS = {

@@ -15,7 +15,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -34,7 +34,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
         return;
       }
 
-      const res = dbService.registerUser({
+      const res = await dbService.registerUser({
         name: fullName.trim(),
         email: email.trim(),
         password,
@@ -58,7 +58,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
         return;
       }
 
-      const res = dbService.authenticateUser(email.trim(), password);
+      const res = await dbService.authenticateUser(email.trim(), password);
 
       if (!res.success) {
         setErrorMsg(res.error || 'Authentication failed.');
@@ -79,7 +79,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
         setErrorMsg('No account found with this email address.');
         return;
       }
-      setSuccessMsg('Password reset instructions have been simulated and sent to your email.');
+      setSuccessMsg('Password reset instructions have been sent to your email.');
     }
   };
 

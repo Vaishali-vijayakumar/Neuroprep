@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Trophy, Star, Zap, Target, Code2, Mic2, BookOpen, Award, Lock, 
-  Flame, CheckCircle2, Shield, Brain, Briefcase, Gift, ArrowRight,
-  TrendingUp, Sparkles, Download, Check, FileText, Cpu, ArrowLeft, X,
-  ChevronRight, Compass, Crown, Swords, Rocket
+  Trophy, Star, Zap, Target, Code2, Mic2, BookOpen, Award, 
+  Flame, CheckCircle2, Brain, Briefcase,
+  Sparkles, Download, Check, FileText, Cpu, ArrowLeft, X,
+  Crown
 } from 'lucide-react';
 import { 
   getGamificationData, 
-  claimQuestReward, 
-  XP_REWARDS,
-  RANK_TIERS 
+  claimQuestReward 
 } from '../services/gamificationService';
 
 export default function Gamification({ 

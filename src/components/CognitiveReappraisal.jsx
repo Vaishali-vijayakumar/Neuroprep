@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, CheckCircle2, ShieldAlert, Sparkles, HelpCircle, ArrowRight, RefreshCw } from 'lucide-react';
+import { Brain, CheckCircle2, Sparkles, HelpCircle } from 'lucide-react';
 import { DISTORTIONS } from '../services/aiEngine';
 
 export default function CognitiveReappraisal({ selectedDistortion, setActiveTab }) {

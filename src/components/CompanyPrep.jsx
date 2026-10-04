@@ -10,21 +10,13 @@ import {
   BookOpen, 
   CheckSquare, 
   Table, 
-  Code2, 
-  Brain, 
   CheckCircle2, 
   UserCheck, 
   Plus, 
   ChevronDown, 
   ChevronUp, 
   Edit3, 
-  Sparkles,
-  ArrowLeft,
-  Briefcase,
-  Award,
-  Clock,
-  HelpCircle,
-  FileCheck
+  ArrowLeft
 } from 'lucide-react';
 
 export default function CompanyPrep({ setActiveTab }) {

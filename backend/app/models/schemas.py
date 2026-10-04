@@ -1,8 +1,8 @@
 """
 Pydantic models for the Neroprep AI Interview Engine API.
 """
-from pydantic import BaseModel, Field
-from typing import Any, Optional
+from pydantic import BaseModel
+from typing import Optional
 
 
 # ── Session ──────────────────────────────────────────────

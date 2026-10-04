@@ -11,10 +11,8 @@ import { FaceEngine } from './engines/FaceEngine';
 import { VocalIntelligenceEngine } from './engines/VocalIntelligenceEngine';
 import { AIQuestionEngine } from './engines/AIQuestionEngine';
 import { useInterviewSocket, startInterviewSession } from './useInterviewSocket';
-import { getTrackConfig } from '../../data/interviewTracksData';
-import { HeyGenAvatarService, HEYGEN_AVATAR_PRESETS } from './engines/HeyGenAvatarService';
+import { HeyGenAvatarService } from './engines/HeyGenAvatarService';
 import SadTalkerRealHumanAvatar from './SadTalkerRealHumanAvatar';
-import { Settings, Video, Sparkles, X, Check, RefreshCw } from 'lucide-react';
 
 // ── Monochrome design tokens ──────────────────────────────────────────────────
 const BLACK = '#111111';

@@ -9,8 +9,8 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WS_BASE = 'ws://localhost:8000';
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WS_BASE  = import.meta.env.VITE_WS_URL || API_BASE.replace(/^http/, 'ws');
 
 export function useInterviewSocket({ sessionId, onQuestion, onEval, onReport, onAdaptation, onStressUpdate }) {
   const wsRef         = useRef(null);

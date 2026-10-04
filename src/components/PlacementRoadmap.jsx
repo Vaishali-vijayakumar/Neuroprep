@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, CheckCircle2, Circle, ArrowRight, BookOpen, Code2, Mic2, Brain, ChevronDown, ChevronUp, Sparkles, Award } from 'lucide-react';
+import { Compass, CheckCircle2, Circle, Code2, Mic2, Brain, ChevronDown, ChevronUp, Sparkles, Award } from 'lucide-react';
 
 const ROADMAP_PHASES = [
   {

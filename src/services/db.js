@@ -1,15 +1,22 @@
+import { createClient } from '@supabase/supabase-js';
 import { localDb } from './localDb';
 
 // Supabase Environment Credentials
 const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
-let supabaseClient = null;
-
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+export const supabase = isSupabaseConfigured
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    })
+  : null;
 
-// Use localDb for browser state management
-export const db = localDb;
+// Use Supabase if configured; otherwise use resilient localDb
+export const db = isSupabaseConfigured && supabase ? supabase : localDb;
 
 const REGISTERED_USERS_KEY = 'neuroprep_registered_users';
 
@@ -52,83 +59,181 @@ function getUserTestScoreKey(userEmail, testType) {
  * Database Helper Service
  */
 export const dbService = {
- // ─────────────────────────────────────────────
- // User Registration & Authentication (Strict Auth)
- // ─────────────────────────────────────────────
- registerUser({ email, password, name, college, department, graduationYear }) {
- if (!email || !password) {
- return { success: false, error: 'Email and password are required.' };
- }
- const normEmail = email.trim().toLowerCase();
- const users = getRegisteredUsersMap();
+  // ─────────────────────────────────────────────
+  // User Registration & Authentication (Supabase + Local Fallback)
+  // ─────────────────────────────────────────────
+  async registerUser({ email, password, name, college, department, graduationYear }) {
+    if (!email || !password) {
+      return { success: false, error: 'Email and password are required.' };
+    }
+    const normEmail = email.trim().toLowerCase();
 
- if (users[normEmail]) {
- return { success: false, error: 'An account with this email already exists. Please log in.' };
- }
+    // 1. If Supabase is configured, register via Supabase Auth
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: normEmail,
+          password: password,
+          options: {
+            data: {
+              name: name?.trim() || '',
+              college: college?.trim() || '',
+              department: department?.trim() || '',
+              graduation_year: Number(graduationYear) || 2026,
+            }
+          }
+        });
 
- const newUser = {
- email: normEmail,
- password: password,
- name: name?.trim() || '',
- college: college?.trim() || '',
- department: department?.trim() || '',
- graduationYear: Number(graduationYear) || '',
- skills: [],
- targetCompany: '',
- targetRole: '',
- createdAt: new Date().toISOString(),
- };
+        if (error) {
+          return { success: false, error: error.message };
+        }
 
- users[normEmail] = newUser;
- saveRegisteredUsersMap(users);
- db.from('profiles').upsert(newUser);
+        const userId = data.user?.id;
+        const profileRecord = {
+          id: userId,
+          email: normEmail,
+          name: name?.trim() || '',
+          college: college?.trim() || '',
+          department: department?.trim() || '',
+          graduation_year: Number(graduationYear) || 2026,
+          created_at: new Date().toISOString(),
+        };
 
- return { success: true, user: newUser };
- },
+        // Upsert into Supabase profiles table
+        await supabase.from('profiles').upsert(profileRecord);
 
- authenticateUser(email, password) {
- if (!email || !password) {
- return { success: false, error: 'Please enter both your email address and password.' };
- }
- const normEmail = email.trim().toLowerCase();
- const users = getRegisteredUsersMap();
+        // Cache locally for offline resilience
+        const users = getRegisteredUsersMap();
+        users[normEmail] = { ...profileRecord, password };
+        saveRegisteredUsersMap(users);
+        localDb.from('profiles').upsert(profileRecord);
 
- const user = users[normEmail];
- if (!user) {
- return {
- success: false,
- error: 'No account found with this email. Please sign up first.'
- };
- }
+        return { success: true, user: profileRecord };
+      } catch (err) {
+        console.warn('Supabase registration notice, trying local fallback:', err);
+      }
+    }
 
- if (user.password !== password) {
- return {
- success: false,
- error: 'Incorrect password. Please verify your password and try again.'
- };
- }
+    // 2. Resilient Local Fallback (offline or without Supabase keys)
+    const users = getRegisteredUsersMap();
 
- return { success: true, user };
- },
+    if (users[normEmail]) {
+      return { success: false, error: 'An account with this email already exists. Please log in.' };
+    }
 
- getUserProfile(email) {
- if (!email) return null;
- const normEmail = email.trim().toLowerCase();
- const users = getRegisteredUsersMap();
- return users[normEmail] || null;
- },
+    const newUser = {
+      email: normEmail,
+      password: password,
+      name: name?.trim() || '',
+      college: college?.trim() || '',
+      department: department?.trim() || '',
+      graduationYear: Number(graduationYear) || 2026,
+      skills: [],
+      targetCompany: 'TCS',
+      targetRole: 'Software Engineer',
+      createdAt: new Date().toISOString(),
+    };
 
- saveUserProfile(email, updatedProfile) {
- if (!email) return;
- const normEmail = email.trim().toLowerCase();
- const users = getRegisteredUsersMap();
- const existing = users[normEmail] || {};
- const merged = { ...existing, ...updatedProfile, email: normEmail, updated_at: new Date().toISOString() };
- users[normEmail] = merged;
- saveRegisteredUsersMap(users);
- db.from('profiles').upsert(merged);
- return merged;
- },
+    users[normEmail] = newUser;
+    saveRegisteredUsersMap(users);
+    localDb.from('profiles').upsert(newUser);
+
+    return { success: true, user: newUser };
+  },
+
+  async authenticateUser(email, password) {
+    if (!email || !password) {
+      return { success: false, error: 'Please enter both your email address and password.' };
+    }
+    const normEmail = email.trim().toLowerCase();
+
+    // 1. If Supabase is configured, authenticate with Supabase Auth
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: normEmail,
+          password: password,
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        // Retrieve stored profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', normEmail)
+          .maybeSingle();
+
+        const userProfile = profileData || {
+          id: data.user?.id,
+          email: normEmail,
+          name: data.user?.user_metadata?.name || normEmail.split('@')[0],
+          college: data.user?.user_metadata?.college || '',
+          department: data.user?.user_metadata?.department || '',
+          graduationYear: data.user?.user_metadata?.graduation_year || 2026,
+        };
+
+        // Cache locally
+        const users = getRegisteredUsersMap();
+        users[normEmail] = userProfile;
+        saveRegisteredUsersMap(users);
+        localDb.from('profiles').upsert(userProfile);
+
+        return { success: true, user: userProfile };
+      } catch (err) {
+        console.warn('Supabase auth notice, trying local fallback:', err);
+      }
+    }
+
+    // 2. Resilient Local Fallback
+    const users = getRegisteredUsersMap();
+    const user = users[normEmail];
+    if (!user) {
+      return {
+        success: false,
+        error: 'No account found with this email. Please sign up first.'
+      };
+    }
+
+    if (user.password !== password) {
+      return {
+        success: false,
+        error: 'Incorrect password. Please verify your password and try again.'
+      };
+    }
+
+    return { success: true, user };
+  },
+
+  getUserProfile(email) {
+    if (!email) return null;
+    const normEmail = email.trim().toLowerCase();
+    const users = getRegisteredUsersMap();
+    return users[normEmail] || null;
+  },
+
+  async saveUserProfile(email, updatedProfile) {
+    if (!email) return;
+    const normEmail = email.trim().toLowerCase();
+    const users = getRegisteredUsersMap();
+    const existing = users[normEmail] || {};
+    const merged = { ...existing, ...updatedProfile, email: normEmail, updated_at: new Date().toISOString() };
+    users[normEmail] = merged;
+    saveRegisteredUsersMap(users);
+    localDb.from('profiles').upsert(merged);
+
+    // Sync to Supabase if configured
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('profiles').upsert(merged, { onConflict: 'email' });
+      } catch (e) {
+        console.warn('Supabase profile sync notice:', e);
+      }
+    }
+    return merged;
+  },
 
   clearAllUsers() {
     this.clearAllUserData();

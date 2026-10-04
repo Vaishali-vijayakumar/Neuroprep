@@ -9,14 +9,7 @@ import {
   Code2, 
   Mic2, 
   Smile, 
-  BarChart2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Target, 
-  Layers, 
-  Zap, 
-  Award,
-  ArrowRight
+  Target
 } from 'lucide-react';
 
 export default function Reports({ profile = {}, moodState = {}, interviewState = {}, codingState = {}, aptitudeState = {}, setActiveTab }) {

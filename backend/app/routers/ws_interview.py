@@ -179,6 +179,14 @@ async def interview_websocket(websocket: WebSocket, session_id: str):
                 response   = {"type": "telemetry_ack", "stress_index": stress}
                 if adaptation:
                     response["adaptation"] = adaptation
+                
+                is_phone = bool(payload.get("phone_detected") or payload.get("phoneReadingDetected") or payload.get("phone_object_visible"))
+                if is_phone:
+                    response["proctor_alert"] = {
+                        "type": "phone_detected",
+                        "message": "⚠️ Mobile phone detected in camera view. External screen scanning is prohibited.",
+                        "phone_alerts": payload.get("phone_alerts", 1)
+                    }
                 await _send(websocket, response)
 
             # ── ANSWER ────────────────────────────────────────────────────────

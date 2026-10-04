@@ -14,6 +14,11 @@ const useInterviewStore = create((set) => ({
   stressIndex: 0,
   transcript: [],
 
+  // Proctoring & Anti-Phone Detection State
+  phoneAlertsCount: 0,
+  phoneIncidentLogs: [],
+  distractionScore: 0,
+
   // AI Evaluation
   lastRubric: null,
   report: null,
@@ -26,9 +31,29 @@ const useInterviewStore = create((set) => ({
   setConfig: (config) => set((state) => ({ config: { ...state.config, ...config } })),
 
   startDeviceCheck: () => set({ pipelineState: 'device_check' }),
-  startInterview:   () => set({ pipelineState: 'live', stressIndex: 0, transcript: [], elapsedSeconds: 0, lastRubric: null, report: null }),
+  startInterview:   () => set({
+    pipelineState: 'live',
+    stressIndex: 0,
+    transcript: [],
+    elapsedSeconds: 0,
+    lastRubric: null,
+    report: null,
+    phoneAlertsCount: 0,
+    phoneIncidentLogs: [],
+    distractionScore: 0,
+  }),
   endInterview:     (report) => set((state) => ({ pipelineState: 'completed', ...(report ? { report } : {}) })),
-  exitInterview:    () => set({ config: null, pipelineState: 'selection', transcript: [], elapsedSeconds: 0, mediaStream: null, report: null }),
+  exitInterview:    () => set({
+    config: null,
+    pipelineState: 'selection',
+    transcript: [],
+    elapsedSeconds: 0,
+    mediaStream: null,
+    report: null,
+    phoneAlertsCount: 0,
+    phoneIncidentLogs: [],
+    distractionScore: 0,
+  }),
 
   setMediaStream:  (mediaStream) => set({ mediaStream }),
 
@@ -36,6 +61,11 @@ const useInterviewStore = create((set) => ({
   setStressIndex: (stressIndex) => set({ stressIndex }),
   setLastRubric:  (lastRubric)  => set({ lastRubric }),
   setReport:      (report)      => set({ report }),
+  addPhoneIncident: (incident) => set((state) => ({
+    phoneAlertsCount: state.phoneAlertsCount + 1,
+    phoneIncidentLogs: [...state.phoneIncidentLogs, incident],
+    distractionScore: Math.min(100, (state.phoneAlertsCount + 1) * 20),
+  })),
   addTranscriptLine: (line) => set((state) => ({
     transcript: [...state.transcript, { ...line, timestamp: line.timestamp || new Date().toISOString() }],
   })),

@@ -44,15 +44,22 @@ class WSClientMessage(BaseModel):
 
 
 class WSTelemetryPayload(BaseModel):
-    stress:           int   = 0
-    blink_rate:       float = 15.0
-    head_pose:        str   = "forward"
-    eye_contact:      float = 85.0
-    volume:           float = 50.0
-    wpm:              float = 0.0
-    silence_duration: float = 0.0
-    filler_count:     int   = 0
-    face_detected:    bool  = True
+    stress:                 int   = 0
+    blink_rate:             float = 15.0
+    head_pose:              str   = "forward"
+    eye_contact:            float = 85.0
+    volume:                 float = 50.0
+    wpm:                    float = 0.0
+    silence_duration:       float = 0.0
+    filler_count:           int   = 0
+    face_detected:          bool  = True
+    phone_detected:         bool  = False
+    phone_object_visible:   bool  = False
+    phone_reading_detected: bool  = False
+    downward_seconds:       int   = 0
+    phone_alerts:           int   = 0
+    distraction_score:      int   = 0
+
 
 
 class WSServerMessage(BaseModel):

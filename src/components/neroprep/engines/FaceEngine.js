@@ -217,15 +217,20 @@ export class FaceEngine {
 
     const isLookingDown = headPose === 'down' || isGazeDown;
 
-    // ── Phone Usage / Downward Reading Detection (Object Detection + 40s Continuous Gaze) ──
+    // ── Phone Usage / Screen-Scanning Detection (COCO-SSD + Downward Gaze) ──
     let phoneRes = {
       phoneDetected: false,
       phoneReadingDetected: false,
       phoneObjectVisible: false,
+      isScreenScanning: false,
       downwardSeconds: 0,
+      isDownwardReading: false,
       isDownwardOver40s: false,
       reason: '',
-      phoneAlerts: 0
+      phoneAlerts: 0,
+      distractionScore: 0,
+      incidentLogs: [],
+      confidence: 0,
     };
 
     if (this.phoneDetector) {
@@ -266,10 +271,15 @@ export class FaceEngine {
       isGazeDown,
       phoneReadingDetected: phoneRes.phoneDetected || false,
       phoneObjectVisible:   phoneRes.phoneObjectVisible || false,
+      isScreenScanning:     phoneRes.isScreenScanning || false,
       downwardSeconds:      phoneRes.downwardSeconds || 0,
-      isDownwardOver40s:    phoneRes.isDownwardOver40s || false,
+      isDownwardReading:    phoneRes.isDownwardReading || false,
+      isDownwardOver40s:    phoneRes.isDownwardProlonged || false,
       phoneAlertReason:     phoneRes.reason || '',
       phoneAlerts:          phoneRes.phoneAlerts || 0,
+      phoneDistractionScore: phoneRes.distractionScore || 0,
+      phoneIncidentLogs:    phoneRes.incidentLogs || [],
+      phoneConfidence:      phoneRes.confidence || 0,
       eyeContact,
       stressScore,
       fearScore:            out.fearScore || 0,

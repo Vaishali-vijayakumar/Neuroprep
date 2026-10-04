@@ -937,8 +937,11 @@ async def generate_report(session_data: dict) -> dict:
         forward_ratio = (poses.count("forward") / len(poses)) if poses else 1.0
         head_pose_stability = "Stable Forward Focus" if forward_ratio >= 0.8 else "Moderate Movement"
 
-        # Reading / Proctor flags
-        proctor_flags = sum(1 for t in telem if t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly"))
+        # Reading / Proctor & Phone Detection flags
+        phone_incidents = sum(1 for t in telem if t.get("phone_detected") or t.get("phoneReadingDetected") or t.get("phone_object_visible"))
+        proctor_flags = sum(1 for t in telem if t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly") or t.get("phone_object_visible"))
+        distraction_score = min(100, phone_incidents * 25)
+        integrity_verdict = "CLEAN" if phone_incidents == 0 else ("ADVISORY" if phone_incidents <= 2 else "FLAGGED")
 
         wpm_vals = [t.get("wpm") for t in telem if t.get("wpm") and t["wpm"] > 0]
         avg_wpm  = int(sum(wpm_vals) / len(wpm_vals)) if wpm_vals else None
@@ -1067,6 +1070,9 @@ async def generate_report(session_data: dict) -> dict:
             "blink_rate_avg":          real_blink,
             "head_pose_stability":     head_pose_stability,
             "proctor_flags":           proctor_flags,
+            "phone_use_count":         phone_incidents,
+            "distraction_score":       distraction_score,
+            "integrity_verdict":       integrity_verdict,
             "speaking_speed":          speaking_speed,
             "filler_word_count":       total_fillers,
             "silence_duration_sec":    total_silence_sec,
@@ -1335,7 +1341,10 @@ def _fallback_report(session_data):
     silence_durations = [t.get("silence_duration_ms", 0) for t in telem if t.get("silence_duration_ms")]
     total_silence_sec = round(sum(silence_durations) / 1000, 1)
 
-    proctor_flags = sum(1 for t in telem if t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly"))
+    phone_incidents = sum(1 for t in telem if t.get("phone_detected") or t.get("phoneReadingDetected") or t.get("phone_object_visible"))
+    proctor_flags = sum(1 for t in telem if t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly") or t.get("phone_object_visible"))
+    distraction_score = min(100, phone_incidents * 25)
+    integrity_verdict = "CLEAN" if phone_incidents == 0 else ("ADVISORY" if phone_incidents <= 2 else "FLAGGED")
 
     tech_score  = avg("technical_accuracy")
     comm_score  = avg("communication")
@@ -1414,6 +1423,9 @@ def _fallback_report(session_data):
         "blink_rate_avg":          real_blink,
         "head_pose_stability":     "Stable Forward Focus",
         "proctor_flags":           proctor_flags,
+        "phone_use_count":         phone_incidents,
+        "distraction_score":       distraction_score,
+        "integrity_verdict":       integrity_verdict,
         "speaking_speed":          speaking_speed,
         "filler_word_count":       total_fillers,
         "silence_duration_sec":    total_silence_sec,

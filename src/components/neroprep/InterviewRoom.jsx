@@ -735,7 +735,24 @@ export default function InterviewRoom() {
  const fe = new FaceEngine(videoEl, canvasRef.current, {
  onTelemetry: (telem) => {
  setFaceTelemetry(telem);
- if (telem?.stressScore > 0) sendTelemetry?.(telem);
+ if (telem?.phoneReadingDetected || telem?.phoneObjectVisible) {
+   useInterviewStore.getState().addPhoneIncident?.({
+     reason: telem.phoneAlertReason || 'Phone detected in screen view',
+     timestamp: new Date().toLocaleTimeString(),
+     count: telem.phoneAlerts || 1,
+   });
+ }
+ if (telem?.stressScore > 0 || telem?.phoneReadingDetected || telem?.phoneObjectVisible) {
+   sendTelemetry?.({
+     ...telem,
+     phone_detected: telem?.phoneReadingDetected || false,
+     phone_object_visible: telem?.phoneObjectVisible || false,
+     phone_reading_detected: telem?.phoneReadingDetected || false,
+     downward_seconds: telem?.downwardSeconds || 0,
+     phone_alerts: telem?.phoneAlerts || 0,
+     distraction_score: telem?.phoneDistractionScore || 0,
+   });
+ }
  }
  });
  fe.start();
@@ -907,6 +924,11 @@ export default function InterviewRoom() {
     total_penalties: engineReport.total_penalties != null ? engineReport.total_penalties : totalPenalty,
     tabSwitchViolations: tabSwitchCount,
     phoneUseCount: faceTelemetry.phoneAlerts || 0,
+    phoneAlertsCount: faceTelemetry.phoneAlerts || 0,
+    phoneIncidentLogs: faceTelemetry.phoneIncidentLogs || [],
+    distractionScore: faceTelemetry.phoneDistractionScore || ((faceTelemetry.phoneAlerts || 0) * 25),
+    integrityVerdict: (faceTelemetry.phoneAlerts || 0) === 0 ? 'CLEAN' : ((faceTelemetry.phoneAlerts || 0) <= 2 ? 'ADVISORY' : 'FLAGGED'),
+    proctoringFlag: (tabSwitchCount > 2 || (faceTelemetry.phoneAlerts || 0) > 0) ? 'FLAGGED' : 'CLEAN',
     grade: engineReport.grade || (avgScore >= 92 ? 'A+' : avgScore >= 85 ? 'A' : avgScore >= 78 ? 'B+' : avgScore >= 70 ? 'B' : avgScore >= 60 ? 'C' : 'D'),
     hire_recommendation: engineReport.hire_recommendation || (avgScore >= 88 ? 'Strong Yes — High Potential' : avgScore >= 75 ? 'Yes — Ready for Next Round' : avgScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'),
     skillScores: engineReport.skillScores || {},
@@ -1261,12 +1283,87 @@ return (
       )}
 
 
+      {/* High-Visibility Floating Proctor Phone Alert */}
+      {faceTelemetry.phoneReadingDetected && (
+        <div style={{
+          backgroundColor: '#FEF2F2',
+          border: '2px solid #EF4444',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+          boxShadow: '0 6px 20px rgba(239, 68, 68, 0.2)',
+          animation: 'bubbleFloatIn 0.3s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px' }}>🚨</span>
+            <div>
+              <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#991B1B' }}>
+                PROCTORING WARNING: MOBILE PHONE DETECTED
+              </div>
+              <div style={{ fontSize: '12px', color: '#B91C1C', marginTop: '2px', fontWeight: 600 }}>
+                {faceTelemetry.phoneAlertReason || 'Mobile device detected in camera feed. External screen scanning (Google Lens / photo capture) is prohibited.'}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              backgroundColor: '#FEE2E2',
+              color: '#991B1B',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              border: '1px solid #FCA5A5'
+            }}>
+              Violation #{faceTelemetry.phoneAlerts || 1} Logged
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* LARGE QUESTION CARD */}
       <div style={{
         background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: `1px solid ${BORDER}`, borderRadius: '16px',
         padding: '26px 30px', display: 'flex', flexDirection: 'column', gap: '12px',
-        boxShadow: 'var(--shadow-3d-card)'
+        boxShadow: 'var(--shadow-3d-card)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+        {/* Anti-Scan Shield: Obscures question text when phone is lifted to screen */}
+        {faceTelemetry.phoneObjectVisible && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            backgroundColor: 'rgba(254, 242, 242, 0.94)',
+            zIndex: 30,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            textAlign: 'center',
+            border: '2px dashed #EF4444',
+            borderRadius: '16px',
+            animation: 'fadeIn 0.2s ease-in-out'
+          }}>
+            <div style={{ fontSize: '36px', marginBottom: '8px' }}>📵</div>
+            <div style={{ fontSize: '17px', fontWeight: 900, color: '#B91C1C', letterSpacing: '-0.3px', fontFamily: 'var(--font-heading)' }}>
+              Anti-Scan Shield Active: Question Hidden
+            </div>
+            <div style={{ fontSize: '13px', color: '#7F1D1D', marginTop: '6px', maxWidth: '520px', fontWeight: 600, lineHeight: 1.5 }}>
+              A smartphone was detected in front of the screen. Screen scanning (Google Lens, ChatGPT Vision, or camera capture) is strictly prohibited. Please lower and remove your device to reveal the question.
+            </div>
+            <div style={{ marginTop: '10px', fontSize: '11px', fontWeight: 800, color: '#991B1B', backgroundColor: '#FEE2E2', padding: '3px 10px', borderRadius: '6px', border: '1px solid #FCA5A5' }}>
+              Proctor Incident #{faceTelemetry.phoneAlerts || 1} Logged
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'var(--font-body)' }}>
             QUESTION {String(questionNum || 1).padStart(2, '0')}

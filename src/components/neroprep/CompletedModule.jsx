@@ -272,15 +272,97 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                 {/* 4. Video & Proctoring */}
                 <div style={{ padding: '14px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
                   <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Proctoring</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: (currentReport.tabSwitchViolations || currentReport.proctor_flags) ? '#111827' : '#111827' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: (currentReport.tabSwitchViolations || currentReport.proctor_flags || currentReport.phoneUseCount) ? '#111827' : '#111827' }}>
                     {currentReport.tabSwitchViolations > 0 ? `${currentReport.tabSwitchViolations} Violation${currentReport.tabSwitchViolations > 1 ? 's' : ''}` :
-                     currentReport.proctor_flags ? `${currentReport.proctor_flags} Alerts` : 'Clean'}
+                     (currentReport.phoneUseCount > 0 || currentReport.proctor_flags) ? `${currentReport.phoneUseCount || currentReport.proctor_flags} Alerts` : 'Clean'}
                   </div>
                   <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600, marginTop: '2px' }}>
-                    {currentReport.proctoringFlag === 'FLAGGED' ? 'Session flagged' : 'No violations detected'}
+                    {(currentReport.proctoringFlag === 'FLAGGED' || (currentReport.phoneUseCount || 0) > 0) ? 'Device alert logged' : 'No violations detected'}
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Dedicated Phone Usage & Screen-Scanning Distraction Audit Card */}
+            <div className="saas-card-spec" style={{
+              padding: '20px 24px',
+              border: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '1.5px solid #FCA5A5' : '1px solid #E5E7EB',
+              backgroundColor: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '#FEF2F2' : '#FFFFFF'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📱 Phone Usage & Screen-Scanning Distraction Audit</span>
+                  <span style={{
+                    fontSize: '11px', padding: '3px 9px', borderRadius: '4px', fontWeight: 800,
+                    backgroundColor: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '#FEE2E2' : '#F3F4F6',
+                    color: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '#B91C1C' : '#111827',
+                    border: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '1px solid #FCA5A5' : '1px solid #E5E7EB'
+                  }}>
+                    {(currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? 'DEVICE FLAGGED' : '100% CLEAN'}
+                  </span>
+                </h3>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: (currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0) ? '#B91C1C' : '#4B5563' }}>
+                  {(currentReport.phoneUseCount > 0 || currentReport.phoneAlertsCount > 0)
+                    ? `⚠️ ${currentReport.phoneUseCount || currentReport.phoneAlertsCount} Phone Alert(s) Detected`
+                    : '🛡️ Zero Smartphone Interference Detected'}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+                <div style={{ padding: '12px 14px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Phone Scanning Alerts</div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: (currentReport.phoneUseCount > 0) ? '#B91C1C' : '#111827' }}>
+                    {currentReport.phoneUseCount || currentReport.phoneAlertsCount || 0}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600, marginTop: '2px' }}>
+                    {(currentReport.phoneUseCount > 0) ? 'Camera scanning detected' : 'No phones visible'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 14px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Distraction Risk</div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: (currentReport.distractionScore > 40) ? '#B91C1C' : '#111827' }}>
+                    {currentReport.distractionScore != null ? `${currentReport.distractionScore}/100` : ((currentReport.phoneUseCount || 0) > 0 ? `${(currentReport.phoneUseCount || 0) * 25}/100` : '0/100')}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600, marginTop: '2px' }}>
+                    {(currentReport.distractionScore > 40 || (currentReport.phoneUseCount || 0) > 1) ? 'High Distraction' : 'Low / Normal'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 14px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Integrity Deduction</div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: (currentReport.phone_penalty > 0) ? '#B91C1C' : '#111827' }}>
+                    {currentReport.phone_penalty ? `-${currentReport.phone_penalty} pts` : '0 pts'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600, marginTop: '2px' }}>
+                    {currentReport.phone_penalty ? 'Penalized for device use' : 'Zero penalty'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 14px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Anti-Scan Shield Status</div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#111827' }}>
+                    {(currentReport.phoneUseCount > 0) ? 'Triggered' : 'Standby'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600, marginTop: '2px' }}>
+                    {(currentReport.phoneUseCount > 0) ? 'Questions protected' : 'Ready'}
+                  </div>
+                </div>
+              </div>
+
+              {(currentReport.phoneIncidentLogs && currentReport.phoneIncidentLogs.length > 0) && (
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#991B1B', marginBottom: '6px' }}>Incident Timeline:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {currentReport.phoneIncidentLogs.map((log, i) => (
+                      <div key={i} style={{ fontSize: '11.5px', color: '#7F1D1D', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 800 }}>• [{log.timestamp || 'Recorded'}]</span>
+                        <span>{log.reason || 'Mobile phone usage detected'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Two columns */}

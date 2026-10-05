@@ -1,388 +1,413 @@
-﻿import React, { useState } from "react";
-import { dbService } from "../services/db";
+import React, { useState } from 'react';
+import { dbService } from '../services/db';
 
-const STEPS = ["Dimensions", "Symptoms", "Context", "Report"];
+const STEPS = ['Dimensions', 'Symptoms', 'Context', 'Report'];
 
 const DIMENSIONS = [
-  { key: "stress",         label: "Placement / Exam Stress",       icon: "⚡", description: "Overall pressure from upcoming placements, tests, or deadlines.",                    polarity: "negative", weight: 0.20 },
-  { key: "anxiety",        label: "Interview Anxiety",              icon: "💓", description: "Racing heart, blank mind, or panic when imagining an interview.",                    polarity: "negative", weight: 0.18 },
-  { key: "imposter",       label: "Imposter Syndrome",             icon: "🪞", description: "Feeling unqualified despite preparation; comparing yourself to peers.",              polarity: "negative", weight: 0.14 },
-  { key: "physicalSymptoms",label: "Physical Stress Symptoms",     icon: "🤕", description: "Headaches, tight chest, sweating, or stomach tension related to study.",             polarity: "negative", weight: 0.10 },
-  { key: "socialPressure", label: "Social / Family Pressure",      icon: "👨‍👩‍👧",  description: "Perceived pressure from family, peers, or society about placements.",          polarity: "negative", weight: 0.08 },
-  { key: "sleep",          label: "Sleep Quality & Restoration",   icon: "🌙", description: "How rested and energised did you feel after sleeping last night?",                    polarity: "positive", weight: 0.13 },
-  { key: "focus",          label: "Focus & Deep-Work Capacity",    icon: "🎯", description: "Ability to concentrate on coding problems without distraction.",                     polarity: "positive", weight: 0.08 },
-  { key: "motivation",     label: "Motivation & Drive",            icon: "🚀", description: "Inner pull to practice, learn, and push through difficult topics.",                  polarity: "positive", weight: 0.05 },
-  { key: "emotionalReg",   label: "Emotional Regulation",         icon: "🧘", description: "Ability to pause, breathe, and stay calm when things go wrong.",                     polarity: "positive", weight: 0.04 },
+  { key: 'stress',           label: 'Placement and Exam Stress',     sub: 'Overall pressure from upcoming placements, tests, or deadlines.',           polarity: 'negative', weight: 0.20 },
+  { key: 'anxiety',          label: 'Interview Anxiety',              sub: 'Racing heart, blank mind, or panic when imagining an interview.',           polarity: 'negative', weight: 0.18 },
+  { key: 'imposter',         label: 'Imposter Syndrome',             sub: 'Feeling unqualified despite preparation; comparing yourself to peers.',      polarity: 'negative', weight: 0.14 },
+  { key: 'physicalSymptoms', label: 'Physical Stress Symptoms',      sub: 'Headaches, tight chest, sweating, or stomach tension from study pressure.', polarity: 'negative', weight: 0.10 },
+  { key: 'socialPressure',   label: 'Social and Family Pressure',    sub: 'Perceived pressure from family, peers, or society about placements.',       polarity: 'negative', weight: 0.08 },
+  { key: 'sleep',            label: 'Sleep Quality and Restoration', sub: 'How rested and energised you felt after sleeping last night.',              polarity: 'positive', weight: 0.13 },
+  { key: 'focus',            label: 'Focus and Deep-Work Capacity',  sub: 'Ability to concentrate on coding problems without distraction.',            polarity: 'positive', weight: 0.08 },
+  { key: 'motivation',       label: 'Motivation and Drive',          sub: 'Inner pull to practice, learn, and push through difficult topics.',         polarity: 'positive', weight: 0.05 },
+  { key: 'emotionalReg',     label: 'Emotional Regulation',         sub: 'Ability to pause, breathe, and stay calm when things go wrong.',            polarity: 'positive', weight: 0.04 },
 ];
 
 const SYMPTOMS = [
-  { key: "blanks",        label: "Mind goes blank during practice problems" },
-  { key: "procrastinate", label: "Procrastinating study due to fear of failure" },
-  { key: "negSelf",       label: 'Negative self-talk ("I am not good enough")' },
-  { key: "compare",       label: "Constantly comparing yourself to placed friends" },
-  { key: "appetite",      label: "Loss of appetite or overeating due to stress" },
-  { key: "insomnia",      label: "Difficulty falling or staying asleep" },
-  { key: "irritable",     label: "Easily irritable or snapping at people" },
-  { key: "avoidance",     label: "Avoiding hard topics (DP, graphs, system design)" },
-  { key: "overthinking",  label: "Overthinking every answer; second-guessing yourself" },
-  { key: "burnout",       label: "Feeling burnt out – studying but retaining nothing" },
+  { key: 'blanks',        label: 'Mind goes blank during practice problems' },
+  { key: 'procrastinate', label: 'Procrastinating study due to fear of failure' },
+  { key: 'negSelf',       label: 'Negative self-talk about your own capabilities' },
+  { key: 'compare',       label: 'Constantly comparing yourself to placed peers' },
+  { key: 'appetite',      label: 'Loss of appetite or overeating due to stress' },
+  { key: 'insomnia',      label: 'Difficulty falling or staying asleep' },
+  { key: 'irritable',     label: 'Easily irritable or snapping at people' },
+  { key: 'avoidance',     label: 'Avoiding hard topics such as DP, graphs, or system design' },
+  { key: 'overthinking',  label: 'Overthinking every answer and second-guessing yourself' },
+  { key: 'burnout',       label: 'Studying but retaining almost nothing — burnout signal' },
 ];
 
 const MOOD_OPTIONS = [
-  { label: "Confident",   emoji: "😎", color: "#059669", desc: "Clear, calm, and ready." },
-  { label: "Focused",     emoji: "🎯", color: "#2563EB", desc: "In the zone, sharp thinking." },
-  { label: "Neutral",     emoji: "😐", color: "#6B7280", desc: "Average, manageable day." },
-  { label: "Anxious",     emoji: "😰", color: "#D97706", desc: "Nervous about upcoming tasks." },
-  { label: "Overwhelmed", emoji: "😵", color: "#DC2626", desc: "Too much, too little time." },
-  { label: "Drained",     emoji: "😞", color: "#7C3AED", desc: "Exhausted and low energy." },
+  { label: 'Confident',   color: '#526257', desc: 'Clear, calm, and ready.' },
+  { label: 'Focused',     color: '#68705F', desc: 'In the zone with sharp thinking.' },
+  { label: 'Neutral',     color: '#89878A', desc: 'Average, manageable day.' },
+  { label: 'Anxious',     color: '#9A6854', desc: 'Nervous about upcoming tasks.' },
+  { label: 'Overwhelmed', color: '#7A3F2E', desc: 'Too much, too little time.' },
+  { label: 'Drained',     color: '#4F5056', desc: 'Exhausted and low energy.' },
 ];
 
 function computeProfile(dimensions, symptoms, mood) {
   let stressSum = 0, posSum = 0, negW = 0, posW = 0;
   DIMENSIONS.forEach(dim => {
     const val = (dimensions[dim.key] || 5) / 10;
-    if (dim.polarity === "negative") { stressSum += val * dim.weight; negW += dim.weight; }
+    if (dim.polarity === 'negative') { stressSum += val * dim.weight; negW += dim.weight; }
     else { posSum += val * dim.weight; posW += dim.weight; }
   });
-  const rawStress = negW > 0 ? (stressSum / negW) * 10 : 5;
-  const rawReadiness = posW > 0 ? (posSum / posW) * 10 : 5;
-  const symPenalty = Math.min(2.5, symptoms.length * 0.25);
-  const moodNudge = { Confident: -0.5, Focused: -0.3, Neutral: 0, Anxious: 0.5, Overwhelmed: 1.0, Drained: 0.8 }[mood] ?? 0;
-  const finalStress = Math.min(10, Math.max(1, parseFloat((rawStress + symPenalty + moodNudge).toFixed(1))));
-  const finalReadiness = Math.min(10, Math.max(1, parseFloat((rawReadiness - moodNudge * 0.4).toFixed(1))));
+  const rawStress    = negW > 0 ? (stressSum / negW) * 10 : 5;
+  const rawReadiness = posW > 0 ? (posSum   / posW)  * 10 : 5;
+  const symPenalty   = Math.min(2.5, symptoms.length * 0.25);
+  const moodNudge    = { Confident: -0.5, Focused: -0.3, Neutral: 0, Anxious: 0.5, Overwhelmed: 1.0, Drained: 0.8 }[mood] ?? 0;
+  const finalStress     = Math.min(10, Math.max(1, parseFloat((rawStress    + symPenalty + moodNudge).toFixed(1))));
+  const finalReadiness  = Math.min(10, Math.max(1, parseFloat((rawReadiness - moodNudge * 0.4).toFixed(1))));
   const finalConfidence = Math.min(10, Math.max(1, Math.round(
     (dimensions.motivation || 5) * 0.35 + ((10 - (dimensions.imposter || 4)) * 0.35) + (dimensions.emotionalReg || 5) * 0.30
   )));
-
-  let profile, color, icon, urgency, summary, coping, pacing;
+  let profile, urgency, summary, coping, pacing;
   if (finalStress >= 7.5) {
-    profile="Acute Psychological Overload"; color="#DC2626"; icon="🚨"; urgency="HIGH";
-    summary="Peak stress levels detected — cognitive performance in interviews will be significantly impaired. Immediate decompression is essential before any practice.";
-    coping=["🧘 Start with 5 min Navy SEAL Box Breathing (4-4-4-4 count) right now.","📝 Open Thought Journal — write down your top 3 fear thoughts and reframe each.","🔢 Practice only 1 Easy Array/String problem to rebuild momentum, not Hard.","📵 Take a 30-min walk without your phone after this check-in.","🌙 Set a strict 10 PM sleep alarm tonight — cognitive recovery is non-negotiable."];
-    pacing="120 WPM — Slow pacing + Step-by-step hint prompts enabled in mock interviews.";
+    profile = 'Acute Psychological Overload'; urgency = 'High Risk';
+    summary = 'Peak stress levels detected. Cognitive performance in interviews will be significantly impaired. Immediate decompression is essential before any timed practice.';
+    coping  = [
+      'Start with 5 minutes of Box Breathing — inhale 4s, hold 4s, exhale 4s, hold 4s. Do this before continuing.',
+      'Open the Thought Journal and write your top 3 fear thoughts. Reframe each with a factual counter-statement.',
+      'Practice only one Easy-level problem to rebuild technical momentum rather than jumping into Hard.',
+      'Take a 30-minute walk away from screens. Physical movement directly reduces cortisol levels.',
+      'Set a firm sleep time tonight — cognitive recovery cannot be skipped or compressed.',
+    ];
+    pacing = '120 WPM — Slow adaptive pacing with step-by-step hint prompts enabled in mock interviews.';
   } else if (finalStress >= 5.5 || symptoms.length >= 5) {
-    profile="Elevated Anxiety & Performance Pressure"; color="#D97706"; icon="⚠️"; urgency="MODERATE-HIGH";
-    summary="Stress levels are elevated and will affect recall speed and problem clarity. Targeted decompression before any timed practice is recommended.";
-    coping=["🔄 Complete Socratic Reappraisal: \"What evidence supports that I will fail?\"","📖 Review your last 5 solved problems to rebuild evidence of competence.","🎯 Do Aptitude MCQs before coding — a lower-stakes warm-up works best.","🕐 Use Pomodoro 25/5 sprints instead of marathon sessions today.","👥 Avoid scrolling peer placement posts — set a social media timer."];
-    pacing="140 WPM — Moderate interview pacing + Supportive tone feedback.";
+    profile = 'Elevated Anxiety and Performance Pressure'; urgency = 'Moderate';
+    summary = 'Stress levels are elevated and will affect recall speed and problem clarity. Structured decompression before any timed session is strongly recommended.';
+    coping  = [
+      'Complete a Socratic Reappraisal exercise: write the worst-case scenario, then systematically challenge each assumption.',
+      'Review your last five solved problems to rebuild evidence of your own competence.',
+      'Begin with Aptitude MCQs rather than coding — a lower-stakes warm-up rebuilds confidence faster.',
+      'Use Pomodoro 25/5 sprints instead of marathon sessions today.',
+      'Avoid placement-news and peer-offer feeds for the rest of the day.',
+    ];
+    pacing = '140 WPM — Moderate interview pacing with supportive tone and partial-credit feedback.';
   } else if (finalStress >= 3.5 && finalReadiness >= 5) {
-    profile="Functional Stress with Good Readiness"; color="#2563EB"; icon="📊"; urgency="LOW-MODERATE";
-    summary="Some stress is present but readiness indicators are healthy. Channel this pressure into structured practice — it will sharpen your performance.";
-    coping=["🎯 Attempt one Company-Specific timed question set (TCS NQT / Infosys style).","⏱️ Simulate a 45-min LeetCode medium problem with a timer.","🤝 Explain a solved solution out loud — verbal rehearsal boosts retention.","📅 Plan tomorrow's study schedule tonight to reduce decision fatigue."];
-    pacing="155 WPM — Standard technical panel pacing.";
+    profile = 'Functional Stress with Good Readiness'; urgency = 'Low';
+    summary = 'Some stress is present but readiness indicators are healthy. Channel this manageable pressure into structured, timed practice to sharpen your edge.';
+    coping  = [
+      'Attempt one Company-Specific timed question set from TCS NQT, Infosys, or Zoho.',
+      'Simulate a 45-minute LeetCode medium problem with a running timer.',
+      'Explain a solution you solved recently out loud — verbal rehearsal strongly boosts retention.',
+      'Plan tomorrow study schedule tonight to eliminate decision fatigue in the morning.',
+    ];
+    pacing = '155 WPM — Standard technical panel pacing. Full feature set enabled.';
   } else if (finalReadiness >= 7) {
-    profile="Peak Placement Readiness"; color="#059669"; icon="🏆"; urgency="OPTIMAL";
-    summary="Psychological state is optimal for high-performance practice. This is the ideal window for tackling your hardest challenges.";
-    coping=["🚀 Attempt a full-length mock interview at maximum pacing now.","💡 Solve 1 Hard graph/DP problem — this is your peak state.","📋 Write a self-assessment after the session: what went well, what to improve.","🎤 Practise your System Design explanation aloud for 10 minutes."];
-    pacing="175–180 WPM — Challenge mode. Full pressure simulation enabled.";
+    profile = 'Peak Placement Readiness'; urgency = 'Optimal';
+    summary = 'Your psychological state is ideal for high-performance practice. This is the best possible window for tackling your hardest challenges.';
+    coping  = [
+      'Attempt a full-length mock interview at maximum pacing — this is your peak window.',
+      'Solve one Hard-difficulty graph or Dynamic Programming problem.',
+      'Write a post-session self-assessment: what you executed well, what to refine next.',
+      'Practise your System Design walkthrough aloud for ten minutes.',
+    ];
+    pacing = '175 to 180 WPM — Challenge mode. Full pressure simulation enabled.';
   } else {
-    profile="Cognitive Fatigue & Low Drive"; color="#7C3AED"; icon="🔋"; urgency="REST PRIORITY";
-    summary="Energy and motivation are depleted. Pushing through will reinforce burnout. Restorative actions will return you to productive state faster.";
-    coping=["😴 Take a 20–30 min power nap before any study session.","🥗 Eat a proper meal — fatigue is amplified by skipped meals.","🎵 Listen to focus music (brown noise / lo-fi) during easy revision.","📚 Do light revision only — flashcards or watching explanation videos.","📝 Write in Positive Memories log — recall recent wins to re-motivate."];
-    pacing="135 WPM — Reduced pace with extended problem time limits.";
+    profile = 'Cognitive Fatigue and Low Drive'; urgency = 'Rest Priority';
+    summary = 'Energy and motivation are depleted. Forcing through a high-intensity session will deepen burnout. Restorative actions will return you to a productive state faster.';
+    coping  = [
+      'Take a 20 to 30 minute power nap before opening any study material.',
+      'Eat a proper meal — fatigue is amplified significantly by skipped meals.',
+      'Do light revision only: flashcards, concept videos, or summaries.',
+      'Write two or three positive memories in the Positive Memories log to re-anchor motivation.',
+      'Limit total screen time today — schedule a proper recovery window.',
+    ];
+    pacing = '135 WPM — Reduced pace with extended problem time limits. Gentle hint mode.';
   }
+  return { profile, urgency, summary, coping, pacing, finalStress, finalReadiness, finalConfidence,
+    symptomCount: symptoms.length, date: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) };
+}
 
-  return { profile, color, icon, urgency, summary, coping, pacing, finalStress, finalReadiness, finalConfidence,
-    symptomCount: symptoms.length, date: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) };
+function ScoreBar({ value, label, isStress }) {
+  const pct = (value / 10) * 100;
+  const barColor = isStress
+    ? (value >= 7 ? 'var(--accent-terracotta)' : value >= 5 ? '#8a7250' : 'var(--btn-sage)')
+    : (value >= 7 ? 'var(--btn-sage)' : value >= 5 ? '#8a7250' : 'var(--accent-terracotta)');
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, alignItems: 'baseline' }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--body-text)' }}>{label}</span>
+        <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+          {value}<span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>/10</span>
+        </span>
+      </div>
+      <div style={{ height: 7, borderRadius: 7, background: 'var(--border-color)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: pct + '%', background: barColor, borderRadius: 7, transition: 'width 0.6s ease' }} />
+      </div>
+    </div>
+  );
 }
 
 function DimensionSlider({ dim, value, onChange }) {
-  const negLabels = ["None","Mild","Noticeable","High","Extreme"];
-  const posLabels = ["Very Low","Low","Moderate","Good","Excellent"];
+  const negL = ['None', 'Mild', 'Noticeable', 'High', 'Extreme'];
+  const posL = ['Very Low', 'Low', 'Moderate', 'Good', 'Excellent'];
   const lvl = Math.min(4, Math.floor((value - 1) / 2.25));
-  const displayLabel = dim.polarity === "negative" ? negLabels[lvl] : posLabels[lvl];
-  const trackColor = dim.polarity === "negative"
-    ? (value <= 3 ? "#059669" : value <= 6 ? "#D97706" : "#DC2626")
-    : (value <= 3 ? "#DC2626" : value <= 6 ? "#D97706" : "#059669");
+  const qualifier = dim.polarity === 'negative' ? negL[lvl] : posL[lvl];
+  const bad = dim.polarity === 'negative' ? value >= 7 : value <= 3;
+  const flagColor = bad ? 'var(--accent-terracotta)' : 'var(--btn-sage)';
   return (
-    <div style={{ marginBottom: 18, padding: "14px 16px", borderRadius: 10, background: "#FAFAFA", border: "1px solid #E5E7EB" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "1rem", marginRight: 6 }}>{dim.icon}</span>
-          <strong style={{ fontSize: "0.88rem", color: "#111827" }}>{dim.label}</strong>
-          <p style={{ fontSize: "0.76rem", color: "#6B7280", margin: "2px 0 0 22px" }}>{dim.description}</p>
+    <div style={{ marginBottom: 14, padding: '13px 15px', borderRadius: 12, background: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 7 }}>
+        <div style={{ flex: 1, paddingRight: 10 }}>
+          <div style={{ fontSize: '0.87rem', fontWeight: 600, color: 'var(--main-heading)' }}>{dim.label}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{dim.sub}</div>
         </div>
-        <div style={{ textAlign: "right", minWidth: 72, flexShrink: 0 }}>
-          <span style={{ fontSize: "1.3rem", fontWeight: 800, color: trackColor }}>{value}</span>
-          <span style={{ fontSize: "0.7rem", color: "#9CA3AF", display: "block" }}>{displayLabel}</span>
+        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 66 }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: flagColor, fontFamily: 'var(--font-heading)' }}>{value}</span>
+          <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: 1 }}>{qualifier}</div>
         </div>
       </div>
       <input type="range" min={1} max={10} step={1} value={value}
         onChange={e => onChange(dim.key, Number(e.target.value))}
-        style={{ width: "100%", accentColor: trackColor, cursor: "pointer" }} />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#9CA3AF", marginTop: 2 }}>
-        <span>1 — {dim.polarity === "negative" ? "None" : "Very Low"}</span>
-        <span>10 — {dim.polarity === "negative" ? "Extreme" : "Excellent"}</span>
+        style={{ width: '100%', accentColor: 'var(--btn-sage)', cursor: 'pointer' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.66rem', color: 'var(--text-muted)', marginTop: 2 }}>
+        <span>{dim.polarity === 'negative' ? '1 — None' : '1 — Very Low'}</span>
+        <span>{dim.polarity === 'negative' ? '10 — Extreme' : '10 — Excellent'}</span>
       </div>
     </div>
   );
 }
 
-function ScoreRing({ value, max = 10, label, color, size = 90 }) {
-  const r = 32, circ = 2 * Math.PI * r, dash = circ * (value / max);
-  return (
-    <div style={{ textAlign: "center" }}>
-      <svg width={size} height={size} viewBox="0 0 76 76">
-        <circle cx={38} cy={38} r={r} fill="none" stroke="#E5E7EB" strokeWidth={7} />
-        <circle cx={38} cy={38} r={r} fill="none" stroke={color} strokeWidth={7}
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform="rotate(-90 38 38)"
-          style={{ transition: "stroke-dasharray 0.6s ease" }} />
-        <text x={38} y={43} textAnchor="middle" fontSize={15} fontWeight={800} fill={color}>{value}</text>
-      </svg>
-      <div style={{ fontSize: "0.73rem", color: "#6B7280", marginTop: 2, fontWeight: 600 }}>{label}</div>
-    </div>
-  );
-}
-
-export default function MoodAssessment({ moodState, setMoodState, setActiveTab, userEmail = "guest" }) {
+export default function MoodAssessment({ moodState, setMoodState, setActiveTab, userEmail = 'guest' }) {
   const [step, setStep] = useState(0);
   const [saved, setSaved] = useState(false);
   const initDims = () => { const d = {}; DIMENSIONS.forEach(dim => { d[dim.key] = 5; }); return d; };
   const [dims, setDims] = useState(initDims);
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
-  const [selectedMood, setSelectedMood] = useState("Neutral");
-  const [context, setContext] = useState("");
+  const [selectedMood, setSelectedMood] = useState('Neutral');
+  const [context, setContext] = useState('');
   const [studyHours, setStudyHours] = useState(3);
   const [daysToInterview, setDaysToInterview] = useState(14);
   const [report, setReport] = useState(null);
 
   const handleDimChange = (key, val) => setDims(prev => ({ ...prev, [key]: val }));
-  const toggleSymptom = key => setSelectedSymptoms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-
+  const toggleSymptom = key => setSelectedSymptoms(prev =>
+    prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+  );
   const generateReport = () => {
     const r = computeProfile(dims, selectedSymptoms, selectedMood);
-    r.moodLabel = selectedMood; r.studyHours = studyHours; r.daysToInterview = daysToInterview;
-    r.context = context; r.dimensions = { ...dims }; r.symptoms = [...selectedSymptoms];
+    r.moodLabel = selectedMood; r.studyHours = studyHours;
+    r.daysToInterview = daysToInterview; r.context = context;
+    r.dimensions = { ...dims }; r.symptoms = [...selectedSymptoms];
     setReport(r); setStep(3);
-    const updatedMoodState = { label: selectedMood, stress: r.finalStress, confidence: r.finalConfidence, readiness: r.finalReadiness };
-    setMoodState(updatedMoodState);
-    dbService.logMood(updatedMoodState);
-    dbService.saveTestScore("mood", r.finalStress, userEmail, { label: selectedMood, confidence: r.finalConfidence, readiness: r.finalReadiness, profile: r.profile });
+    const ms = { label: selectedMood, stress: r.finalStress, confidence: r.finalConfidence, readiness: r.finalReadiness };
+    setMoodState(ms);
+    dbService.logMood(ms);
+    dbService.saveTestScore('mood', r.finalStress, userEmail,
+      { label: selectedMood, confidence: r.finalConfidence, readiness: r.finalReadiness, profile: r.profile });
     setSaved(true); setTimeout(() => setSaved(false), 4000);
   };
 
   const StepBar = () => (
-    <div style={{ display: "flex", gap: 0, marginBottom: 24 }}>
+    <div style={{ display: 'flex', gap: 0, marginBottom: 24 }}>
       {STEPS.map((s, i) => (
-        <div key={s} style={{ flex: 1, display: "flex", alignItems: "center" }}>
+        <div key={s} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ height: 4, borderRadius: 4, background: i <= step ? "#111827" : "#E5E7EB", transition: "background 0.3s" }} />
-            <div style={{ fontSize: "0.7rem", color: i <= step ? "#111827" : "#9CA3AF", fontWeight: 600, marginTop: 4 }}>{s}</div>
+            <div style={{ height: 3, borderRadius: 3, background: i <= step ? 'var(--btn-sage)' : 'var(--border-color)', transition: 'background 0.3s' }} />
+            <div style={{ fontSize: '0.7rem', color: i <= step ? 'var(--btn-sage)' : 'var(--text-muted)', fontWeight: 600, marginTop: 4 }}>{s}</div>
           </div>
-          {i < STEPS.length - 1 && <div style={{ width: 8 }} />}
+          {i < STEPS.length - 1 && <div style={{ width: 10 }} />}
         </div>
       ))}
     </div>
   );
 
   return (
-    <div style={{ flex: 1, padding: "28px 24px", maxWidth: 1100, margin: "0 auto", width: "100%", fontFamily: "var(--font-inter)" }}>
+    <div style={{ flex: 1, padding: '28px 24px', maxWidth: 1080, margin: '0 auto', width: '100%', fontFamily: 'var(--font-body)' }}>
+
       <div style={{ marginBottom: 18 }}>
-        <button onClick={() => setActiveTab && setActiveTab("dashboard")} className="btn-back-dashboard" style={{ padding: "8px 18px", fontSize: "0.88rem" }}>← Back to Dashboard</button>
+        <button onClick={() => setActiveTab && setActiveTab('dashboard')} className="btn-back-dashboard" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>
+          Back to Dashboard
+        </button>
       </div>
 
-      <div className="saas-card-spec" style={{ padding: "22px 26px", marginBottom: 22 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <span className="pill-tag">Psychological Intelligence</span>
-            <h2 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: "6px 0 4px" }}>Multi-Dimension Mood & Readiness Check-in</h2>
-            <p style={{ color: "#6B7280", fontSize: "0.88rem", maxWidth: 580 }}>10-dimension psychological profiling — generates a precision readiness score and personalised coping plan.</p>
-          </div>
-          {report && (
-            <div style={{ display: "flex", gap: 16, flexShrink: 0 }}>
-              <ScoreRing value={report.finalStress} label="Stress" color={report.finalStress >= 7 ? "#DC2626" : report.finalStress >= 5 ? "#D97706" : "#059669"} />
-              <ScoreRing value={report.finalReadiness} label="Readiness" color="#2563EB" />
-              <ScoreRing value={report.finalConfidence} label="Confidence" color="#7C3AED" />
-            </div>
-          )}
-        </div>
+      <div className="saas-card-spec" style={{ padding: '22px 26px', marginBottom: 22 }}>
+        <span className="pill-tag" style={{ marginBottom: 8, display: 'inline-block' }}>Psychological Intelligence</span>
+        <h2 style={{ fontSize: '1.55rem', fontWeight: 700, color: 'var(--main-heading)', margin: '6px 0 6px', fontFamily: 'var(--font-heading)' }}>
+          Multi-Dimension Mood and Readiness Check-in
+        </h2>
+        <p style={{ color: 'var(--body-text)', fontSize: '0.88rem', maxWidth: 580, lineHeight: 1.65 }}>
+          A 9-dimension psychological profiling engine. Produces a precision readiness score and a personalised, priority-ranked coping plan calibrated to your current mental state.
+        </p>
       </div>
 
       {saved && (
-        <div style={{ padding: "12px 18px", borderRadius: 10, background: "#ECFDF5", border: "1px solid #059669", color: "#065F46", fontWeight: 700, marginBottom: 18, fontSize: "0.88rem" }}>
-          ✅ Assessment saved to database — Adaptive Engine updated with your current profile.
+        <div style={{ padding: '12px 18px', borderRadius: 10, background: 'var(--primary-tint)', border: '1px solid var(--btn-sage)', color: 'var(--btn-sage-hover)', fontWeight: 700, marginBottom: 18, fontSize: '0.88rem' }}>
+          Assessment saved to database. Adaptive Engine updated with your current profile.
         </div>
       )}
 
       <StepBar />
 
-      {/* ── STEP 0: DIMENSIONS ── */}
       {step === 0 && (
         <div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
             <div className="saas-card-spec" style={{ padding: 22 }}>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#DC2626", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                ⬆️ Stress Indicators <span style={{ fontSize: "0.72rem", color: "#9CA3AF", fontWeight: 400 }}>(higher = more stress)</span>
-              </h3>
-              {DIMENSIONS.filter(d => d.polarity === "negative").map(dim => (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Stress Indicators</div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Higher value = more stress present</div>
+              </div>
+              {DIMENSIONS.filter(d => d.polarity === 'negative').map(dim => (
                 <DimensionSlider key={dim.key} dim={dim} value={dims[dim.key]} onChange={handleDimChange} />
               ))}
             </div>
             <div className="saas-card-spec" style={{ padding: 22 }}>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#059669", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                ⬆️ Readiness Indicators <span style={{ fontSize: "0.72rem", color: "#9CA3AF", fontWeight: 400 }}>(higher = better)</span>
-              </h3>
-              {DIMENSIONS.filter(d => d.polarity === "positive").map(dim => (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Readiness Indicators</div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Higher value = better condition</div>
+              </div>
+              {DIMENSIONS.filter(d => d.polarity === 'positive').map(dim => (
                 <DimensionSlider key={dim.key} dim={dim} value={dims[dim.key]} onChange={handleDimChange} />
               ))}
             </div>
           </div>
-          <div style={{ textAlign: "right", marginTop: 18 }}>
-            <button onClick={() => setStep(1)} className="btn-primary-spec" style={{ padding: "12px 32px" }}>Next: Symptom Checklist →</button>
+          <div style={{ textAlign: 'right', marginTop: 18 }}>
+            <button onClick={() => setStep(1)} className="btn-primary-spec" style={{ padding: '12px 32px' }}>Next: Symptom Checklist</button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 1: SYMPTOMS ── */}
       {step === 1 && (
         <div className="saas-card-spec" style={{ padding: 26 }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", marginBottom: 4 }}>Which of these have you experienced in the last 24–48 hours?</h3>
-          <p style={{ color: "#6B7280", fontSize: "0.83rem", marginBottom: 18 }}>Select all that apply. This refines your psychological profile beyond simple sliders.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--main-heading)', marginBottom: 4, fontFamily: 'var(--font-heading)' }}>
+            Which of these have you experienced in the last 24 to 48 hours?
+          </h3>
+          <p style={{ color: 'var(--body-text)', fontSize: '0.83rem', marginBottom: 18 }}>
+            Select all that apply. Each signal adjusts your computed stress index beyond the slider values.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {SYMPTOMS.map(sym => {
               const active = selectedSymptoms.includes(sym.key);
               return (
                 <div key={sym.key} onClick={() => toggleSymptom(sym.key)}
-                  style={{ padding: "13px 15px", borderRadius: 10, border: active ? "2px solid #111827" : "1.5px solid #E5E7EB",
-                    background: active ? "#F8F9FA" : "#FFFFFF", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s ease",
-                    fontSize: "0.85rem", color: "#374151", fontWeight: active ? 600 : 400 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                    border: active ? "2px solid #111827" : "1.5px solid #D1D5DB",
-                    background: active ? "#111827" : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s ease" }}>
-                    {active && <span style={{ color: "#fff", fontSize: "0.65rem", fontWeight: 800 }}>✓</span>}
+                  style={{ padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                    border: active ? '1.5px solid var(--btn-sage)' : '1px solid var(--border-color)',
+                    background: active ? 'var(--primary-tint)' : 'var(--bg-card-solid)',
+                    display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.15s ease',
+                    fontSize: '0.84rem', color: active ? 'var(--btn-sage-hover)' : 'var(--body-text)', fontWeight: active ? 600 : 400 }}>
+                  <div style={{ width: 17, height: 17, borderRadius: 4, flexShrink: 0,
+                    border: active ? '1.5px solid var(--btn-sage)' : '1px solid var(--border-color)',
+                    background: active ? 'var(--btn-sage)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
+                    {active && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </div>
                   {sym.label}
                 </div>
               );
             })}
           </div>
-          <div style={{ marginTop: 18, padding: "10px 14px", borderRadius: 8, background: "#F3F4F6", fontSize: "0.81rem", color: "#374151" }}>
-            {selectedSymptoms.length === 0 ? "✅ No symptoms selected — great sign!" : `⚠️ ${selectedSymptoms.length} symptom${selectedSymptoms.length > 1 ? "s" : ""} selected — will increase computed stress index.`}
+          <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-solid)', border: '1px solid var(--border-color)', fontSize: '0.81rem', color: 'var(--body-text)' }}>
+            {selectedSymptoms.length === 0 ? 'No symptoms selected — good indicator.' : selectedSymptoms.length + ' symptom' + (selectedSymptoms.length > 1 ? 's' : '') + ' flagged — adjusting stress index upward.'}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 22 }}>
-            <button onClick={() => setStep(0)} className="btn-back-dashboard" style={{ padding: "10px 24px" }}>← Back</button>
-            <button onClick={() => setStep(2)} className="btn-primary-spec" style={{ padding: "12px 32px" }}>Next: Context →</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 22 }}>
+            <button onClick={() => setStep(0)} className="btn-back-dashboard" style={{ padding: '10px 24px' }}>Back</button>
+            <button onClick={() => setStep(2)} className="btn-primary-spec" style={{ padding: '12px 32px' }}>Next: Context</button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 2: CONTEXT ── */}
       {step === 2 && (
         <div className="saas-card-spec" style={{ padding: 26 }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", marginBottom: 18 }}>Context & Emotional State</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--main-heading)', marginBottom: 18, fontFamily: 'var(--font-heading)' }}>Context and Emotional State</h3>
           <div style={{ marginBottom: 22 }}>
-            <label style={{ fontSize: "0.87rem", fontWeight: 600, color: "#374151", display: "block", marginBottom: 10 }}>Current Emotional State</label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {MOOD_OPTIONS.map(m => (
-                <div key={m.label} onClick={() => setSelectedMood(m.label)}
-                  style={{ padding: "14px 12px", borderRadius: 10,
-                    border: selectedMood === m.label ? `2px solid ${m.color}` : "1.5px solid #E5E7EB",
-                    background: selectedMood === m.label ? `${m.color}12` : "#FFFFFF",
-                    cursor: "pointer", textAlign: "center", transition: "all 0.15s ease" }}>
-                  <div style={{ fontSize: "1.7rem", marginBottom: 4 }}>{m.emoji}</div>
-                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: selectedMood === m.label ? m.color : "#111827" }}>{m.label}</div>
-                  <div style={{ fontSize: "0.73rem", color: "#6B7280", marginTop: 2 }}>{m.desc}</div>
-                </div>
-              ))}
+            <label style={{ fontSize: '0.87rem', fontWeight: 600, color: 'var(--secondary-heading)', display: 'block', marginBottom: 10 }}>Current Emotional State</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {MOOD_OPTIONS.map(m => {
+                const active = selectedMood === m.label;
+                return (
+                  <div key={m.label} onClick={() => setSelectedMood(m.label)}
+                    style={{ padding: '14px 12px', borderRadius: 12, cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
+                      border: active ? ('1.5px solid ' + m.color) : '1px solid var(--border-color)',
+                      background: active ? 'var(--primary-tint)' : 'var(--bg-card-solid)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: active ? m.color : 'var(--main-heading)', fontFamily: 'var(--font-heading)', marginBottom: 3 }}>{m.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{m.desc}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 22 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 22 }}>
             {[
-              { label: "Study hours today", value: studyHours, min: 0, max: 12, step: 0.5, suffix: "h", set: setStudyHours },
-              { label: "Days to next interview", value: daysToInterview, min: 1, max: 30, step: 1, suffix: "d", set: setDaysToInterview },
+              { label: 'Study hours today', value: studyHours, min: 0, max: 12, step: 0.5, suffix: 'h', setter: setStudyHours },
+              { label: 'Days to next interview', value: daysToInterview, min: 1, max: 30, step: 1, suffix: 'd', setter: setDaysToInterview },
             ].map(s => (
-              <div key={s.label} style={{ padding: "15px 16px", borderRadius: 12, background: "#FAFAFA", border: "1px solid #E5E7EB" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <label style={{ fontSize: "0.84rem", fontWeight: 600, color: "#374151" }}>{s.label}</label>
-                  <strong style={{ color: "#111827" }}>{s.value > 30 ? "30+" : s.value}{s.suffix}</strong>
+              <div key={s.label} style={{ padding: '15px 16px', borderRadius: 12, background: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <label style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--secondary-heading)' }}>{s.label}</label>
+                  <strong style={{ color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>{s.value}{s.suffix}</strong>
                 </div>
                 <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
-                  onChange={e => s.set(Number(e.target.value))}
-                  style={{ width: "100%", accentColor: "#111827" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#9CA3AF", marginTop: 2 }}>
+                  onChange={e => s.setter(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--btn-sage)' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: 2 }}>
                   <span>{s.min}{s.suffix}</span><span>{s.max}{s.suffix}</span>
                 </div>
               </div>
             ))}
           </div>
           <div style={{ marginBottom: 22 }}>
-            <label style={{ fontSize: "0.87rem", fontWeight: 600, color: "#374151", display: "block", marginBottom: 8 }}>
-              What is on your mind right now? <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(optional)</span>
+            <label style={{ fontSize: '0.87rem', fontWeight: 600, color: 'var(--secondary-heading)', display: 'block', marginBottom: 8 }}>
+              What is on your mind right now?{' '}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
             </label>
             <textarea value={context} onChange={e => setContext(e.target.value)}
-              placeholder="e.g. I bombed a mock interview yesterday and cannot get it out of my head..."
-              rows={3} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E5E7EB",
-                fontSize: "0.87rem", color: "#111827", resize: "vertical", fontFamily: "inherit",
-                lineHeight: 1.6, outline: "none", boxSizing: "border-box" }} />
+              placeholder="e.g. I did poorly on a mock interview yesterday and cannot stop thinking about it..."
+              rows={3} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-input)',
+                fontSize: '0.87rem', color: 'var(--main-heading)', resize: 'vertical', fontFamily: 'var(--font-body)',
+                lineHeight: 1.6, outline: 'none', boxSizing: 'border-box', background: 'var(--bg-input)' }} />
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <button onClick={() => setStep(1)} className="btn-back-dashboard" style={{ padding: "10px 24px" }}>← Back</button>
-            <button onClick={generateReport} className="btn-primary-spec" style={{ padding: "12px 32px" }}>Generate Psychological Report 🧠</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <button onClick={() => setStep(1)} className="btn-back-dashboard" style={{ padding: '10px 24px' }}>Back</button>
+            <button onClick={generateReport} className="btn-primary-spec" style={{ padding: '12px 32px' }}>Generate Psychological Report</button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 3: REPORT ── */}
       {step === 3 && report && (
         <div>
-          <div style={{ padding: "22px 26px", borderRadius: 16, marginBottom: 22,
-            background: `linear-gradient(135deg, ${report.color}15 0%, ${report.color}05 100%)`,
-            border: `2px solid ${report.color}40` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <span style={{ fontSize: "1.8rem" }}>{report.icon}</span>
-                  <div>
-                    <div style={{ fontSize: "0.72rem", fontWeight: 700, color: report.color, textTransform: "uppercase", letterSpacing: "0.08em" }}>Profile — {report.urgency}</div>
-                    <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#111827", margin: 0 }}>{report.profile}</h3>
-                  </div>
+          <div className="saas-card-spec" style={{ padding: '22px 26px', marginBottom: 22, borderLeft: '4px solid var(--btn-sage)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                  Psychological Profile — {report.urgency}
                 </div>
-                <p style={{ fontSize: "0.87rem", color: "#374151", maxWidth: 580, lineHeight: 1.65, marginTop: 6 }}>{report.summary}</p>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--main-heading)', margin: '0 0 8px', fontFamily: 'var(--font-heading)' }}>{report.profile}</h3>
+                <p style={{ fontSize: '0.87rem', color: 'var(--body-text)', lineHeight: 1.7, maxWidth: 580 }}>{report.summary}</p>
               </div>
-              <div style={{ display: "flex", gap: 18 }}>
-                <ScoreRing value={report.finalStress} label="Stress Index" color={report.finalStress >= 7 ? "#DC2626" : report.finalStress >= 5 ? "#D97706" : "#059669"} size={96} />
-                <ScoreRing value={report.finalReadiness} label="Readiness" color="#2563EB" size={96} />
-                <ScoreRing value={report.finalConfidence} label="Confidence" color="#7C3AED" size={96} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 190 }}>
+                <ScoreBar value={report.finalStress}     label="Stress Index"     isStress={true} />
+                <ScoreBar value={report.finalReadiness}  label="Readiness Score"  isStress={false} />
+                <ScoreBar value={report.finalConfidence} label="Confidence Score" isStress={false} />
               </div>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 22 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 22 }}>
             {[
-              { label: "Mood State", value: `${MOOD_OPTIONS.find(m => m.label === report.moodLabel)?.emoji || ""} ${report.moodLabel}` },
-              { label: "Symptoms Flagged", value: `${report.symptomCount} / ${SYMPTOMS.length}` },
-              { label: "Study Hours Today", value: `${report.studyHours}h` },
-              { label: "Days to Interview", value: `${report.daysToInterview > 30 ? "30+" : report.daysToInterview}d` },
-              { label: "Assessment Date", value: report.date },
+              { label: 'Mood State',        value: report.moodLabel },
+              { label: 'Symptoms Flagged',  value: report.symptomCount + ' of ' + SYMPTOMS.length },
+              { label: 'Study Hours Today', value: report.studyHours + 'h' },
+              { label: 'Days to Interview', value: report.daysToInterview + 'd' },
+              { label: 'Assessed At',       value: report.date },
             ].map(m => (
-              <div key={m.label} style={{ padding: "13px 14px", borderRadius: 12, background: "#F8F9FA", border: "1px solid #E5E7EB", textAlign: "center" }}>
-                <div style={{ fontSize: "0.71rem", color: "#6B7280", fontWeight: 600, marginBottom: 5 }}>{m.label}</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#111827" }}>{m.value}</div>
+              <div key={m.label} style={{ padding: '13px 14px', borderRadius: 12, background: 'var(--bg-card-solid)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.label}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>{m.value}</div>
               </div>
             ))}
           </div>
 
           <div className="saas-card-spec" style={{ padding: 22, marginBottom: 22 }}>
-            <h4 style={{ fontSize: "0.92rem", fontWeight: 700, color: "#111827", marginBottom: 14 }}>Dimension Breakdown</h4>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 22px" }}>
+            <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--secondary-heading)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Dimension Breakdown</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px' }}>
               {DIMENSIONS.map(dim => {
                 const val = report.dimensions[dim.key];
-                const barColor = dim.polarity === "positive"
-                  ? (val >= 7 ? "#059669" : val >= 5 ? "#D97706" : "#DC2626")
-                  : (val <= 3 ? "#059669" : val <= 6 ? "#D97706" : "#DC2626");
+                const bad = dim.polarity === 'negative' ? val >= 7 : val <= 3;
+                const barColor = bad ? 'var(--accent-terracotta)' : val >= 6 ? 'var(--btn-sage)' : '#8a7250';
                 return (
-                  <div key={dim.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{dim.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: "0.76rem", color: "#374151", fontWeight: 600 }}>{dim.label}</span>
-                        <span style={{ fontSize: "0.76rem", color: barColor, fontWeight: 700 }}>{val}/10</span>
-                      </div>
-                      <div style={{ height: 5, borderRadius: 5, background: "#E5E7EB", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${val * 10}%`, background: barColor, borderRadius: 5, transition: "width 0.5s ease" }} />
-                      </div>
+                  <div key={dim.key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: '0.79rem', color: 'var(--body-text)', fontWeight: 600 }}>{dim.label}</span>
+                      <span style={{ fontSize: '0.79rem', color: barColor, fontWeight: 700 }}>{val}/10</span>
+                    </div>
+                    <div style={{ height: 5, borderRadius: 5, background: 'var(--border-color)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: (val * 10) + '%', background: barColor, borderRadius: 5, transition: 'width 0.5s ease' }} />
                     </div>
                   </div>
                 );
@@ -390,34 +415,38 @@ export default function MoodAssessment({ moodState, setMoodState, setActiveTab, 
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: 20, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.65fr', gap: 20, marginBottom: 24 }}>
             <div className="saas-card-spec" style={{ padding: 22 }}>
-              <h4 style={{ fontSize: "0.92rem", fontWeight: 700, color: "#111827", marginBottom: 12 }}>🎯 Personalised Coping & Action Plan</h4>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--secondary-heading)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Personalised Coping and Action Plan</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {report.coping.map((c, i) => (
-                  <li key={i} style={{ padding: "10px 13px", borderRadius: 8,
-                    background: i === 0 ? "#FEF3C7" : "#F9FAFB",
-                    border: i === 0 ? "1px solid #FCD34D" : "1px solid #E5E7EB",
-                    fontSize: "0.84rem", color: "#374151", lineHeight: 1.6 }}>
-                    {i === 0 && <span style={{ fontWeight: 700, color: "#92400E", display: "block", fontSize: "0.72rem", marginBottom: 2 }}>PRIORITY ACTION</span>}
+                  <div key={i} style={{ padding: '11px 14px', borderRadius: 8,
+                    background: i === 0 ? 'var(--primary-tint)' : 'var(--bg-card-solid)',
+                    border: i === 0 ? '1px solid var(--btn-sage)' : '1px solid var(--border-color)',
+                    fontSize: '0.84rem', color: 'var(--body-text)', lineHeight: 1.65 }}>
+                    {i === 0 && <div style={{ fontWeight: 700, color: 'var(--btn-sage-hover)', fontSize: '0.69rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Priority Action</div>}
                     {c}
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="saas-card-spec" style={{ padding: 18, flex: 1 }}>
-                <h4 style={{ fontSize: "0.9rem", fontWeight: 700, color: "#111827", marginBottom: 8 }}>🤖 Adaptive Engine Pacing</h4>
-                <p style={{ fontSize: "0.84rem", color: "#374151", lineHeight: 1.65 }}>{report.pacing}</p>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--secondary-heading)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Adaptive Engine Pacing</div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--body-text)', lineHeight: 1.7 }}>{report.pacing}</p>
               </div>
               {report.context && (
-                <div className="saas-card-spec" style={{ padding: 16, background: "#FFFBEB", borderColor: "#FCD34D" }}>
-                  <h4 style={{ fontSize: "0.82rem", fontWeight: 700, color: "#92400E", marginBottom: 5 }}>Your Context Note</h4>
-                  <p style={{ fontSize: "0.8rem", color: "#78350F", lineHeight: 1.6, fontStyle: "italic" }}>"{report.context}"</p>
+                <div className="saas-card-spec" style={{ padding: 16, borderLeft: '3px solid var(--accent-terracotta)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>Your Note</div>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--body-text)', lineHeight: 1.6, fontStyle: 'italic' }}>&ldquo;{report.context}&rdquo;</p>
                 </div>
               )}
-              <button onClick={() => setActiveTab && setActiveTab("dashboard")} className="btn-primary-spec" style={{ width: "100%", justifyContent: "center", padding: "12px" }}>Apply to Dashboard & Hubs</button>
-              <button onClick={() => { setStep(0); setReport(null); setSelectedSymptoms([]); setDims(initDims()); }} className="btn-back-dashboard" style={{ width: "100%", justifyContent: "center", padding: "10px" }}>Redo Assessment</button>
+              <button onClick={() => setActiveTab && setActiveTab('dashboard')} className="btn-primary-spec" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+                Apply to Dashboard and Hubs
+              </button>
+              <button onClick={() => { setStep(0); setReport(null); setSelectedSymptoms([]); setDims(initDims()); }} className="btn-back-dashboard" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}>
+                Redo Assessment
+              </button>
             </div>
           </div>
         </div>

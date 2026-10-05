@@ -213,64 +213,9 @@ export const dbService = {
  },
 
  // ─────────────────────────────────────────────
- // Scores Persistence — scoped per user email
+ // Duplicate Score Persistence block removed
+ // (Consolidated lower in the file with Supabase sync)
  // ─────────────────────────────────────────────
- getSavedReadinessScore(userEmail) {
- try {
- const key = getUserScoreKey(userEmail);
- const raw = localStorage.getItem(key);
- if (!raw) return null;
- return JSON.parse(raw);
- } catch (e) {
- return null;
- }
- },
-
- saveReadinessScore(scoreObj, userEmail) {
- try {
- const key = getUserScoreKey(userEmail);
- const record = {
- ...scoreObj,
- updated_at: new Date().toISOString()
- };
- localStorage.setItem(key, JSON.stringify(record));
- db.from('readiness_scores').insert(record);
- } catch (e) {
- console.error("Error saving readiness score:", e);
- }
- },
-
- // ─────────────────────────────────────────────
- // Individual test score persistence (per-user, per-test type)
- // testType: 'coding' | 'interview' | 'speech' | 'mood'
- // ─────────────────────────────────────────────
- saveTestScore(testType, scoreValue, userEmail, extra = {}) {
- try {
- const key = getUserTestScoreKey(userEmail, testType);
- const record = {
- type: testType,
- score: scoreValue,
- date: new Date().toLocaleDateString(),
- time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
- updated_at: new Date().toISOString(),
- ...extra
- };
- localStorage.setItem(key, JSON.stringify(record));
- } catch (e) {
- console.error(`Error saving ${testType} score:`, e);
- }
- },
-
- getTestScore(testType, userEmail) {
- try {
- const key = getUserTestScoreKey(userEmail, testType);
- const raw = localStorage.getItem(key);
- if (!raw) return null;
- return JSON.parse(raw);
- } catch (e) {
- return null;
- }
- },
 
  // Mood Logs
  async getMoodLogs() {
@@ -329,6 +274,15 @@ export const dbService = {
  const existing = this.getJournalsForUser(userEmail);
  const updated = existing.filter(e => e.id !== entryId);
  localStorage.setItem(key, JSON.stringify(updated));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('thought_journals')
+     .delete()
+     .eq('id', entryId)
+     .eq('user_email', userEmail)
+     .catch(() => {});
+ }
+
  return updated;
  } catch (e) {
  return [];
@@ -339,6 +293,14 @@ export const dbService = {
  try {
  const key = getUserJournalKey(userEmail);
  localStorage.setItem(key, JSON.stringify([]));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('thought_journals')
+     .delete()
+     .eq('user_email', userEmail)
+     .catch(() => {});
+ }
+
  return [];
  } catch (e) {
  return [];
@@ -391,6 +353,16 @@ export const dbService = {
  if (existing.some(n => n.text.toLowerCase() === noteObj.text.toLowerCase())) return existing;
  const updated = [newNote, ...existing];
  localStorage.setItem(`neuroprep_hope_${safeEmail}`, JSON.stringify(updated));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('hope_notes').insert({
+     id: newNote.id,
+     user_email: userEmail,
+     text: newNote.text,
+     date: newNote.date
+   }).catch(() => {});
+ }
+
  return updated;
  } catch (e) {
  return [];
@@ -425,6 +397,17 @@ export const dbService = {
  if (existing.some(m => m.text.toLowerCase() === memObj.text.toLowerCase())) return existing;
  const updated = [newMem, ...existing];
  localStorage.setItem(`neuroprep_memories_${safeEmail}`, JSON.stringify(updated));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('positive_memories').insert({
+     id: newMem.id,
+     user_email: userEmail,
+     text: newMem.text,
+     category: newMem.category,
+     date: newMem.date
+   }).catch(() => {});
+ }
+
  return updated;
  } catch (e) {
  return [];
@@ -451,6 +434,16 @@ export const dbService = {
  const newRef = { id: Date.now(), date: new Date().toLocaleDateString(), ...reflectionObj };
  const updated = [newRef, ...existing];
  localStorage.setItem(`neuroprep_weekly_${safeEmail}`, JSON.stringify(updated));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('weekly_reflections').insert({
+     id: newRef.id,
+     user_email: userEmail,
+     reflection_data: newRef,
+     date: newRef.date
+   }).catch(() => {});
+ }
+
  return updated;
  } catch (e) {
  return [];
@@ -520,6 +513,15 @@ export const dbService = {
  };
  const updated = [...current, newSnapshot].slice(-15); // keep latest 15 snapshots
  localStorage.setItem(`neuroprep_report_history_${safeEmail}`, JSON.stringify(updated));
+
+ if (isSupabaseConfigured && userEmail !== 'guest') {
+   db.from('report_snapshots').insert({
+     user_email: userEmail,
+     snapshot_data: newSnapshot,
+     created_at: new Date().toISOString()
+   }).catch(() => {});
+ }
+
  return newSnapshot;
  } catch (e) {
  console.error('Error saving report snapshot', e);
@@ -683,12 +685,25 @@ export const dbService = {
  try {
  const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
  const record = {
+ type: testType,
  score: Number(score) || 0,
  date: new Date().toLocaleDateString(),
  timestamp: Date.now(),
+ user_email: userEmail || 'guest',
  ...metadata
  };
  localStorage.setItem(`neuroprep_testscore_${testType}_${safeEmail}`, JSON.stringify(record));
+
+ // Also persist to Supabase test_scores table
+ if (isSupabaseConfigured) {
+   db.from('test_scores').upsert({
+     user_email: record.user_email,
+     type: record.type,
+     score: record.score,
+     metadata: metadata,
+     updated_at: new Date().toISOString()
+   }, { onConflict: 'user_email, type' }).catch(() => {});
+ }
 
  // Dispatch global real-time event
  try {
@@ -719,10 +734,20 @@ export const dbService = {
  const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
  const record = {
  ...scoreObj,
+ user_email: userEmail || 'guest',
  lastUpdated: new Date().toLocaleDateString(),
  timestamp: Date.now()
  };
  localStorage.setItem(`neuroprep_score_${safeEmail}`, JSON.stringify(record));
+ 
+ if (isSupabaseConfigured) {
+   db.from('readiness_scores').upsert({
+     user_email: record.user_email,
+     score_data: scoreObj,
+     updated_at: new Date().toISOString()
+   }, { onConflict: 'user_email' }).catch(() => {});
+ }
+ 
  return record;
  } catch (e) {
  console.error("Error saving readiness score:", e);

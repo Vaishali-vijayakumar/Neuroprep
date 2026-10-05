@@ -1,24 +1,24 @@
 """
 Pydantic models for the Neroprep AI Interview Engine API.
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
 # ── Session ──────────────────────────────────────────────
 
 class InterviewConfig(BaseModel):
-    trackId:     str  = "default"
-    trackName:   str  = "General Interview"
-    difficulty:  str  = "Intermediate"
-    personality: str  = "professional"
-    duration:    int  = 30
-    role:        str  = "Software Engineer"
-    company:     str  = "General Track"
-    mode:        str  = "voice"
-    language:    str  = "English"
-    codingLang:  str  = "Python"
-    numQ:        int  = 10
+    trackId:     str  = Field(default="default", max_length=100)
+    trackName:   str  = Field(default="General Interview", max_length=200)
+    difficulty:  str  = Field(default="Intermediate", max_length=50)
+    personality: str  = Field(default="professional", max_length=50)
+    duration:    int  = Field(default=30, ge=1, le=180)
+    role:        str  = Field(default="Software Engineer", max_length=100)
+    company:     str  = Field(default="General Track", max_length=100)
+    mode:        str  = Field(default="voice", max_length=20)
+    language:    str  = Field(default="English", max_length=50)
+    codingLang:  str  = Field(default="Python", max_length=50)
+    numQ:        int  = Field(default=10, ge=1, le=50)
     enableVideo: bool = True
     enableMic:   bool = True
     enableHints: bool = True
@@ -75,24 +75,24 @@ class WSServerMessage(BaseModel):
 # ── Evaluation ───────────────────────────────────────────
 
 class EvaluateRequest(BaseModel):
-    session_id:   str
-    question:     str
-    answer:       str
-    stress_index: int = 0
+    session_id:   str = Field(..., max_length=128)
+    question:     str = Field(..., max_length=5000)
+    answer:       str = Field(..., max_length=15000)
+    stress_index: int = Field(default=0, ge=0, le=100)
 
 
 class RubricScore(BaseModel):
-    technical_accuracy:   int
-    communication:        int
-    grammar:              int
-    problem_solving:      int
-    star_depth:           int
-    confidence:           int
-    leadership_ownership: int
-    critical_thinking:    int
-    time_management:      int
-    overall:              int
-    feedback:             str
+    technical_accuracy:   int = Field(ge=0, le=100)
+    communication:        int = Field(ge=0, le=100)
+    grammar:              int = Field(ge=0, le=100)
+    problem_solving:      int = Field(ge=0, le=100)
+    star_depth:           int = Field(ge=0, le=100)
+    confidence:           int = Field(ge=0, le=100)
+    leadership_ownership: int = Field(ge=0, le=100)
+    critical_thinking:    int = Field(ge=0, le=100)
+    time_management:      int = Field(ge=0, le=100)
+    overall:              int = Field(ge=0, le=100)
+    feedback:             str = Field(default="", max_length=5000)
     strengths:            list[str] = []
     improvements:         list[str] = []
 
@@ -100,10 +100,10 @@ class RubricScore(BaseModel):
 # ── Code ─────────────────────────────────────────────────
 
 class CodeRunRequest(BaseModel):
-    session_id:  Optional[str] = "standalone"
-    source_code: str
-    language:    str = "python"
-    stdin:       str = ""
+    session_id:  Optional[str] = Field(default="standalone", max_length=128)
+    source_code: str = Field(..., max_length=100000)
+    language:    str = Field(default="python", max_length=50)
+    stdin:       str = Field(default="", max_length=10000)
 
 
 class CodeRunResponse(BaseModel):

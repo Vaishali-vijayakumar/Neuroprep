@@ -1,16 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase Environment Credentials
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://pqxayrfoegxokjagjfjr.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxeGF5cmZvZWd4b2tqYWdqZmpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNzUxMzYsImV4cCI6MjEwNjc1MTEzNn0.Uiguae9bJwQNGmhy3OHUdVCbTq1o9JVwfE-sMZeLKm4';
+// Supabase Environment Credentials (strictly read from environment)
+const SUPABASE_URL = (import.meta.env?.VITE_SUPABASE_URL || '').trim();
+const SUPABASE_ANON_KEY = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+
+if (!isSupabaseConfigured) {
+  console.warn('[Security Notice] Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) are not set. Database operations will operate in offline/local mode.');
+}
+
+export const supabase = isSupabaseConfigured
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    })
+  : createClient('https://placeholder.supabase.co', 'placeholder-key', {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    });
 
 // Primary Database Client is Supabase
 export const db = supabase;

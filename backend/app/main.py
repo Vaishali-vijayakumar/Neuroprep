@@ -1,9 +1,13 @@
+import os
 import uuid
 from datetime import datetime
 from fastapi import FastAPI, UploadFile, File, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+
+# ── Security & Middleware ──────────────────────────────────────────────────────
+from app.services.security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 
 # ── Existing ATS services ──────────────────────────────────────────────────────
 from app.services.pdf_extractor import extract_pdf_text
@@ -22,28 +26,45 @@ from app.routers import ws_interview
 from app.routers import ws_audio          # Hybrid audio pipeline WebSocket
 from app.routers import chat as chat_router
 from app.routers import rag as rag_router
+from app.routers import admin as admin_router        # Protected Admin RBAC Router
+
+# ── Environment & Production Debug Settings ────────────────────────────────────
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production").lower()
+DEBUG_MODE = os.getenv("DEBUG", "false").lower() in ("true", "1")
+ENABLE_DOCS = os.getenv("ENABLE_DOCS", "false").lower() in ("true", "1") or DEBUG_MODE
 
 app = FastAPI(
     title="Neroprep — AI Placement Platform",
     description="ATS Resume Analysis + Real-Time AI Mock Interview Engine powered by Gemini 2.0.",
-    version="2.0.0"
+    version="2.0.0",
+    docs_url="/docs" if ENABLE_DOCS else None,
+    redoc_url="/redoc" if ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if ENABLE_DOCS else None,
 )
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── Security Middlewares (Rate Limiting + Headers) ────────────────────────────
+app.add_middleware(RateLimitMiddleware, max_requests_per_minute=120)
+app.add_middleware(SecurityHeadersMiddleware, is_production=(ENVIRONMENT == "production"))
+
+# ── Restricted Production CORS ────────────────────────────────────────────────
+raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()] if raw_origins else [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5173",
+    "https://neuroprep.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:5173",
-    ],
-    allow_origin_regex=r"https?://.*",
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
 # ── Mount AI Interview Engine routers ─────────────────────────────────────────
@@ -54,6 +75,7 @@ app.include_router(code_router.router,     prefix="/api/code")
 app.include_router(dsa_router.router,      prefix="/api/dsa")   # Live DSA compiler
 app.include_router(chat_router.router,     prefix="/api/chat")  # Emotional Placement Mentor
 app.include_router(rag_router.router,      prefix="/api/rag")   # Hybrid YouTube Video RAG Engine
+app.include_router(admin_router.router,    prefix="/api/admin") # Protected Admin RBAC Router
 app.include_router(stress_router.router)    # Spatiotemporal & rPPG Stress API
 app.include_router(ws_interview.router)   # WebSocket at /ws/{session_id}
 app.include_router(ws_audio.router)       # Audio pipeline at /ws/audio/{session_id}

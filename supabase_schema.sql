@@ -175,6 +175,9 @@ CREATE POLICY "Users can access own coding submissions" ON public.coding_submiss
 CREATE POLICY "Users can access own readiness scores" ON public.readiness_scores FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Anyone can view verified learning resources" ON public.learning_resources FOR SELECT USING (verified = true);
 CREATE POLICY "Anyone can view published company experiences" ON public.company_experiences FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can publish company experiences" ON public.company_experiences FOR INSERT WITH CHECK (true);
-CREATE POLICY "Users can access own aptitude attempts" ON public.aptitude_mock_attempts FOR ALL USING (true);
+CREATE POLICY "Authenticated users can publish company experiences" ON public.company_experiences FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Users can access own aptitude attempts" ON public.aptitude_mock_attempts 
+  FOR ALL 
+  USING ((auth.jwt() ->> 'email') = user_email)
+  WITH CHECK ((auth.jwt() ->> 'email') = user_email);
 

@@ -73,8 +73,57 @@ async def run_code(source_code: str, language: str, stdin: str = "") -> dict:
     return _simulate_fallback(source_code, lang, stdin)
 
 
+import ast
+
+DISALLOWED_MODULES = {
+    "os", "sys", "subprocess", "shutil", "socket", "urllib", "requests",
+    "http", "ftplib", "pathlib", "ctypes", "pty", "posix", "nt",
+    "importlib", "pickle", "shelve", "builtins", "winreg", "inspect"
+}
+
+DISALLOWED_CALLS = {
+    "eval", "exec", "open", "__import__", "compile", "breakpoint"
+}
+
+def is_safe_python_code(source_code: str) -> tuple[bool, str]:
+    """Inspect AST to detect and block malicious imports, calls, or dunder access."""
+    try:
+        tree = ast.parse(source_code)
+    except SyntaxError:
+        return True, ""  # Syntax errors will be reported cleanly by interpreter
+    
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                mod = alias.name.split(".")[0].lower()
+                if mod in DISALLOWED_MODULES:
+                    return False, f"Security Violation: Importing module '{alias.name}' is prohibited."
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                mod = node.module.split(".")[0].lower()
+                if mod in DISALLOWED_MODULES:
+                    return False, f"Security Violation: Importing from '{node.module}' is prohibited."
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in DISALLOWED_CALLS:
+                return False, f"Security Violation: Invocation of built-in '{node.func.id}()' is prohibited."
+        elif isinstance(node, ast.Attribute):
+            if node.attr.startswith("__") and node.attr.endswith("__"):
+                if node.attr not in ("__init__", "__name__", "__doc__", "__repr__", "__str__", "__len__", "__getitem__", "__iter__", "__next__"):
+                    return False, f"Security Violation: Accessing internal attribute '{node.attr}' is prohibited."
+                    
+    return True, ""
+
+
 async def _execute_python_locally(source_code: str, stdin: str, timeout_seconds: int = 5) -> dict:
-    """Runs Python code safely in an isolated child process."""
+    """Runs Python code safely in an isolated child process after strict AST validation."""
+    is_safe, sec_reason = is_safe_python_code(source_code)
+    if not is_safe:
+        return {
+            "stdout": "",
+            "stderr": sec_reason,
+            "exit_code": 1,
+        }
+
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-u",

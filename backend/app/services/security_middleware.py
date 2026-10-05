@@ -90,10 +90,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=(), interest-cohort=()"
+        # Permissions Policy: allow camera and microphone for interview features
+        response.headers["Permissions-Policy"] = "camera=*, microphone=*, geolocation=(), interest-cohort=()"
         
-        # Enforce HTTPS HSTS only in production
-        if self.is_production:
+        # Enforce HTTPS HSTS only in production on public HTTPS domains (never on localhost)
+        is_local = request.url.hostname in ("localhost", "127.0.0.1", "::1")
+        if self.is_production and not is_local:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
         # Hide internal web server signature

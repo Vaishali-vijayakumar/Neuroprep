@@ -628,7 +628,7 @@ export default function InterviewRoom() {
       if (!aiEngineRef.current) {
         aiEngineRef.current = new AIQuestionEngine(config || {});
       }
-      const nextQ = aiEngineRef.current.getNextQuestion(localStressIdx || 0);
+      const nextQ = aiEngineRef.current.getNextQuestion(stressIndex || 0);
       setQuestionNum(n => n + 1);
       setCurrentQ(nextQ);
       if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: nextQ });
@@ -637,7 +637,7 @@ export default function InterviewRoom() {
     setUserAnswerText('');
     setInterimText('');
     setSubmitWarning('');
-  }, [aiStatus, localStressIdx, config, addTranscriptLine, speakQuestion]);
+  }, [aiStatus, stressIndex, config, addTranscriptLine, speakQuestion]);
 
   // Handle user answer submission (Voice-first)
   const handleUserAnswer = useCallback((overrideText) => {

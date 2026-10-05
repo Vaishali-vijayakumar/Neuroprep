@@ -40,6 +40,8 @@ export default function App() {
   const [isLanding, setIsLanding] = useState(() => {
     if (session) return false;
     try {
+      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      if (path && path !== 'index.html' && path !== '') return false;
       const guestMode = localStorage.getItem('neuroprep_explore_mode');
       if (guestMode === 'true') return false;
     } catch (e) {}
@@ -52,12 +54,14 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      let path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      if (path === 'interview') path = 'mock';
       if (path && path !== 'index.html') return path;
-      const hash = window.location.hash.replace(/^#/, '');
+      let hash = window.location.hash.replace(/^#/, '');
+      if (hash === 'interview') hash = 'mock';
       if (hash) return hash;
       const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
-      if (savedTab) return savedTab;
+      if (savedTab) return savedTab === 'interview' ? 'mock' : savedTab;
     } catch (e) {}
     return 'dashboard';
   });
@@ -393,7 +397,11 @@ export default function App() {
       <>
         <LandingPage 
           onOpenAuth={handleOpenAuth} 
-          onExploreDashboard={() => { setIsLanding(false); setActiveTab('dashboard'); }} 
+          onExploreDashboard={() => { 
+            try { localStorage.setItem('neuroprep_explore_mode', 'true'); } catch (_) {}
+            setIsLanding(false); 
+            setActiveTab('dashboard'); 
+          }} 
         />
 
         {authModalOpen && (
@@ -458,7 +466,7 @@ export default function App() {
           <CompanyPrep setActiveTab={setActiveTab} />
         )}
 
-        {activeTab === 'mock' && (
+        {(activeTab === 'mock' || activeTab === 'interview') && (
           <NeroprepEngine userEmail={userEmail} setActiveTab={setActiveTab} />
         )}
 

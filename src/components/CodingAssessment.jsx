@@ -857,23 +857,31 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  </h3>
  </div>
  <button 
- onClick={() => setSolutionProblem(null)}
- style={{
- background: '#F3F4F6',
- border: 'none',
- borderRadius: '50%',
- width: '32px',
- height: '32px',
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center',
- cursor: 'pointer',
- fontWeight: 800,
- color: '#6B7280'
- }}
- >
- 
- </button>
+            onClick={() => setSolutionProblem(null)}
+            title="Close Solution"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              border: '1px solid #020617',
+              fontSize: '15px',
+              fontWeight: 800,
+              lineHeight: 1,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1E293B'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0F172A'; }}
+          >
+            ✕
+          </button>
  </div>
 
  {/* Approach Explanation */}

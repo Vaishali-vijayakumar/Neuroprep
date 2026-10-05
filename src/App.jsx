@@ -38,13 +38,8 @@ export default function App() {
   const TAB_STORAGE_KEY = 'neuroprep_active_tab';
 
   const [isLanding, setIsLanding] = useState(() => {
+    // Always show landing page if not authenticated
     if (session) return false;
-    try {
-      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
-      if (path && path !== 'index.html' && path !== '') return false;
-      const guestMode = localStorage.getItem('neuroprep_explore_mode');
-      if (guestMode === 'true') return false;
-    } catch (e) {}
     return true;
   });
 
@@ -343,6 +338,7 @@ export default function App() {
   const handleSignOut = () => {
     try {
       localStorage.removeItem(SESSION_STORAGE_KEY);
+      localStorage.removeItem('neuroprep_explore_mode');
       if (supabase?.auth) {
         supabase.auth.signOut().catch(() => {});
       }
@@ -391,23 +387,18 @@ export default function App() {
     return () => window.removeEventListener('neuroprep-nav', handleNavEvent);
   }, []);
 
-  if (isLanding && !isAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <>
-        <LandingPage 
-          onOpenAuth={handleOpenAuth} 
-          onExploreDashboard={() => { 
-            try { localStorage.setItem('neuroprep_explore_mode', 'true'); } catch (_) {}
-            setIsLanding(false); 
-            setActiveTab('dashboard'); 
-          }} 
+        <LandingPage
+          onOpenAuth={handleOpenAuth}
         />
 
         {authModalOpen && (
-          <AuthModal 
-            initialMode={authMode} 
-            onClose={() => setAuthModalOpen(false)} 
-            onLoginSuccess={handleLoginSuccess} 
+          <AuthModal
+            initialMode={authMode}
+            onClose={() => setAuthModalOpen(false)}
+            onLoginSuccess={handleLoginSuccess}
           />
         )}
       </>

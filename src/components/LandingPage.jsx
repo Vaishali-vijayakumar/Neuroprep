@@ -111,7 +111,7 @@ const FAQS = [
   }
 ];
 
-export default function LandingPage({ onOpenAuth, onExploreDashboard }) {
+export default function LandingPage({ onOpenAuth }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [activePreviewTab, setActivePreviewTab] = useState('mock');
   const [openFaq, setOpenFaq] = useState(null);
@@ -187,12 +187,6 @@ export default function LandingPage({ onOpenAuth, onExploreDashboard }) {
             fontSize: '0.98rem', fontWeight: 800
           }}>
             Start Free Practice Now
-          </button>
-          <button onClick={onExploreDashboard} className="btn-secondary-spec" style={{
-            padding: '16px 36px', borderRadius: 12,
-            fontSize: '0.98rem', fontWeight: 700
-          }}>
-            Explore Placement Hub
           </button>
         </div>
 

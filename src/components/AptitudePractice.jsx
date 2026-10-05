@@ -27,11 +27,27 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
   const [pastAttempts, setPastAttempts] = useState([]);
 
   useEffect(() => {
+    // Immediate load from local storage cache so completed tests show instantly
+    try {
+      const cacheKey = `aptitude_attempts_${userEmail || 'guest'}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length) {
+          setPastAttempts(parsed);
+        }
+      }
+    } catch (_) {}
+
     const fetchAttempts = async () => {
       try {
         if (db) {
           const { data } = await db.from('aptitude_mock_attempts').select('*');
-          if (data && data.length) setPastAttempts(data);
+          if (data && data.length) {
+            setPastAttempts(data);
+            const cacheKey = `aptitude_attempts_${userEmail || 'guest'}`;
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+          }
         }
       } catch (e) {
         console.warn('Aptitude attempts fetch notice:', e);
@@ -162,7 +178,14 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     } catch (e) {
       console.warn('Aptitude attempt save notice:', e);
     }
-    setPastAttempts((prev) => [attemptRecord, ...prev]);
+    setPastAttempts((prev) => {
+      const updated = [attemptRecord, ...prev];
+      try {
+        const cacheKey = `aptitude_attempts_${userEmail || 'guest'}`;
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
 
     const newTotalTests = (pastAttempts.length || 0) + 1;
     dbService.saveTestScore('aptitude', accuracyPercent, userEmail, {
@@ -351,7 +374,9 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                       {/* Section Table / Structured Row List */}
                       <div className="saas-card-spec" style={{ padding: 0, overflow: 'hidden' }}>
                         {categoryTests.map((test, tIdx) => {
-                          const testAttempt = pastAttempts.find((a) => a.mockTestId === test.id || (a.mockTestTitle && a.mockTestTitle.toLowerCase().includes(test.title.toLowerCase())));
+                          const matchingAttempts = pastAttempts.filter((a) => a.mockTestId === test.id || (a.mockTestTitle && a.mockTestTitle.toLowerCase().includes(test.title.toLowerCase())));
+                          const testAttempt = matchingAttempts[0];
+                          const totalAttempts = matchingAttempts.length;
                           const isLast = tIdx === categoryTests.length - 1;
 
                           return (
@@ -406,17 +431,39 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
                                 {testAttempt && (
                                   <div style={{ 
-                                    padding: '5px 12px', 
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '7px 14px', 
                                     backgroundColor: testAttempt.isPassed ? '#EAECE8' : '#F5EBE6', 
-                                    borderRadius: '8px', 
-                                    border: '1px solid var(--border-color)', 
-                                    fontSize: '0.82rem', 
-                                    fontWeight: 800,
-                                    color: testAttempt.isPassed ? '#526257' : '#9A6854',
-                                    textAlign: 'center',
-                                    fontFamily: 'var(--font-heading)'
+                                    borderRadius: '10px', 
+                                    border: '1.5px solid var(--border-color)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
                                   }}>
-                                    Score: {testAttempt.score}/40
+                                    <div>
+                                      <div style={{ fontSize: '0.66rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+                                        Previous Result
+                                      </div>
+                                      <div style={{ 
+                                        fontSize: '0.95rem', 
+                                        fontWeight: 800, 
+                                        color: testAttempt.isPassed ? '#526257' : '#9A6854',
+                                        fontFamily: 'var(--font-heading)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                      }}>
+                                        <span>{testAttempt.score}/40</span>
+                                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--body-text)' }}>
+                                          ({testAttempt.accuracyPercent || Math.round((testAttempt.score / (testAttempt.totalQuestions || 40)) * 100)}%)
+                                        </span>
+                                      </div>
+                                    </div>
+                                    {testAttempt.completedAt && (
+                                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', borderLeft: '1px solid var(--border-color)', paddingLeft: '8px', lineHeight: 1.2 }}>
+                                        {new Date(testAttempt.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 

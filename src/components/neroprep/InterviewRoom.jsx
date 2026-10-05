@@ -106,13 +106,14 @@ export default function InterviewRoom() {
  const [userAnswerText, setUserAnswerText] = useState('');
  const [submitWarning, setSubmitWarning] = useState('');
  const [currentCode, setCurrentCode] = useState('');
- const [currentQ, setCurrentQ] = useState(() => {
- try {
- return aiEngineRef.current?.getNextQuestion?.() || 'Please introduce yourself and explain your background.';
- } catch (_) {
- return 'Please introduce yourself and explain your background.';
- }
- });
+  const [currentQ, setCurrentQ] = useState(() => {
+    try {
+      const q = aiEngineRef.current?.getNextQuestion?.();
+      return (typeof q === 'string' && q.trim()) ? q : 'Please introduce yourself and explain your academic background and key technical strengths.';
+    } catch (_) {
+      return 'Please introduce yourself and explain your academic background and key technical strengths.';
+    }
+  });
  const [questionNum, setQuestionNum] = useState(1);
  const [playbackSpeed, setPlaybackSpeed] = useState(1.0); // 0.85 | 1.0 | 1.15
  const [activeSentenceIdx, setActiveSentenceIdx] = useState(-1);
@@ -490,12 +491,18 @@ export default function InterviewRoom() {
 
   // Dynamic Teleprompter: highlights the currently vocalized sentence in real time
   const renderTeleprompterQuestion = (questionText, activeIdx, status) => {
-    if (!questionText) return 'Preparing your first question...';
+    let qStr = questionText;
+    if (qStr && typeof qStr === 'object') {
+      qStr = qStr.question || qStr.text || qStr.title || '';
+    }
+    if (!qStr || typeof qStr !== 'string' || !qStr.trim()) {
+      return 'Please introduce yourself and explain your academic background and key technical strengths.';
+    }
     if (status !== 'speaking' || activeIdx < 0) {
-      return questionText;
+      return qStr;
     }
 
-    const sentences = questionText.match(/[^.!?]+[.!?]+|\S[^.!?]+$/g) || [questionText];
+    const sentences = qStr.match(/[^.!?]+[.!?]+|\S[^.!?]+$/g) || [qStr];
     return sentences.map((sentence, idx) => {
       const isCurrent = idx === activeIdx;
       return (

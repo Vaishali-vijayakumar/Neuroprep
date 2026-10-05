@@ -21,16 +21,6 @@ function NeroprepEngine({ userEmail = 'guest', setActiveTab }) {
     case 'device_check':
       return <DeviceCheckModule setActiveTab={setActiveTab} />;
     case 'live':
-      if (trackId === 'dsa' || trackId === 'coding') {
-        return (
-          <CodingRoom
-            config={config}
-            onEndSession={(report) => {
-              useInterviewStore.getState().endInterview(report);
-            }}
-          />
-        );
-      }
       return <InterviewRoom setActiveTab={setActiveTab} />;
     case 'completed':
       return <CompletedModule userEmail={userEmail} setActiveTab={setActiveTab} />;

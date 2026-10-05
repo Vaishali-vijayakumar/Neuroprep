@@ -51,11 +51,47 @@ export class FaceEngine {
     this._init();
   }
 
+  start() {
+    this.running = true;
+    if (!this.faceMesh) {
+      this._init();
+    }
+  }
+
+  stop() {
+    this.destroy();
+  }
+
   async _init() {
     try {
-      const { FaceMesh } = await import('@mediapipe/face_mesh');
+      let FaceMeshConstructor = null;
+      try {
+        const mp = await import('@mediapipe/face_mesh');
+        FaceMeshConstructor = mp.FaceMesh || mp.default?.FaceMesh || mp.default || window.FaceMesh;
+      } catch (_) {
+        FaceMeshConstructor = window.FaceMesh;
+      }
 
-      this.faceMesh = new FaceMesh({
+      if (!FaceMeshConstructor && typeof window !== 'undefined') {
+        if (!window.FaceMesh) {
+          await new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+            script.crossOrigin = 'anonymous';
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.head.appendChild(script);
+          });
+        }
+        FaceMeshConstructor = window.FaceMesh;
+      }
+
+      if (!FaceMeshConstructor) {
+        console.warn('[FaceEngine] FaceMesh solution constructor not found, fallback enabled.');
+        return;
+      }
+
+      this.faceMesh = new FaceMeshConstructor({
         locateFile: (file) =>
           `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
       });

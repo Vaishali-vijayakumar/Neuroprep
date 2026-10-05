@@ -351,7 +351,24 @@ export class VoiceEngine {
 
     try {
       this.recognition.start();
-    } catch (_) {}
+      this.isListening = true;
+      this.onStateChange({ type: 'listening', value: true });
+    } catch (err) {
+      if (err.name === 'InvalidStateError') {
+        this.isListening = true;
+        this.onStateChange({ type: 'listening', value: true });
+      } else {
+        setTimeout(() => {
+          if (this._shouldRestart && !this._destroyed && !this.isListening) {
+            try {
+              this.recognition.start();
+              this.isListening = true;
+              this.onStateChange({ type: 'listening', value: true });
+            } catch (_) {}
+          }
+        }, 200);
+      }
+    }
 
     if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
       try {
@@ -364,8 +381,10 @@ export class VoiceEngine {
   stopListening() {
     this._shouldRestart = false;
     clearTimeout(this._silenceTimer);
+    this.isListening = false;
+    this.onStateChange({ type: 'listening', value: false });
 
-    if (this.recognition && this.isListening) {
+    if (this.recognition) {
       try {
         this.recognition.stop();
       } catch (_) {}
@@ -406,7 +425,7 @@ export class VoiceEngine {
     if (!this.synthesis || !text || this._destroyed) return Promise.resolve();
 
     await this._ensureVoicesLoaded();
-    this.synthesis.cancel();
+    try { this.synthesis.cancel(); } catch (_) {}
 
     return new Promise((resolve) => {
       const cleanText = text
@@ -465,18 +484,30 @@ export class VoiceEngine {
         utterance.volume = 1.0;
         if (voice) utterance.voice = voice;
 
+        // Safety timeout per sentence (in case browser blocks autoplay without user click)
+        const sentenceTimeout = setTimeout(() => {
+          speakChain(index + 1);
+        }, Math.max(3000, sentenceText.length * 90));
+
         utterance.onend = () => {
+          clearTimeout(sentenceTimeout);
           speakChain(index + 1);
         };
 
         utterance.onerror = (e) => {
+          clearTimeout(sentenceTimeout);
           if (e.error !== 'interrupted') {
             console.warn('[VoiceEngine] TTS sentence error:', e.error);
           }
           speakChain(index + 1);
         };
 
-        this.synthesis.speak(utterance);
+        try {
+          this.synthesis.speak(utterance);
+        } catch (_) {
+          clearTimeout(sentenceTimeout);
+          speakChain(index + 1);
+        }
       };
 
       speakChain(0);

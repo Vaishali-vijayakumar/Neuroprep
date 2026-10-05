@@ -372,18 +372,10 @@ export default function InterviewRoom() {
 
   const speakingQRef = useRef('');
 
-  // Hardware-level acoustic isolation
+  // Hardware-level acoustic isolation & software mic management
   const toggleMicHardware = useCallback((enabled) => {
-    const s = streamRef.current || stream;
-    if (s) {
-      try {
-        s.getAudioTracks().forEach((track) => {
-          track.enabled = enabled;
-        });
-      } catch (_) {}
-    }
     voiceRef.current?.setHardwareAudioEnabled?.(enabled);
-  }, [stream]);
+  }, []);
 
   // Force start listening immediately (bypasses TTS audio playback / Natural Barge-In)
   const forceStartListening = useCallback(() => {
@@ -437,7 +429,6 @@ export default function InterviewRoom() {
     setIsEmpathyNudgeActive(false);
     setActiveSentenceIdx(0);
 
-    // Hard isolation of microphone at hardware stream level during AI speech
     toggleMicHardware(false);
 
     try {
@@ -445,7 +436,8 @@ export default function InterviewRoom() {
       voiceRef.current?.stopListening();
     } catch (_) {}
 
-    // Auto-recovery timeout: switch to listening within 12s if avatar/TTS gets blocked
+    // Dynamic recovery timeout: switch to listening within 4s max if avatar/TTS gets blocked
+    const autoAdvanceMs = Math.min(4800, Math.max(2200, text.split(/\s+/).length * 200));
     const safetyTimer = setTimeout(() => {
       setAiStatus((prev) => {
         if (prev === 'speaking') {
@@ -457,18 +449,17 @@ export default function InterviewRoom() {
         }
         return prev;
       });
-    }, 12000);
+    }, autoAdvanceMs);
 
     const onFinishSpeaking = () => {
       clearTimeout(safetyTimer);
       setActiveSentenceIdx(-1);
       setAiStatus('listening');
       setResponseTimer(0);
-      // Small 120ms safety guard so room reverb clears before re-enabling hardware mic
+      toggleMicHardware(true);
       setTimeout(() => {
-        toggleMicHardware(true);
         try { voiceRef.current?.startListening(); } catch (_) {}
-      }, 120);
+      }, 60);
     };
 
     if (isHeyGenStreaming && heyGenServiceRef.current) {
@@ -628,14 +619,34 @@ export default function InterviewRoom() {
  };
  }, [config?.language]);
 
- // Handle user answer submission (Voice-first)
- const handleUserAnswer = useCallback((overrideText) => {
- const textToSend = (overrideText !== undefined ? overrideText : userAnswerText || '').trim();
+  // Skip to next question immediately
+  const handleSkipQuestion = useCallback(() => {
+    if (aiStatus === 'thinking') return;
+    try { voiceRef.current?.stopListening(); } catch (_) {}
+    setAiStatus('thinking');
+    setTimeout(() => {
+      if (!aiEngineRef.current) {
+        aiEngineRef.current = new AIQuestionEngine(config || {});
+      }
+      const nextQ = aiEngineRef.current.getNextQuestion(localStressIdx || 0);
+      setQuestionNum(n => n + 1);
+      setCurrentQ(nextQ);
+      if (addTranscriptLine) addTranscriptLine({ role: 'ai', text: nextQ });
+      speakQuestion(nextQ);
+    }, 600);
+    setUserAnswerText('');
+    setInterimText('');
+    setSubmitWarning('');
+  }, [aiStatus, localStressIdx, config, addTranscriptLine, speakQuestion]);
 
- if (!textToSend || textToSend.split(/\s+/).filter(Boolean).length < 2) {
- setSubmitWarning('Please speak your response clearly into your microphone or type in the box before submitting.');
- return;
- }
+  // Handle user answer submission (Voice-first)
+  const handleUserAnswer = useCallback((overrideText) => {
+    const textToSend = (overrideText !== undefined ? overrideText : userAnswerText || '').trim();
+
+    if (!textToSend || textToSend.split(/\s+/).filter(Boolean).length < 1) {
+      setSubmitWarning('Please speak your response clearly into your microphone, type your answer, or click "Next Question" to proceed.');
+      return;
+    }
 
  setSubmitWarning('');
 
@@ -755,7 +766,7 @@ export default function InterviewRoom() {
  }
  }
  });
- fe.start();
+ if (typeof fe.start === 'function') fe.start();
  faceRef.current = fe;
  }
  } catch (e) {
@@ -763,8 +774,8 @@ export default function InterviewRoom() {
  }
 
  try {
- if (!vocalRef.current && sessionId) {
- const vi = new VocalIntelligenceEngine(videoEl.srcObject, sessionId, {
+ if (!vocalRef.current) {
+ const vi = new VocalIntelligenceEngine(videoEl.srcObject, sessionId || 'session_local', {
  onAnalysis: (analysis) => setVocalAnalysis(analysis),
  });
  vi.start();
@@ -1474,6 +1485,19 @@ return (
               </button>
             )}
 
+            {aiStatus === 'speaking' && (
+              <button
+                onClick={forceStartListening}
+                className="btn-secondary-spec"
+                style={{
+                  padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  borderRadius: '8px', border: '1px solid #10B981', color: '#065F46', backgroundColor: '#ECFDF5'
+                }}
+              >
+                ● Start Answering (Mic Active)
+              </button>
+            )}
+
             <button
               onClick={() => handleUserAnswer()}
               disabled={aiStatus === 'thinking'}
@@ -1484,6 +1508,19 @@ return (
               }}
             >
               {aiStatus === 'thinking' ? 'Analyzing Response...' : 'Submit Spoken Answer'}
+            </button>
+
+            <button
+              onClick={handleSkipQuestion}
+              disabled={aiStatus === 'thinking'}
+              className="btn-secondary-spec"
+              style={{
+                padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: aiStatus === 'thinking' ? 'not-allowed' : 'pointer',
+                borderRadius: '8px'
+              }}
+              title="Advance to the next question from the AI question engine"
+            >
+              Next Question →
             </button>
           </div>
         </div>

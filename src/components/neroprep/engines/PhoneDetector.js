@@ -157,8 +157,8 @@ export class PhoneDetector {
       this.downwardElapsedSeconds = 0;
     }
 
-    const isDownwardReading = this.downwardElapsedSeconds >= 7;
-    const isDownwardProlonged = this.downwardElapsedSeconds >= 15;
+    const isDownwardReading = this.downwardElapsedSeconds >= 4;
+    const isDownwardProlonged = this.downwardElapsedSeconds >= 10;
 
     // ── 2. Real-Time Camera Object Detection (Throttle: 320ms ~ 3 FPS) ──
     if (this.model && videoEl && videoEl.readyState >= 2 && now - this.lastDetectionTime >= 320) {

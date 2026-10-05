@@ -390,6 +390,9 @@ export default function InterviewRoom() {
     setResponseTimer(0);
     toggleMicHardware(true);
     try {
+      audioRef.current?.resume();
+    } catch (_) {}
+    try {
       voiceRef.current?.startListening();
     } catch (_) {}
   }, [isHeyGenStreaming, toggleMicHardware]);
@@ -500,7 +503,7 @@ export default function InterviewRoom() {
           key={idx}
           style={{
             backgroundColor: isCurrent ? 'rgba(254, 243, 199, 0.95)' : 'transparent',
-            color: isCurrent ? '#92400E' : (idx < activeIdx ? 'var(--main-heading)' : 'var(--text-muted)'),
+            color: isCurrent ? '#92400E' : (idx < activeIdx ? '#111827' : '#1F2937'),
             padding: isCurrent ? '2px 6px' : '0',
             borderRadius: isCurrent ? '6px' : '0',
             border: isCurrent ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid transparent',
@@ -602,22 +605,23 @@ export default function InterviewRoom() {
  };
  const chosenLang = langMap[config?.language] || 'en-US';
 
- const ve = new VoiceEngine({
- lang: chosenLang,
- onTranscript: ({ fullText, interimText: it }) => {
- setUserAnswerText(fullText || '');
- setInterimText(it || '');
- },
- });
- voiceRef.current = ve;
- } catch (e) {
- console.warn('[InterviewRoom] VoiceEngine init error:', e);
- }
+    const ve = new VoiceEngine({
+      lang: chosenLang,
+      mediaStream: stream || sharedStream || streamRef.current,
+      onTranscript: ({ fullText, interimText: it }) => {
+        setUserAnswerText(fullText || '');
+        setInterimText(it || '');
+      },
+    });
+    voiceRef.current = ve;
+  } catch (e) {
+    console.warn('[InterviewRoom] VoiceEngine init error:', e);
+  }
 
- return () => {
- try { voiceRef.current?.destroy(); } catch (_) {}
- };
- }, [config?.language]);
+  return () => {
+    try { voiceRef.current?.destroy(); } catch (_) {}
+  };
+ }, [config?.language, stream, sharedStream]);
 
   // Skip to next question immediately
   const handleSkipQuestion = useCallback(() => {
@@ -719,10 +723,12 @@ export default function InterviewRoom() {
 
  useEffect(() => {
  if (sharedStream && sharedStream.active) {
+ streamRef.current = sharedStream;
  setStream(sharedStream);
  } else {
  navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
  .then(s => {
+ streamRef.current = s;
  setStream(s);
  useInterviewStore.getState().setMediaStream?.(s);
  })
@@ -1343,35 +1349,34 @@ return (
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Anti-Scan Shield: Obscures question text when phone is lifted to screen */}
+        {/* Phone Detector Security Notice: Non-blocking alert banner so question is always 100% visible */}
         {faceTelemetry.phoneObjectVisible && (
           <div style={{
-            position: 'absolute',
-            inset: 0,
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
-            backgroundColor: 'rgba(254, 242, 242, 0.94)',
-            zIndex: 30,
+            backgroundColor: '#FEF2F2',
+            border: '1.5px solid #EF4444',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            textAlign: 'center',
-            border: '2px dashed #EF4444',
-            borderRadius: '16px',
+            justifyContent: 'space-between',
+            gap: '10px',
+            marginBottom: '6px',
             animation: 'fadeIn 0.2s ease-in-out'
           }}>
-            <div style={{ fontSize: '36px', marginBottom: '8px' }}>📵</div>
-            <div style={{ fontSize: '17px', fontWeight: 900, color: '#B91C1C', letterSpacing: '-0.3px', fontFamily: 'var(--font-heading)' }}>
-              Anti-Scan Shield Active: Question Hidden
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '20px' }}>📵</span>
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#B91C1C' }}>
+                  Mobile Device Detected in Camera View
+                </span>
+                <span style={{ fontSize: '11.5px', color: '#991B1B', display: 'block', fontWeight: 500 }}>
+                  Screen scanning (Google Lens / photo capture) is prohibited. Please keep your device lowered.
+                </span>
+              </div>
             </div>
-            <div style={{ fontSize: '13px', color: '#7F1D1D', marginTop: '6px', maxWidth: '520px', fontWeight: 600, lineHeight: 1.5 }}>
-              A smartphone was detected in front of the screen. Screen scanning (Google Lens, ChatGPT Vision, or camera capture) is strictly prohibited. Please lower and remove your device to reveal the question.
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '11px', fontWeight: 800, color: '#991B1B', backgroundColor: '#FEE2E2', padding: '3px 10px', borderRadius: '6px', border: '1px solid #FCA5A5' }}>
-              Proctor Incident #{faceTelemetry.phoneAlerts || 1} Logged
-            </div>
+            <span style={{ fontSize: '11px', fontWeight: 800, backgroundColor: '#FEE2E2', color: '#991B1B', padding: '3px 8px', borderRadius: '6px' }}>
+              Violation #{faceTelemetry.phoneAlerts || 1}
+            </span>
           </div>
         )}
 
@@ -1386,10 +1391,10 @@ return (
           )}
         </div>
         <div style={{
-          fontSize: '1.28rem', fontWeight: 700, color: 'var(--main-heading)', margin: 0,
+          fontSize: '1.28rem', fontWeight: 700, color: '#1F2937', margin: 0,
           lineHeight: 1.6, fontFamily: 'var(--font-heading)',
         }}>
-          "{renderTeleprompterQuestion(currentQ, activeSentenceIdx, aiStatus)}"
+          "{renderTeleprompterQuestion(currentQ || 'Please introduce yourself and explain your academic background and key technical strengths.', activeSentenceIdx, aiStatus)}"
         </div>
 
         {/* Tactical Pause Wave Banner (3-4 seconds when a new question arrives) */}
@@ -1485,7 +1490,7 @@ return (
               </button>
             )}
 
-            {aiStatus === 'speaking' && (
+            {aiStatus === 'speaking' ? (
               <button
                 onClick={forceStartListening}
                 className="btn-secondary-spec"
@@ -1495,6 +1500,21 @@ return (
                 }}
               >
                 ● Start Answering (Mic Active)
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  try { audioRef.current?.resume(); } catch (_) {}
+                  try { voiceRef.current?.startListening(); } catch (_) {}
+                }}
+                className="btn-secondary-spec"
+                style={{
+                  padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#047857', backgroundColor: '#F0FDF4'
+                }}
+                title="Click if browser did not start speech recognition automatically"
+              >
+                🎤 Mic Active (Tap to Restart)
               </button>
             )}
 

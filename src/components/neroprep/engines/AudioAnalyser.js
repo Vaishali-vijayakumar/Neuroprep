@@ -15,6 +15,19 @@ export class AudioAnalyser {
 
     try {
       this.context  = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.context.state === 'suspended') {
+        this.context.resume().catch(() => {});
+        // Also resume on any user gesture
+        const resumeCtx = () => {
+          if (this.context && this.context.state === 'suspended') {
+            this.context.resume().catch(() => {});
+          }
+          window.removeEventListener('click', resumeCtx);
+          window.removeEventListener('keydown', resumeCtx);
+        };
+        window.addEventListener('click', resumeCtx, { once: true });
+        window.addEventListener('keydown', resumeCtx, { once: true });
+      }
       const source  = this.context.createMediaStreamSource(stream);
 
       // Analyser for volume + frequency
@@ -30,9 +43,20 @@ export class AudioAnalyser {
     }
   }
 
+  resume() {
+    if (this.context && this.context.state === 'suspended') {
+      return this.context.resume().catch(() => {});
+    }
+    return Promise.resolve();
+  }
+
   _loop() {
     this.animFrame = requestAnimationFrame(() => this._loop());
     if (!this.analyser) return;
+
+    if (this.context && this.context.state === 'suspended') {
+      this.context.resume().catch(() => {});
+    }
 
     this.analyser.getByteFrequencyData(this.dataArray);
 

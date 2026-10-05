@@ -25,8 +25,8 @@ export default function SidePanel({
   aiStatus = 'listening',
   elapsedSeconds = 0,
 }) {
-  // Default to Focus Mode (Clean, non-distracting screen for candidate confidence)
-  const [focusMode, setFocusMode] = useState(true);
+  // Default to Proctor View so Cognitive Load and Real-time Proctor telemetry are visible immediately
+  const [focusMode, setFocusMode] = useState(false);
 
   const config      = useInterviewStore((s) => s.config);
   const stressIndex = useInterviewStore((s) => s.stressIndex) || 0;

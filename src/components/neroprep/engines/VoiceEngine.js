@@ -12,7 +12,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export class VoiceEngine {
-  constructor({ onTranscript, onStateChange, lang } = {}) {
+  constructor({ onTranscript, onStateChange, lang, mediaStream } = {}) {
     this.onTranscript    = onTranscript    || (() => {});
     this.onStateChange   = onStateChange   || (() => {});
     this.lang            = lang || (typeof navigator !== 'undefined' ? (navigator.language || 'en-US') : 'en-US');
@@ -34,11 +34,13 @@ export class VoiceEngine {
     // MediaRecorder for high-precision backend AI audio transcription
     this.mediaRecorder   = null;
     this.audioChunks     = [];
-    this.mediaStream     = null;
+    this.mediaStream     = mediaStream || null;
     this._silenceTimer   = null;
 
     this._initRecognition();
-    this._initMediaRecorder();
+    if (this.mediaStream) {
+      this._initMediaRecorder();
+    }
 
     if (this.synthesis) {
       this._ensureVoicesLoaded().then(() => {
@@ -204,7 +206,7 @@ export class VoiceEngine {
     this.recognition.continuous      = true;
     this.recognition.interimResults  = true;
     this.recognition.lang            = this.lang;
-    this.recognition.maxAlternatives = 5;
+    this.recognition.maxAlternatives = 1;
 
     this.recognition.onstart = () => {
       if (this._destroyed) return;

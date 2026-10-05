@@ -1,183 +1,106 @@
--- ========================================================
--- NeuroPrep Supabase PostgreSQL Schema Migration DDL
--- Paste this script directly into Supabase SQL Editor
--- ========================================================
+-- ==============================================================================
+-- NEUROPREP SUPABASE SCHEMA
+-- Run these scripts in the Supabase SQL Editor to create the necessary tables
+-- ==============================================================================
 
--- 1. Student Profiles Table
+-- 1. Profiles Table (Automatically populated on signup)
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY DEFAULT auth.uid(),
-  name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  college TEXT,
-  department TEXT,
-  cgpa NUMERIC(3, 2),
-  graduation_year INT,
-  skills JSONB DEFAULT '[]'::jsonb,
-  target_company TEXT DEFAULT 'TCS',
-  target_role TEXT DEFAULT 'Software Development Engineer (SDE)',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+    id UUID REFERENCES auth.users(id) PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    college TEXT,
+    department TEXT,
+    graduation_year INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Mood & Stress Assessment Logs Table
-CREATE TABLE IF NOT EXISTS public.mood_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  mood_label TEXT NOT NULL,
-  stress_level INT NOT NULL CHECK (stress_level BETWEEN 1 AND 10),
-  confidence_level INT NOT NULL CHECK (confidence_level BETWEEN 1 AND 10),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 2. Test Scores Table (Stores Aptitude, Coding, Interview, Speech, Mood scores)
+CREATE TABLE IF NOT EXISTS public.test_scores (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'coding', 'aptitude', 'interview', 'mood', 'speech'
+    score NUMERIC DEFAULT 0,
+    metadata JSONB,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_email, type) -- Allows upserting latest scores per type
 );
 
--- 3. Thought Journal Entries Table
-CREATE TABLE IF NOT EXISTS public.thought_journals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  category TEXT DEFAULT 'Placement Preparation',
-  emotions JSONB DEFAULT '[]'::jsonb,
-  sentiment TEXT,
-  detected_distortions JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 4. CBT Cognitive Reappraisal Exercises Table
-CREATE TABLE IF NOT EXISTS public.cbt_reappraisals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  distortion_name TEXT NOT NULL,
-  evidence_supporting TEXT,
-  evidence_contradicting TEXT,
-  friend_advice TEXT,
-  balanced_thought TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 5. Mock Interview Reports Table
-CREATE TABLE IF NOT EXISTS public.mock_interviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  interview_type TEXT NOT NULL,
-  target_company TEXT NOT NULL,
-  tech_score INT NOT NULL,
-  comm_score INT NOT NULL,
-  confidence_score INT NOT NULL,
-  speech_analysis JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 6. Coding Submissions & Compiler Results Table
-CREATE TABLE IF NOT EXISTS public.coding_submissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  problem_id INT NOT NULL,
-  problem_title TEXT NOT NULL,
-  language TEXT NOT NULL,
-  code_content TEXT NOT NULL,
-  passed_cases INT NOT NULL,
-  total_cases INT NOT NULL,
-  execution_time TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 7. Placement Readiness Scores Table
+-- 3. Readiness Scores Table (Stores the global dashboard readiness score)
 CREATE TABLE IF NOT EXISTS public.readiness_scores (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  readiness_score INT NOT NULL,
-  coding_score INT NOT NULL,
-  interview_score INT NOT NULL,
-  speech_score INT NOT NULL,
-  stress_score INT NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_email TEXT UNIQUE NOT NULL,
+    score_data JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. AI Learning Resources Table (Curated Placement & Technical Database)
-CREATE TABLE IF NOT EXISTS public.learning_resources (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  topic TEXT NOT NULL,
-  subtopic TEXT NOT NULL,
-  category TEXT NOT NULL, -- CSE / APTITUDE
-  subject TEXT NOT NULL,  -- Programming / DSA / Core CS / Web / Quantitative / Logical / Verbal
-  website TEXT NOT NULL,  -- GeeksforGeeks, LeetCode, Scaler, InterviewBit, etc.
-  title TEXT NOT NULL,
-  url TEXT NOT NULL,
-  difficulty TEXT DEFAULT 'Medium', -- Beginner / Intermediate / Advanced / Interview / Placement
-  learning_level TEXT DEFAULT 'Interview', -- Beginner / Interview / Problem Solving / Placement
-  resource_type TEXT DEFAULT 'Article',   -- Article / Coding Problem / Interactive Tutorial / Mock Set
-  description TEXT,
-  reason TEXT,                            -- Best for: Concepts + Interviews
-  quality_score NUMERIC(3, 2) DEFAULT 4.80,
-  verified BOOLEAN DEFAULT TRUE,
-  last_verified TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 4. Interview Sessions Table (Stores completed AI mock interview data)
+CREATE TABLE IF NOT EXISTS public.interview_sessions (
+    id TEXT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    date TEXT,
+    time TEXT,
+    timestamp BIGINT,
+    trackName TEXT,
+    trackId TEXT,
+    role TEXT,
+    difficulty TEXT,
+    duration TEXT,
+    overall_score NUMERIC,
+    grade TEXT,
+    report JSONB,
+    config JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indices for fast classification & semantic lookup
-CREATE INDEX IF NOT EXISTS idx_learning_resources_topic ON public.learning_resources (topic);
-CREATE INDEX IF NOT EXISTS idx_learning_resources_category ON public.learning_resources (category, subject);
--- 9. Company Interview Experiences Table (Community Archive)
-CREATE TABLE IF NOT EXISTS public.company_experiences (
-  id TEXT PRIMARY KEY,
-  company_id TEXT NOT NULL,
-  title TEXT NOT NULL,
-  author_name TEXT DEFAULT 'Anonymous Student',
-  college TEXT,
-  role TEXT,
-  overall_outcome TEXT DEFAULT 'Offered',
-  difficulty TEXT DEFAULT 'Medium',
-  rounds JSONB DEFAULT '[]'::jsonb,
-  tips TEXT,
-  published_date TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 5. Report Snapshots Table (Stores comprehensive performance reports)
+CREATE TABLE IF NOT EXISTS public.report_snapshots (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    snapshot_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 10. Aptitude Mock Test Attempts Table
-CREATE TABLE IF NOT EXISTS public.aptitude_mock_attempts (
-  id TEXT PRIMARY KEY,
-  user_email TEXT NOT NULL,
-  test_id TEXT NOT NULL,
-  test_title TEXT NOT NULL,
-  score INT NOT NULL,
-  total_questions INT NOT NULL,
-  correct_count INT NOT NULL,
-  incorrect_count INT NOT NULL,
-  time_spent_seconds INT DEFAULT 0,
-  breakdown JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- ==============================================================================
+-- DIARY WRITING & WELLNESS TABLES
+-- ==============================================================================
+
+-- 6. Thought Journals (Diary entries)
+CREATE TABLE IF NOT EXISTS public.thought_journals (
+    id TEXT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    date TEXT,
+    title TEXT,
+    category TEXT,
+    content TEXT,
+    analysis JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_learning_resources_website ON public.learning_resources (website);
-CREATE INDEX IF NOT EXISTS idx_learning_resources_quality ON public.learning_resources (quality_score DESC);
-CREATE INDEX IF NOT EXISTS idx_company_experiences_company ON public.company_experiences (company_id);
-CREATE INDEX IF NOT EXISTS idx_aptitude_mock_attempts_user ON public.aptitude_mock_attempts (user_email);
+-- 7. Hope Notes
+CREATE TABLE IF NOT EXISTS public.hope_notes (
+    id BIGINT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    text TEXT NOT NULL,
+    date TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- Enable Row Level Security (RLS)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.mood_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.thought_journals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cbt_reappraisals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.mock_interviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coding_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.readiness_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learning_resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.company_experiences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.aptitude_mock_attempts ENABLE ROW LEVEL SECURITY;
+-- 8. Positive Memories
+CREATE TABLE IF NOT EXISTS public.positive_memories (
+    id BIGINT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    text TEXT NOT NULL,
+    category TEXT,
+    date TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- Basic RLS Policies (Users can read and write their own data)
-CREATE POLICY "Users can access own profile" ON public.profiles FOR ALL USING (auth.uid() = id);
-CREATE POLICY "Users can access own mood logs" ON public.mood_logs FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can access own journals" ON public.thought_journals FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can access own CBT exercises" ON public.cbt_reappraisals FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can access own mock interviews" ON public.mock_interviews FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can access own coding submissions" ON public.coding_submissions FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can access own readiness scores" ON public.readiness_scores FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Anyone can view verified learning resources" ON public.learning_resources FOR SELECT USING (verified = true);
-CREATE POLICY "Anyone can view published company experiences" ON public.company_experiences FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can publish company experiences" ON public.company_experiences FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Users can access own aptitude attempts" ON public.aptitude_mock_attempts 
-  FOR ALL 
-  USING ((auth.jwt() ->> 'email') = user_email)
-  WITH CHECK ((auth.jwt() ->> 'email') = user_email);
-
+-- 9. Weekly Reflections
+CREATE TABLE IF NOT EXISTS public.weekly_reflections (
+    id BIGINT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    reflection_data JSONB NOT NULL,
+    date TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

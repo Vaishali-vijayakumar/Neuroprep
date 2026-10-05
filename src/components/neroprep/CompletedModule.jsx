@@ -365,23 +365,8 @@ export default function CompletedModule({ userEmail = 'guest' }) {
               )}
             </div>
 
-            {/* Two columns */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
-
-              {/* Performance Scores */}
-              <div className="saas-card-spec" style={{ padding: '22px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px 0' }}>Evaluation Rubrics</h3>
-                <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '0 0 14px 0' }}>
-                  {noData
-                    ? 'Complete at least one question to generate scores.'
-                    : isCoding
-                    ? `Based on ${currentReport.problemsSolved || 0} problem${currentReport.problemsSolved !== 1 ? 's' : ''} solved`
-                    : `Based on ${currentReport.question_reviews?.length || 0} question${currentReport.question_reviews?.length !== 1 ? 's' : ''} evaluated`}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {scoreItems.map((s) => <ScoreBar key={s.label} {...s} />)}
-                </div>
-              </div>
+            {/* Single column for metrics */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
               {/* Behavioural metrics + observation */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -415,8 +400,8 @@ export default function CompletedModule({ userEmail = 'guest' }) {
                       value: `${currentReport.question_audit_score ?? currentReport.code_score ?? displayScore ?? 0}/100`,
                     },
                     {
-                      label: 'Evaluation Rubrics Average (30% Weight)',
-                      value: `${currentReport.rubric_avg_score ?? currentReport.code_score ?? displayScore ?? 0}/100`,
+                      label: 'Question Performance Audit (50% Weight)',
+                      value: `${currentReport.question_audit_score ?? currentReport.code_score ?? displayScore ?? 0}/100`,
                     },
                     {
                       label: 'Biometrics & Telemetry (20% Weight)',

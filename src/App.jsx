@@ -60,8 +60,7 @@ export default function App() {
       let hash = window.location.hash.replace(/^#/, '');
       if (hash === 'interview') hash = 'mock';
       if (hash) return hash;
-      const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
-      if (savedTab) return savedTab === 'interview' ? 'mock' : savedTab;
+      // Always default to dashboard — do not restore last tab from localStorage
     } catch (e) {}
     return 'dashboard';
   });

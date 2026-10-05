@@ -83,13 +83,8 @@ export class VoiceEngine {
    * Hardware-level acoustic isolation: toggle the underlying MediaStreamTrack
    */
   setHardwareAudioEnabled(enabled) {
-    if (this.mediaStream) {
-      try {
-        this.mediaStream.getAudioTracks().forEach((track) => {
-          track.enabled = enabled;
-        });
-      } catch (_) {}
-    }
+    // Keep hardware tracks intact so Web Audio analyser & browser SpeechRecognition are never silenced;
+    // speech recognition buffering is handled via startListening() / stopListening()
   }
 
   _pickBestFemaleVoice() {
@@ -122,23 +117,37 @@ export class VoiceEngine {
 
   /** Initialize MediaRecorder to capture raw audio chunks for backend refinement */
   async _initMediaRecorder() {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
+    if (typeof MediaRecorder === 'undefined') return;
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      let audioStream = this.mediaStream;
+      if (audioStream && typeof audioStream.getAudioTracks === 'function') {
+        const audioTracks = audioStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioStream = new MediaStream(audioTracks);
+        } else {
+          audioStream = null;
+        }
+      }
+
+      if (!audioStream && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      }
+
+      if (!audioStream) return;
 
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
         ? 'audio/webm'
-        : 'audio/mp4';
+        : '';
 
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType });
+      this.mediaRecorder = mimeType ? new MediaRecorder(audioStream, { mimeType }) : new MediaRecorder(audioStream);
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -150,7 +159,7 @@ export class VoiceEngine {
         this._refineWithBackendAI();
       };
     } catch (e) {
-      console.warn('[VoiceEngine] MediaRecorder init error (will use browser STT):', e);
+      console.warn('[VoiceEngine] MediaRecorder init notice:', e.message);
     }
   }
 

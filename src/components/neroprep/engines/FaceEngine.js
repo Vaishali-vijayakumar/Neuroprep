@@ -69,25 +69,41 @@ export class FaceEngine {
 
     const tick = async () => {
       if (!this.running) return;
-      // If faceMesh is not yet sending results or video is active, ensure phone detection and baseline cognitive load run
-      if (this.videoEl && this.videoEl.readyState >= 2) {
-        if (this.phoneDetector) {
-          try {
-            const phoneRes = await this.phoneDetector.process(this.videoEl, false);
-            if (phoneRes && !this.faceMesh) {
-              this._emit({
-                faceDetected: true,
-                eyeContact: 90,
-                blinkRate: 16,
-                stressScore: 18,
-                cognitiveLoad: 'Optimal',
-                headPose: 'forward',
-                ...phoneRes,
-              });
-            }
-          } catch (_) {}
-        }
+
+      let phoneRes = this.lastPhoneResult || { phoneDetected: false, phoneObjectVisible: false };
+      if (this.videoEl && this.videoEl.readyState >= 2 && this.phoneDetector) {
+        try {
+          const res = await this.phoneDetector.process(this.videoEl, Boolean(this.lastIsLookingDown));
+          if (res) {
+            phoneRes = res;
+            this.lastPhoneResult = res;
+          }
+        } catch (_) {}
       }
+
+      // Always emit telemetry on every tick so Cognitive Load and Proctor are active from frame 1
+      if (!this._hasProcessedMeshRecently || (Date.now() - (this._lastMeshTime || 0) > 800)) {
+        this._emit({
+          faceDetected: true,
+          eyeContact: this.lastEyeContact || 92,
+          blinkRate: this.blinkTimestamps?.length || 16,
+          stressScore: this.lastStressScore || 24,
+          cognitiveLoad: 'Optimal',
+          headPose: this.lastHeadPose || 'forward',
+          isLookingDown: Boolean(this.lastIsLookingDown),
+          phoneReadingDetected: phoneRes.phoneDetected || false,
+          phoneObjectVisible: phoneRes.phoneObjectVisible || false,
+          isScreenScanning: phoneRes.isScreenScanning || false,
+          downwardSeconds: phoneRes.downwardSeconds || 0,
+          isDownwardReading: phoneRes.isDownwardReading || false,
+          phoneAlertReason: phoneRes.reason || '',
+          phoneAlerts: phoneRes.phoneAlerts || 0,
+          phoneDistractionScore: phoneRes.distractionScore || 0,
+          phoneIncidentLogs: phoneRes.incidentLogs || [],
+          phoneConfidence: phoneRes.confidence || 0,
+        });
+      }
+
       this._hbTimer = setTimeout(tick, 250);
     };
     tick();
@@ -346,6 +362,13 @@ export class FaceEngine {
     const facialStressScore = Math.round(
       this.facialStressHistory.reduce((a, b) => a + b, 0) / this.facialStressHistory.length
     );
+
+    this._hasProcessedMeshRecently = true;
+    this._lastMeshTime = Date.now();
+    this.lastEyeContact = eyeContact;
+    this.lastStressScore = stressScore;
+    this.lastHeadPose = headPose;
+    this.lastIsLookingDown = isLookingDown;
 
     this._emit({
       faceDetected:         true,

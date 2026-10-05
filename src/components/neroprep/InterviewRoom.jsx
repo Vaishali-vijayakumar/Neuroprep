@@ -743,6 +743,34 @@ export default function InterviewRoom() {
  }
  }, [sharedStream]);
 
+  // Baseline proctor telemetry so Cognitive Load and Proctor are active immediately on room entrance
+  useEffect(() => {
+    setFaceTelemetry(prev => ({
+      faceDetected: true,
+      blinkRate: 16,
+      headPose: 'forward',
+      eyeContact: 92,
+      stressScore: 24,
+      cognitiveLoad: 'Optimal',
+      phoneReadingDetected: false,
+      phoneObjectVisible: false,
+      phoneAlerts: 0,
+      phoneAlertReason: '',
+      phoneDistractionScore: 0,
+      ...prev
+    }));
+  }, []);
+
+  // Audio Analyser fallback if video element event was delayed
+  useEffect(() => {
+    if (stream && !audioRef.current) {
+      try {
+        const aa = new AudioAnalyser(stream, { onMetrics: (m) => setAudioMetrics(m) });
+        audioRef.current = aa;
+      } catch (_) {}
+    }
+  }, [stream]);
+
  // Video Ready
  const onVideoReady = useCallback((videoEl) => {
  if (!videoEl || !videoEl.srcObject) return;

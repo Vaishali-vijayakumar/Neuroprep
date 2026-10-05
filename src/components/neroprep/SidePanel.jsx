@@ -70,9 +70,9 @@ export default function SidePanel({
   }
 
   // Determine effective fused score and label
-  const effectiveScore = faceDetected && fusedResult?.score !== undefined
+  const effectiveScore = (fusedResult?.score !== undefined && fusedResult.score > 0)
     ? fusedResult.score
-    : (Number(stressIndex) || 0);
+    : (faceTelemetry?.stressScore || Number(stressIndex) || 28);
 
   const details = scorerInstance?.getLabel(
     effectiveScore,

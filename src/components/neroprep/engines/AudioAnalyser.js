@@ -28,16 +28,33 @@ export class AudioAnalyser {
         window.addEventListener('click', resumeCtx, { once: true });
         window.addEventListener('keydown', resumeCtx, { once: true });
       }
-      const source  = this.context.createMediaStreamSource(stream);
+      // Check if stream has audio tracks
+      if (stream && typeof stream.getAudioTracks === 'function' && stream.getAudioTracks().length > 0) {
+        const source = this.context.createMediaStreamSource(stream);
 
-      // Analyser for volume + frequency
-      this.analyser = this.context.createAnalyser();
-      this.analyser.fftSize           = 2048;
-      this.analyser.smoothingTimeConstant = 0.8;
-      source.connect(this.analyser);
+        // Analyser for volume + frequency
+        this.analyser = this.context.createAnalyser();
+        this.analyser.fftSize = 2048;
+        this.analyser.smoothingTimeConstant = 0.8;
+        source.connect(this.analyser);
 
-      this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-      this._loop();
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        this._loop();
+      } else {
+        // If stream has no audio tracks, acquire standalone mic stream
+        navigator.mediaDevices?.getUserMedia({ audio: true }).then((micStream) => {
+          if (!this.context || this.context.state === 'closed') return;
+          const source = this.context.createMediaStreamSource(micStream);
+          this.analyser = this.context.createAnalyser();
+          this.analyser.fftSize = 2048;
+          this.analyser.smoothingTimeConstant = 0.8;
+          source.connect(this.analyser);
+          this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+          this._loop();
+        }).catch((e) => {
+          console.warn('AudioAnalyser: Mic capture notice:', e.message);
+        });
+      }
     } catch (err) {
       console.warn('AudioAnalyser: Could not initialise AudioContext:', err.message);
     }

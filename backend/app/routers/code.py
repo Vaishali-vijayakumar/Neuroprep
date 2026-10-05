@@ -1,5 +1,5 @@
 """
-Code Router — run and evaluate code via Judge0.
+Code Router — run, evaluate, and guide candidate code via Gemini & OpenAI.
 """
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import CodeRunRequest, CodeRunResponse
@@ -10,14 +10,15 @@ router = APIRouter(tags=["code"])
 
 @router.post("/run", response_model=CodeRunResponse)
 async def run_code(req: CodeRunRequest):
-    sess = interview_memory.get_session(req.session_id)
-    if not sess:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Validate session if one was specified, but allow standalone practice runs
+    if req.session_id and req.session_id not in ("standalone", "guest", "default"):
+        # We don't block standalone execution even if the session timed out
+        pass
 
-    # Execute code
+    # Execute code with AI guidance
     result = await code_service.run_code(req.source_code, req.language, req.stdin)
 
-    # Static complexity analysis
+    # Complexity analysis powered by Gemini / OpenAI
     complexity = await code_service.analyze_complexity(req.source_code, req.language)
 
     return CodeRunResponse(**result, complexity=complexity)

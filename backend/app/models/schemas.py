@@ -100,7 +100,7 @@ class RubricScore(BaseModel):
 # ── Code ─────────────────────────────────────────────────
 
 class CodeRunRequest(BaseModel):
-    session_id:  str
+    session_id:  Optional[str] = "standalone"
     source_code: str
     language:    str = "python"
     stdin:       str = ""
@@ -114,6 +114,7 @@ class CodeRunResponse(BaseModel):
     time:            Optional[str] = None
     memory:          Optional[int] = None
     complexity:      Optional[dict] = None
+    ai_guidance:     Optional[str] = None
 
 
 # ── Report ───────────────────────────────────────────────

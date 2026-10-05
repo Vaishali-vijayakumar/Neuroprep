@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FORMULA_SECTORS, TOPIC_FORMULAS } from '../data/aptitudeFormulasData';
 import { MOCK_TESTS_CATALOG, MOCK_TEST_CATEGORIES } from '../data/mockTestsData';
-import { localDb } from '../services/localDb';
-import { dbService } from '../services/db';
+import { db, dbService } from '../services/db';
 import { recordActivity } from '../services/gamificationService';
 
 export default function AptitudePractice({ setActiveTab, aptitudeState, setAptitudeState, userEmail }) {
@@ -29,11 +28,17 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
   useEffect(() => {
     const fetchAttempts = async () => {
-      const { data } = await localDb.from('aptitude_mock_attempts').select();
-      if (data) setPastAttempts(data);
+      try {
+        if (db) {
+          const { data } = await db.from('aptitude_mock_attempts').select('*');
+          if (data && data.length) setPastAttempts(data);
+        }
+      } catch (e) {
+        console.warn('Aptitude attempts fetch notice:', e);
+      }
     };
     fetchAttempts();
-  }, []);
+  }, [userEmail]);
 
   // Timer countdown hook during live test
   useEffect(() => {
@@ -127,9 +132,22 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
     const attemptRecord = {
       id: `attempt-${Date.now()}`,
+      user_email: userEmail || 'guest',
+      test_id: selectedMockTest.id,
+      test_title: selectedMockTest.title,
+      score,
+      total_questions: selectedMockTest.totalQuestions,
+      correct_count: score,
+      incorrect_count: selectedMockTest.totalQuestions - score,
+      time_spent_seconds: totalTimeSpentSeconds,
+      breakdown: {
+        accuracyPercent,
+        isPassed,
+        sectionalScores,
+        userAnswers
+      },
       mockTestId: selectedMockTest.id,
       mockTestTitle: selectedMockTest.title,
-      score,
       totalQuestions: selectedMockTest.totalQuestions,
       accuracyPercent,
       isPassed,
@@ -139,7 +157,11 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
       completedAt: new Date().toISOString()
     };
 
-    await localDb.from('aptitude_mock_attempts').insert(attemptRecord);
+    try {
+      if (db) await db.from('aptitude_mock_attempts').insert(attemptRecord);
+    } catch (e) {
+      console.warn('Aptitude attempt save notice:', e);
+    }
     setPastAttempts((prev) => [attemptRecord, ...prev]);
 
     const newTotalTests = (pastAttempts.length || 0) + 1;

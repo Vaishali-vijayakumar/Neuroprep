@@ -1,5 +1,5 @@
 """
-Test Runner — Executes sample and hidden test cases against Judge0.
+Test Runner — Executes sample and hidden test cases with Gemini/OpenAI evaluation.
 
 Runs each test case independently and collects:
 - Pass/fail per test
@@ -18,7 +18,7 @@ async def run_tests(
     mode: str = "sample",  # "sample" | "hidden"
 ) -> Dict[str, Any]:
     """
-    Run a list of test cases against the given source code via Judge0.
+    Run a list of test cases against the given source code via AI code service.
     Returns aggregated results.
     """
     if not tests:
@@ -120,13 +120,16 @@ async def _run_single_test(
     expected_n = _normalise(expected)
     passed   = actual == expected_n
 
-    # Parse runtime/memory from Judge0 response
+    # Parse runtime/memory from AI response
     runtime_ms = None
     memory_kb  = None
     try:
         t = exec_result.get("time")
         if t:
-            runtime_ms = round(float(t) * 1000, 1)
+            if isinstance(t, str) and "ms" in t:
+                runtime_ms = round(float(t.replace("ms", "").strip()), 1)
+            else:
+                runtime_ms = round(float(t) * 1000, 1)
         m = exec_result.get("memory")
         if m:
             memory_kb = int(m)

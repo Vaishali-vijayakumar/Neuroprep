@@ -1,66 +1,44 @@
 import { createClient } from '@supabase/supabase-js';
-import { localDb } from './localDb';
 
 // Supabase Environment Credentials
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://pqxayrfoegxokjagjfjr.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxeGF5cmZvZWd4b2tqYWdqZmpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNzUxMzYsImV4cCI6MjEwNjc1MTEzNn0.Uiguae9bJwQNGmhy3OHUdVCbTq1o9JVwfE-sMZeLKm4';
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const supabase = isSupabaseConfigured
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      }
-    })
-  : null;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
-// Use Supabase if configured; otherwise use resilient localDb
-export const db = isSupabaseConfigured && supabase ? supabase : localDb;
-
-const REGISTERED_USERS_KEY = 'neuroprep_registered_users';
-
-function getRegisteredUsersMap() {
- try {
- const raw = localStorage.getItem(REGISTERED_USERS_KEY);
- return raw ? JSON.parse(raw) : {};
- } catch (e) {
- return {};
- }
-}
-
-function saveRegisteredUsersMap(usersMap) {
- try {
- localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(usersMap));
- } catch (e) {
- console.error('Error saving users map:', e);
- }
-}
+// Primary Database Client is Supabase
+export const db = supabase;
 
 // ─────────────────────────────────────────────
 // Per-user journal key helper
 // ─────────────────────────────────────────────
 function getUserJournalKey(userEmail) {
- const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
- return `neuroprep_journals_${safeEmail}`;
+  const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  return `neuroprep_journals_${safeEmail}`;
 }
 
 function getUserScoreKey(userEmail) {
- const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
- return `neuroprep_score_${safeEmail}`;
+  const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  return `neuroprep_score_${safeEmail}`;
 }
 
 function getUserTestScoreKey(userEmail, testType) {
- const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
- return `neuroprep_testscore_${testType}_${safeEmail}`;
+  const safeEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  return `neuroprep_testscore_${testType}_${safeEmail}`;
 }
 
 /**
- * Database Helper Service
+ * Database Helper Service — Supabase Database & Authentication
  */
 export const dbService = {
   // ─────────────────────────────────────────────
-  // User Registration & Authentication (Supabase + Local Fallback)
+  // User Registration & Authentication (Supabase)
   // ─────────────────────────────────────────────
   async registerUser({ email, password, name, college, department, graduationYear }) {
     if (!email || !password) {
@@ -68,77 +46,52 @@ export const dbService = {
     }
     const normEmail = email.trim().toLowerCase();
 
-    // 1. If Supabase is configured, register via Supabase Auth
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email: normEmail,
-          password: password,
-          options: {
-            data: {
-              name: name?.trim() || '',
-              college: college?.trim() || '',
-              department: department?.trim() || '',
-              graduation_year: Number(graduationYear) || 2026,
-            }
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normEmail,
+        password: password,
+        options: {
+          data: {
+            name: name?.trim() || '',
+            college: college?.trim() || '',
+            department: department?.trim() || '',
+            graduation_year: Number(graduationYear) || 2026,
           }
-        });
-
-        if (error) {
-          return { success: false, error: error.message };
         }
+      });
 
-        const userId = data.user?.id;
-        const profileRecord = {
-          id: userId,
-          email: normEmail,
-          name: name?.trim() || '',
-          college: college?.trim() || '',
-          department: department?.trim() || '',
-          graduation_year: Number(graduationYear) || 2026,
-          created_at: new Date().toISOString(),
-        };
-
-        // Upsert into Supabase profiles table
-        await supabase.from('profiles').upsert(profileRecord);
-
-        // Cache locally for offline resilience
-        const users = getRegisteredUsersMap();
-        users[normEmail] = { ...profileRecord, password };
-        saveRegisteredUsersMap(users);
-        localDb.from('profiles').upsert(profileRecord);
-
-        return { success: true, user: profileRecord };
-      } catch (err) {
-        console.warn('Supabase registration notice, trying local fallback:', err);
+      if (error) {
+        return { success: false, error: error.message };
       }
+
+      const userId = data.user?.id;
+      const profileRecord = {
+        id: userId,
+        email: normEmail,
+        name: name?.trim() || '',
+        college: college?.trim() || '',
+        department: department?.trim() || '',
+        graduation_year: Number(graduationYear) || 2026,
+        created_at: new Date().toISOString(),
+      };
+
+      // Upsert into Supabase profiles table
+      if (userId) {
+        try {
+          await supabase.from('profiles').upsert(profileRecord);
+        } catch (_) {}
+      }
+
+      const requiresEmailConfirmation = !data.session;
+
+      return { 
+        success: true, 
+        user: profileRecord, 
+        emailConfirmationRequired: requiresEmailConfirmation 
+      };
+    } catch (err) {
+      return { success: false, error: err.message || 'Registration failed.' };
     }
-
-    // 2. Resilient Local Fallback (offline or without Supabase keys)
-    const users = getRegisteredUsersMap();
-
-    if (users[normEmail]) {
-      return { success: false, error: 'An account with this email already exists. Please log in.' };
-    }
-
-    const newUser = {
-      email: normEmail,
-      password: password,
-      name: name?.trim() || '',
-      college: college?.trim() || '',
-      department: department?.trim() || '',
-      graduationYear: Number(graduationYear) || 2026,
-      skills: [],
-      targetCompany: 'TCS',
-      targetRole: 'Software Engineer',
-      createdAt: new Date().toISOString(),
-    };
-
-    users[normEmail] = newUser;
-    saveRegisteredUsersMap(users);
-    localDb.from('profiles').upsert(newUser);
-
-    return { success: true, user: newUser };
   },
 
   async authenticateUser(email, password) {
@@ -147,90 +100,67 @@ export const dbService = {
     }
     const normEmail = email.trim().toLowerCase();
 
-    // 1. If Supabase is configured, authenticate with Supabase Auth
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: normEmail,
-          password: password,
-        });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normEmail,
+        password: password,
+      });
 
-        if (error) {
-          return { success: false, error: error.message };
+      if (error) {
+        if (error.message?.toLowerCase().includes('email not confirmed')) {
+          return {
+            success: false,
+            error: 'Email confirmation required! Please check your inbox and click the verification link sent by Supabase before logging in.'
+          };
         }
-
-        // Retrieve stored profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', normEmail)
-          .maybeSingle();
-
-        const userProfile = profileData || {
-          id: data.user?.id,
-          email: normEmail,
-          name: data.user?.user_metadata?.name || normEmail.split('@')[0],
-          college: data.user?.user_metadata?.college || '',
-          department: data.user?.user_metadata?.department || '',
-          graduationYear: data.user?.user_metadata?.graduation_year || 2026,
-        };
-
-        // Cache locally
-        const users = getRegisteredUsersMap();
-        users[normEmail] = userProfile;
-        saveRegisteredUsersMap(users);
-        localDb.from('profiles').upsert(userProfile);
-
-        return { success: true, user: userProfile };
-      } catch (err) {
-        console.warn('Supabase auth notice, trying local fallback:', err);
+        return { success: false, error: error.message };
       }
-    }
 
-    // 2. Resilient Local Fallback
-    const users = getRegisteredUsersMap();
-    const user = users[normEmail];
-    if (!user) {
-      return {
-        success: false,
-        error: 'No account found with this email. Please sign up first.'
+      // Retrieve stored profile from Supabase
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', normEmail)
+        .maybeSingle();
+
+      const userProfile = profileData || {
+        id: data.user?.id,
+        email: normEmail,
+        name: data.user?.user_metadata?.name || normEmail.split('@')[0],
+        college: data.user?.user_metadata?.college || '',
+        department: data.user?.user_metadata?.department || '',
+        graduationYear: data.user?.user_metadata?.graduation_year || 2026,
       };
-    }
 
-    if (user.password !== password) {
-      return {
-        success: false,
-        error: 'Incorrect password. Please verify your password and try again.'
-      };
+      return { success: true, user: userProfile };
+    } catch (err) {
+      return { success: false, error: err.message || 'Authentication failed.' };
     }
-
-    return { success: true, user };
   },
 
-  getUserProfile(email) {
+  async getUserProfile(email) {
     if (!email) return null;
     const normEmail = email.trim().toLowerCase();
-    const users = getRegisteredUsersMap();
-    return users[normEmail] || null;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', normEmail)
+        .maybeSingle();
+      return data || null;
+    } catch (e) {
+      return null;
+    }
   },
 
   async saveUserProfile(email, updatedProfile) {
-    if (!email) return;
+    if (!email) return null;
     const normEmail = email.trim().toLowerCase();
-    const users = getRegisteredUsersMap();
-    const existing = users[normEmail] || {};
-    const merged = { ...existing, ...updatedProfile, email: normEmail, updated_at: new Date().toISOString() };
-    users[normEmail] = merged;
-    saveRegisteredUsersMap(users);
-    localDb.from('profiles').upsert(merged);
-
-    // Sync to Supabase if configured
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('profiles').upsert(merged, { onConflict: 'email' });
-      } catch (e) {
-        console.warn('Supabase profile sync notice:', e);
-      }
+    const merged = { ...updatedProfile, email: normEmail, updated_at: new Date().toISOString() };
+    try {
+      await supabase.from('profiles').upsert(merged, { onConflict: 'email' });
+    } catch (e) {
+      console.warn('Supabase profile sync notice:', e);
     }
     return merged;
   },
@@ -239,9 +169,9 @@ export const dbService = {
     this.clearAllUserData();
   },
 
-  clearAllUserData() {
+  async clearAllUserData() {
     try {
-      localDb.clearAllTables();
+      await supabase.auth.signOut().catch(() => {});
       if (typeof localStorage !== 'undefined') {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -256,7 +186,7 @@ export const dbService = {
         window.dispatchEvent(new CustomEvent('neuroprep-data-cleared'));
       } catch (_) {}
     } catch (e) {
-      console.error('Error clearing all user and practice data:', e);
+      console.error('Error clearing user data:', e);
     }
   },
 
@@ -787,10 +717,14 @@ export const dbService = {
  return null;
  }
  },
-
- // 1-Click Database Export
- exportLocalDump() {
- return localDb.exportDatabaseDump();
- }
+  // Database Export
+  async exportLocalDump() {
+    try {
+      const { data } = await supabase.from('profiles').select('*');
+      return { profiles: data || [] };
+    } catch (_) {
+      return {};
+    }
+  }
 };
 

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react';
 import { dbService } from '../services/db';
 
 export default function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }) {
-  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot' | 'confirm_email'
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [college, setCollege] = useState('');
   const [department, setDepartment] = useState('Computer Science and Engineering');
   const [gradYear, setGradYear] = useState(2026);
@@ -45,6 +49,15 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
 
       if (!res.success) {
         setErrorMsg(res.error || 'Registration failed.');
+        return;
+      }
+
+      // If Supabase email confirmation is required
+      if (res.emailConfirmationRequired) {
+        setRegisteredEmail(email.trim());
+        setMode('confirm_email');
+        setErrorMsg('');
+        setSuccessMsg('');
         return;
       }
 
@@ -136,11 +149,8 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
 
         {/* Branding & Header */}
         <div style={{ marginBottom: '18px' }}>
-          <span className="pill-tag" style={{ marginBottom: '8px' }}>
-            NeuroPrep Student Onboarding
-          </span>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--main-heading)', margin: '4px 0 0 0', fontFamily: 'var(--font-heading)' }}>
-            {mode === 'login' ? 'Sign In to NeuroPrep' : mode === 'register' ? 'Student Registration' : 'Reset Your Password'}
+            {mode === 'login' ? 'Sign In to NeuroPrep' : mode === 'register' ? 'Student Registration' : mode === 'confirm_email' ? 'Check Your Email' : 'Reset Your Password'}
           </h2>
         </div>
 
@@ -178,10 +188,10 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
               padding: '9px',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: mode === 'register' ? 'var(--btn-sage)' : 'transparent',
+              backgroundColor: (mode === 'register' || mode === 'confirm_email') ? 'var(--btn-sage)' : 'transparent',
               fontWeight: 700,
-              color: mode === 'register' ? 'var(--btn-text)' : 'var(--secondary-heading)',
-              boxShadow: mode === 'register' ? 'var(--shadow-3d-btn)' : 'none',
+              color: (mode === 'register' || mode === 'confirm_email') ? 'var(--btn-text)' : 'var(--secondary-heading)',
+              boxShadow: (mode === 'register' || mode === 'confirm_email') ? 'var(--shadow-3d-btn)' : 'none',
               cursor: 'pointer',
               fontSize: '0.86rem',
               transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)'
@@ -222,8 +232,75 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
           </div>
         )}
 
-        {/* Form Controls */}
-        <form onSubmit={handleSubmit}>
+        {/* Verification Screen after Supabase Registration */}
+        {mode === 'confirm_email' ? (
+          <div style={{ textAlign: 'center', padding: '10px 4px 6px' }}>
+            <div style={{
+              width: '68px',
+              height: '68px',
+              margin: '0 auto 16px',
+              borderRadius: '50%',
+              backgroundColor: '#EAECE8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid var(--btn-sage)',
+              boxShadow: '0 4px 14px rgba(91, 107, 85, 0.16)'
+            }}>
+              <Mail size={32} color="var(--btn-sage)" />
+            </div>
+
+            <h3 style={{ fontSize: '1.24rem', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '8px' }}>
+              Confirmation Link Sent!
+            </h3>
+
+            <p style={{ fontSize: '0.9rem', color: 'var(--secondary-heading)', lineHeight: '1.55', marginBottom: '16px' }}>
+              We have sent a verification email to{' '}
+              <strong style={{ color: 'var(--main-heading)' }}>{registeredEmail || email}</strong>.
+              <br />
+              Please check your inbox and click the verification link before signing in.
+            </p>
+
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: '10px',
+              backgroundColor: '#F5EBE6',
+              border: '1px solid var(--border-color)',
+              color: 'var(--secondary-heading)',
+              fontSize: '0.82rem',
+              lineHeight: '1.5',
+              marginBottom: '20px',
+              textAlign: 'left'
+            }}>
+              📬 <strong>Note:</strong> If you don't find the confirmation email in your primary inbox within 1–2 minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setEmail(registeredEmail || email);
+                setPassword('');
+                setErrorMsg('');
+                setSuccessMsg('After clicking the confirmation link in your email, enter your password to sign in.');
+              }}
+              className="btn-back-dashboard"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '13px 20px',
+                fontSize: '0.94rem',
+                fontWeight: 800,
+                borderRadius: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              Proceed to Sign In
+            </button>
+          </div>
+        ) : (
+          /* Form Controls */
+          <form onSubmit={handleSubmit}>
           
           {mode === 'register' && (
             <div style={{ marginBottom: '14px' }}>
@@ -264,29 +341,83 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
                 <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--main-heading)', marginBottom: '5px', fontWeight: 700 }}>
                   Password *
                 </label>
-                <input 
-                  type="password" 
-                  placeholder="Enter password"
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  className="input-field" 
-                  style={{ padding: '10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
-                  required 
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Enter password"
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    className="input-field" 
+                    style={{ padding: '10px 38px 10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
+                    required 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: 'var(--secondary-heading)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0.75,
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.75'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--main-heading)', marginBottom: '5px', fontWeight: 700 }}>
                   Confirm Password *
                 </label>
-                <input 
-                  type="password" 
-                  placeholder="Re-enter password"
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  className="input-field" 
-                  style={{ padding: '10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
-                  required 
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    placeholder="Re-enter password"
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                    className="input-field" 
+                    style={{ padding: '10px 38px 10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
+                    required 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: 'var(--secondary-heading)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0.75,
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.75'}
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
           ) : mode !== 'forgot' ? (
@@ -294,15 +425,42 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
               <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--main-heading)', marginBottom: '5px', fontWeight: 700 }}>
                 Password *
               </label>
-              <input 
-                type="password" 
-                placeholder="Enter password"
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="input-field" 
-                style={{ padding: '10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
-                required 
-              />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Enter password"
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="input-field" 
+                  style={{ padding: '10px 38px 10px 14px', fontSize: '0.9rem', backgroundColor: 'var(--bg-card-solid)', border: '1.5px solid var(--border-color)', borderRadius: '10px', width: '100%' }}
+                  required 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    padding: '4px',
+                    cursor: 'pointer',
+                    color: 'var(--secondary-heading)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.75,
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.75'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -401,6 +559,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
             </button>
           )}
         </form>
+        )}
       </div>
     </div>
   );

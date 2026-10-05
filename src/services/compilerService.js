@@ -1,6 +1,6 @@
 /**
  * LeetCode-Standard Compiler & Execution Engine
- * Primary Engine: Judge0 CE (The Open-Source Online Judge standard used by LeetCode)
+ * Primary Engine: Backend AI Execution & Guidance Engine (Gemini & OpenAI)
  * Secondary Engine: Wandbox Production Compiler API
  * Offline / Fallback Engine: In-Browser Client-Side Evaluator & Web Worker Sandbox
  * 
@@ -12,22 +12,7 @@
  * - C, Go, Rust
  */
 
-// ── Judge0 Language IDs ──────────────────────────────────────────────────────
-const JUDGE0_LANG_IDS = {
-  python:     71, // Python 3.8.1 / 3.11
-  python3:    71,
-  py:         71,
-  cpp:        54, // C++ (GCC 9.2.0)
-  'c++':      54,
-  c:          50, // C (GCC 9.2.0)
-  java:       62, // Java (OpenJDK 13.0.1)
-  javascript: 63, // JavaScript (Node.js 12.14.0)
-  js:         63,
-  typescript: 74, // TypeScript (3.7.4)
-  ts:         74,
-  go:         60, // Go (1.13.5)
-  rust:       73, // Rust (1.40.0)
-};
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8000';
 
 // ── Wandbox Compiler Fallback Map ───────────────────────────────────────────
 const WANDBOX_COMPILER_MAP = {
@@ -1064,56 +1049,54 @@ function executeInWorker(jsCode, stdin = '') {
   });
 }
 
-// ── Primary Engine: Judge0 CE (Official LeetCode Online Judge Standard) ───────
-async function executeOnJudge0(preparedCode, language, stdin = '', timeoutMs = 8000) {
+// ── Primary Engine: Backend AI Execution & Guidance Engine (Gemini & OpenAI) ───
+async function executeOnBackendAI(preparedCode, language, stdin = '', timeoutMs = 8000) {
   const langKey = language.toLowerCase().trim();
-  const langId = JUDGE0_LANG_IDS[langKey] || 71;
-
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
 
   try {
-    const res = await fetch('https://ce.judge0.com/submissions?base64_encoded=true&wait=true', {
+    const res = await fetch(`${API_BASE}/api/code/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: ctrl.signal,
       body: JSON.stringify({
-        source_code: utf8ToBase64(preparedCode),
-        language_id: langId,
-        stdin: stdin ? utf8ToBase64(stdin) : '',
+        source_code: preparedCode,
+        language: langKey,
+        stdin: stdin ? String(stdin) : '',
+        session_id: 'standalone',
       }),
     });
     clearTimeout(tid);
 
     if (!res.ok) {
-      throw new Error(`Judge0 API HTTP ${res.status}`);
+      throw new Error(`AI Backend HTTP ${res.status}`);
     }
 
     const data = await res.json();
-    const stdout = (base64ToUtf8(data.stdout) || '').trim();
-    const stderr = (base64ToUtf8(data.stderr) || '').trim();
-    const compileOutput = (base64ToUtf8(data.compile_output) || '').trim();
-    const statusDesc = data.status?.description || 'Unknown';
-    const isSuccess = data.status?.id === 3; // 3 is "Accepted"
-
-    const timeSec = data.time ? parseFloat(data.time) : 0;
-    const timeMs = Math.round(timeSec * 1000);
-    const memoryMb = data.memory ? (data.memory / 1024).toFixed(1) : null;
+    const stdout = (data.stdout || '').trim();
+    const stderr = (data.stderr || '').trim();
+    const compileOutput = (data.compile_output || '').trim();
+    const statusDesc = data.status || 'Accepted';
+    const isSuccess = (statusDesc === 'Accepted') && !stderr;
 
     return {
       ok: isSuccess,
       output: stdout,
-      error: compileOutput || stderr || (data.status?.id !== 3 ? statusDesc : null),
+      error: compileOutput || stderr || (!isSuccess ? statusDesc : null),
       status: statusDesc,
-      executionTime: timeMs > 0 ? `${timeMs}ms` : '1ms',
-      memory: memoryMb ? `${memoryMb} MB` : null,
-      provider: `Judge0 LeetCode Engine (${langKey})`,
+      executionTime: data.time || '15ms',
+      memory: data.memory ? `${data.memory} KB` : null,
+      complexity: data.complexity,
+      ai_guidance: data.ai_guidance || null,
+      provider: data.provider || `AI Engine (${langKey})`,
     };
   } catch (err) {
     clearTimeout(tid);
     throw err;
   }
 }
+
 
 // ── Secondary Engine: Wandbox API ─────────────────────────────────────────────
 async function executeOnWandbox(preparedCode, language, stdin = '', timeoutMs = 8000) {
@@ -1196,7 +1179,7 @@ function executeClientSide(code, language = 'python', stdin = '') {
 
 /**
  * Universal LeetCode-Grade Compiler API
- * Compiles and runs code through Judge0 CE (LeetCode Standard), Wandbox, or Local Web Worker.
+ * Compiles and runs code through Backend AI Engine (Gemini & OpenAI), Wandbox, or Local Web Worker.
  */
 export async function executeCodeOnline(code, language = 'python', stdin = '', problemContext = null) {
   const langKey = String(language).toLowerCase().trim();
@@ -1205,15 +1188,15 @@ export async function executeCodeOnline(code, language = 'python', stdin = '', p
   // Prepare LeetCode driver-wrapped code for the selected language
   const preparedCode = prepareCode(code, langKey, stdin);
 
-  // Tier 1: Primary Online Engine — Judge0 CE (Official LeetCode Online Judge API)
+  // Tier 1: Primary Online Engine — Backend AI Engine (Gemini & OpenAI)
   try {
-    const judgeRes = await executeOnJudge0(preparedCode, langKey, stdin, 6000);
+    const aiRes = await executeOnBackendAI(preparedCode, langKey, stdin, 7000);
     const ms = Math.round(performance.now() - startTime);
     return {
-      ...judgeRes,
-      executionTime: judgeRes.executionTime || `${ms}ms`,
+      ...aiRes,
+      executionTime: aiRes.executionTime || `${ms}ms`,
     };
-  } catch (judgeErr) {
+  } catch (aiErr) {
     // Tier 2: Secondary Online Engine — Wandbox Real Multi-Language Compilers
     try {
       const wandboxRes = await executeOnWandbox(preparedCode, langKey, stdin, 5000);
@@ -1250,10 +1233,10 @@ export async function executeCodeOnline(code, language = 'python', stdin = '', p
       return {
         ok: false,
         output: '',
-        error: judgeErr?.message || 'Execution timed out or network error.',
+        error: aiErr?.message || 'Execution timed out or network error.',
         status: 'Runtime Error',
         executionTime: `${ms}ms`,
-        provider: 'LeetCode Execution Engine',
+        provider: 'AI Placement Execution Engine',
       };
     }
   }

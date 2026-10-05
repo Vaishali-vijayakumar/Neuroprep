@@ -105,7 +105,7 @@ export class VocalIntelligenceEngine {
     try {
       await this._connectWebSocket();
       await this._startAudioCapture();
-      this._startWebSpeechFallback();
+      // Note: Browser Web Speech API is managed exclusively by VoiceEngine to prevent audio-session lock conflicts
       this._running = true;
     } catch (err) {
       this.onError(`[VocalEngine] start failed: ${err.message}`);

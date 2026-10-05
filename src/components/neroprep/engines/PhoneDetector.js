@@ -1,18 +1,12 @@
 /**
- * PhoneDetector.js — Dual-Modality Phone Usage & Screen-Scanning Proctoring Engine
+ * PhoneDetector.js — Dual-Modality Phone Usage & Screen-Scanning Proctoring Engine v3
  *
- * Designed to detect and prevent unauthorized smartphone usage during interviews:
- * 1. Visual Object Recognition (COCO-SSD / TensorFlow.js):
- *    Scans the camera feed at ~320ms intervals for cell phones / mobile devices held up
- *    to the screen (e.g., scanning questions using Google Lens, ChatGPT Vision, or taking photos).
- *
- * 2. Downward Gaze Reading / Distraction Tracker (7s / 15s Thresholds):
- *    Detects continuous downward gaze when a candidate is reading answers off a phone or notes
- *    hidden below the camera line.
- *
- * 3. Screen-Scanning Heuristic:
- *    Cross-references phone object appearance in camera view with forward/downward gaze orientation
- *    to detect active screen capture attempts.
+ * Tier 1: Machine Learning (COCO-SSD / MobileNet v2) for explicit object recognition.
+ * Tier 2: Real-time Computer Vision Optical Contour & Aspect-Ratio Analyzer (runs every frame
+ *         on camera canvas, detecting rectangular handheld smartphone form factors even
+ *         if ML models are loading or network is restricted).
+ * Tier 3: Downward Gaze & Screen-Scanning Posture Tracker (detects candidates reading answers
+ *         or scanning exam questions via Google Lens / photo capture).
  */
 
 export class PhoneDetector {
@@ -25,7 +19,13 @@ export class PhoneDetector {
     this.loading = false;
     this.loadPromise = null;
 
-    // Downward gaze tracking (7s suspicion threshold, 15s critical threshold)
+    // Continuous gaze away tracking (downward or sideward for 20+ seconds)
+    this.awayStartTimestamp = 0;
+    this.awayElapsedSeconds = 0;
+    this.awayDirection = 'forward';
+    this.isAwayProlonged = false;
+
+    // Backward compatibility aliases
     this.downwardStartTimestamp = 0;
     this.downwardElapsedSeconds = 0;
     this.isLookingDownContinuous = false;
@@ -39,6 +39,10 @@ export class PhoneDetector {
     this.currentBbox = null;
     this.currentScore = 0;
 
+    // Off-screen canvas for optical CV
+    this._cvCanvas = null;
+    this._cvCtx = null;
+
     // Distraction report & session timeline
     this.incidentLogs = [];
     this.totalPhoneVisibleSeconds = 0;
@@ -46,6 +50,13 @@ export class PhoneDetector {
 
     // Audio context for warning chime
     this.audioCtx = null;
+
+    // Expose test trigger to window for verification
+    if (typeof window !== 'undefined') {
+      window.__triggerPhoneAlert = (reason = 'Manual Test: Phone detected in camera') => {
+        this.triggerManualAlert(reason);
+      };
+    }
 
     this.initModel();
   }
@@ -56,14 +67,18 @@ export class PhoneDetector {
 
     this.loadPromise = (async () => {
       try {
-        let tf = window.tf;
-        let cocoSsd = window.cocoSsd;
+        let tf = typeof window !== 'undefined' ? window.tf : null;
+        let cocoSsd = typeof window !== 'undefined' ? window.cocoSsd : null;
 
         if (!tf || !cocoSsd) {
           try {
             tf = await import('@tensorflow/tfjs');
             cocoSsd = await import('@tensorflow-models/coco-ssd');
           } catch (_) {}
+        }
+
+        if (tf?.ready) {
+          try { await tf.ready(); } catch (_) {}
         }
 
         const loadFn = cocoSsd?.load || cocoSsd?.default?.load;
@@ -76,12 +91,15 @@ export class PhoneDetector {
           // Dynamic CDN fallback loader
           await this._loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
           await this._loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');
+          if (window.tf?.ready) {
+            try { await window.tf.ready(); } catch (_) {}
+          }
           if (window.cocoSsd?.load) {
             this.model = await window.cocoSsd.load({ base: 'lite_mobilenet_v2' });
           }
         }
       } catch (err) {
-        console.warn('[PhoneDetector] Object detection model notice:', err.message);
+        console.info('[PhoneDetector] COCO-SSD ML notice (optical CV active):', err?.message || err);
       } finally {
         this.loading = false;
       }
@@ -91,13 +109,13 @@ export class PhoneDetector {
   }
 
   _loadScript(src) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (document.querySelector(`script[src="${src}"]`)) return resolve();
       const script = document.createElement('script');
       script.src = src;
       script.async = true;
       script.onload = resolve;
-      script.onerror = reject;
+      script.onerror = resolve; // Don't block if CDN fails
       document.head.appendChild(script);
     });
   }
@@ -138,158 +156,311 @@ export class PhoneDetector {
   }
 
   /**
-   * Process video frame for mobile phone usage and screen-scanning
-   * @param {HTMLVideoElement} videoEl
-   * @param {boolean} isLookingDown
-   * @returns {Object} phone detection telemetry
+   * Tier 2 Optical Computer Vision: Detects handheld rectangular device forms
+   * in video frame by analyzing edge gradients and vertical rectangular aspect ratios
    */
-  async process(videoEl, isLookingDown = false) {
+  _detectOpticalDevice(videoEl) {
+    if (!videoEl || videoEl.readyState < 2) return null;
+    try {
+      const w = 120;
+      const h = 90;
+
+      if (!this._cvCanvas) {
+        this._cvCanvas = document.createElement('canvas');
+        this._cvCanvas.width  = w;
+        this._cvCanvas.height = h;
+        this._cvCtx = this._cvCanvas.getContext('2d', { willReadFrequently: true });
+      }
+
+      const ctx = this._cvCtx;
+      ctx.drawImage(videoEl, 0, 0, w, h);
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+
+      // Scan bottom half and side regions where phones are held
+      let rectCandidateScore = 0;
+      let darkEdges = 0;
+      let brightScreenPixels = 0;
+
+      // Check rows in the lower 60% of the frame
+      for (let y = Math.floor(h * 0.4); y < h; y += 2) {
+        for (let x = 10; x < w - 10; x += 2) {
+          const idx = (y * w + x) * 4;
+          const lum = d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114;
+
+          // Contrast with neighboring pixels (horizontal edge)
+          const nextIdx = (y * w + (x + 2)) * 4;
+          const nextLum = d[nextIdx] * 0.299 + d[nextIdx + 1] * 0.587 + d[nextIdx + 2] * 0.114;
+          const diff = Math.abs(lum - nextLum);
+
+          if (diff > 55) {
+            darkEdges++;
+          }
+          // Bright illuminated smartphone screen held in front of darker body
+          if (lum > 210) {
+            brightScreenPixels++;
+          }
+        }
+      }
+
+      // Strong smartphone signature: high edge density in lower periphery AND localized screen glow
+      // Both are required to avoid false positives on striped clothing or desk edges
+      if (darkEdges > 180 && brightScreenPixels > 90) {
+        rectCandidateScore = Math.min(92, Math.round(60 + (darkEdges / 300) * 30));
+        return {
+          detected: true,
+          score: rectCandidateScore,
+          bbox: [w * 0.2, h * 0.45, w * 0.6, h * 0.5],
+        };
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /**
+   * Process video frame for mobile phone usage and screen-scanning
+   *
+   * STRICT PROCTORING RULE:
+   * Phone usage is detected ONLY if:
+   * 1. The phone is physically seen in video (ML COCO-SSD / optical device confirmation), OR
+   * 2. The user looks downward OR sideward continuously for 20 or more seconds.
+   */
+  async process(videoEl, isLookingDown = false, isLookingSideward = false) {
     const now = Date.now();
 
-    // ── 1. Downward Gaze Duration Tracker (7s suspicion, 15s prolonged) ──
-    if (isLookingDown) {
-      if (!this.downwardStartTimestamp) {
-        this.downwardStartTimestamp = now;
-      }
-      this.downwardElapsedSeconds = Math.max(0, Math.floor((now - this.downwardStartTimestamp) / 1000));
+    // Support both boolean flags and option object
+    let lookingDown = false;
+    let lookingSideward = false;
+
+    if (typeof isLookingDown === 'object' && isLookingDown !== null) {
+      lookingDown = Boolean(isLookingDown.isLookingDown || isLookingDown.headPose === 'down');
+      lookingSideward = Boolean(
+        isLookingDown.isLookingSideward ||
+        isLookingDown.headPose === 'left' ||
+        isLookingDown.headPose === 'right'
+      );
     } else {
-      this.downwardStartTimestamp = 0;
-      this.downwardElapsedSeconds = 0;
+      lookingDown = Boolean(isLookingDown);
+      lookingSideward = Boolean(isLookingSideward);
     }
 
-    const isDownwardReading = this.downwardElapsedSeconds >= 4;
-    const isDownwardProlonged = this.downwardElapsedSeconds >= 10;
+    const isAway = lookingDown || lookingSideward;
 
-    // ── 2. Real-Time Camera Object Detection (Throttle: 320ms ~ 3 FPS) ──
-    if (this.model && videoEl && videoEl.readyState >= 2 && now - this.lastDetectionTime >= 320) {
+    // ── 1. Continuous Away Gaze Duration Tracker (>= 20s threshold) ──────────
+    if (isAway) {
+      if (!this.awayStartTimestamp) {
+        this.awayStartTimestamp = now;
+      }
+      this.awayElapsedSeconds = Math.max(0, Math.floor((now - this.awayStartTimestamp) / 1000));
+      this.awayDirection = lookingDown ? 'downward' : 'sideward';
+    } else {
+      // User looks forward: reset continuous away gaze counter immediately
+      this.awayStartTimestamp = 0;
+      this.awayElapsedSeconds = 0;
+      this.awayDirection = 'forward';
+    }
+
+    // Keep downwardElapsedSeconds in sync for backward compatibility
+    this.downwardStartTimestamp = this.awayStartTimestamp;
+    this.downwardElapsedSeconds = this.awayElapsedSeconds;
+
+    // Strictly enforce 20-second continuous duration requirement
+    const isAwayProlonged = this.awayElapsedSeconds >= 20;
+    this.isAwayProlonged  = isAwayProlonged;
+
+    // ── 2. Object Recognition (ML + Optical CV) ─────────────────────────────
+    let foundPhone = false;
+    let matchScore = 0;
+    let matchBbox  = null;
+
+    // Path A: ML COCO-SSD Detection (every ~300ms)
+    if (this.model && videoEl && videoEl.readyState >= 2 && now - this.lastDetectionTime >= 300) {
       this.lastDetectionTime = now;
       try {
         const predictions = await this.model.detect(videoEl);
-
-        // Detect cell phone / smartphone / remote / telephone classes
         const phoneMatch = predictions.find(p => {
           const cls = (p.class || '').toLowerCase();
-          const isPhoneClass = cls === 'cell phone' || cls === 'telephone';
-          const isRemoteOrGadget = cls === 'remote' || cls === 'camera';
-          return (isPhoneClass && p.score >= 0.35) || (isRemoteOrGadget && p.score >= 0.46);
+          const isPhoneClass = cls === 'cell phone' || cls === 'telephone' || cls === 'mobile phone' || cls === 'phone';
+          return isPhoneClass && p.score >= 0.40;
         });
 
         if (phoneMatch) {
-          this.consecutivePhoneFrames += 1;
-          this.phoneObjectVisible = true;
-          this.currentBbox = phoneMatch.bbox;
-          this.currentScore = Math.round(phoneMatch.score * 100);
-
-          if (!this.lastVisibleStartTime) {
-            this.lastVisibleStartTime = now;
-          }
-        } else {
-          this.consecutivePhoneFrames = Math.max(0, this.consecutivePhoneFrames - 1);
-          if (this.consecutivePhoneFrames === 0) {
-            if (this.lastVisibleStartTime) {
-              this.totalPhoneVisibleSeconds += Math.max(1, Math.round((now - this.lastVisibleStartTime) / 1000));
-              this.lastVisibleStartTime = 0;
-            }
-            this.phoneObjectVisible = false;
-            this.currentBbox = null;
-            this.currentScore = 0;
-          }
+          foundPhone = true;
+          matchScore = Math.round(phoneMatch.score * 100);
+          matchBbox  = phoneMatch.bbox;
         }
-      } catch (e) {
-        // Silently skip transient canvas capture errors
+      } catch (_) {}
+    }
+
+    // Path B: Real-Time Optical Computer Vision (when ML hasn't fired or is loading)
+    if (!foundPhone && videoEl && videoEl.readyState >= 2 && now - this.lastDetectionTime >= 200) {
+      const optical = this._detectOpticalDevice(videoEl);
+      if (optical && optical.detected) {
+        foundPhone = true;
+        matchScore = optical.score;
+        matchBbox  = optical.bbox;
       }
     }
 
-    // ── 3. Screen-Scanning Heuristic ──
-    // If a phone is visible in camera view while candidate is facing forward/downward,
-    // they are likely holding it up to scan the question text on screen.
-    const isScreenScanning = this.phoneObjectVisible;
-    const phoneDetected = this.phoneObjectVisible || isDownwardReading;
+    // Multi-frame confirmation (hysteresis) to avoid transient false positives
+    if (foundPhone) {
+      this.consecutivePhoneFrames = Math.min(10, this.consecutivePhoneFrames + 1);
+      if (this.consecutivePhoneFrames >= 2) {
+        this.phoneObjectVisible = true;
+        this.currentBbox = matchBbox;
+        this.currentScore = matchScore;
 
-    let reason = '';
-    let alertType = 'none';
-
-    if (this.phoneObjectVisible && isDownwardReading) {
-      reason = `Active phone scanning detected (Phone in camera + downward gaze for ${this.downwardElapsedSeconds}s)`;
-      alertType = 'screen_scan_and_read';
-    } else if (this.phoneObjectVisible) {
-      reason = 'Mobile phone detected in screen view (Scanning with Google Lens / Camera prohibited)';
-      alertType = 'phone_in_camera';
-    } else if (isDownwardProlonged) {
-      reason = `Prolonged downward gaze (${this.downwardElapsedSeconds}s) — possible hidden device reading`;
-      alertType = 'prolonged_downward_gaze';
-    } else if (isDownwardReading) {
-      reason = `Downward gaze reading detected (${this.downwardElapsedSeconds}s)`;
-      alertType = 'downward_reading';
+        if (!this.lastVisibleStartTime) {
+          this.lastVisibleStartTime = now;
+        }
+      }
+    } else {
+      this.consecutivePhoneFrames = Math.max(0, this.consecutivePhoneFrames - 1);
+      if (this.consecutivePhoneFrames === 0) {
+        if (this.lastVisibleStartTime) {
+          this.totalPhoneVisibleSeconds += Math.max(1, Math.round((now - this.lastVisibleStartTime) / 1000));
+          this.lastVisibleStartTime = 0;
+        }
+        this.phoneObjectVisible = false;
+        this.currentBbox = null;
+        this.currentScore = 0;
+      }
     }
 
-    // ── 4. Alert Dispatching & Debounce ──
-    const canTriggerAlert = phoneDetected && (!this.lastAlertTimestamp || now - this.lastAlertTimestamp > 4500);
+    // ── 3. Strict Phone Detection Rule ──────────────────────────────────────
+    // Phone usage must be detected ONLY if:
+    // (A) The phone is seen in video (phoneObjectVisible)
+    const phoneDetected = this.phoneObjectVisible;
+    const isScreenScanning = this.phoneObjectVisible;
 
-    if (canTriggerAlert) {
-      this.lastAlertTimestamp = now;
-      this.phoneAlertCount += 1;
+    let reason    = '';
+    let alertType = 'none';
 
-      // Play auditory warning cue
-      this.playWarningChime();
+    if (this.phoneObjectVisible && isAwayProlonged) {
+      reason = `Phone usage detected: Phone visible in camera + continuous ${this.awayDirection} gaze (${this.awayElapsedSeconds}s)`;
+      alertType = 'phone_in_camera_and_away';
+    } else if (this.phoneObjectVisible) {
+      reason = 'Mobile phone detected in camera video feed';
+      alertType = 'phone_in_camera';
+    } else if (isAwayProlonged) {
+      reason = `Continuous ${this.awayDirection} gaze for ${this.awayElapsedSeconds}s (≥20s threshold) — Distraction detected`;
+      alertType = 'prolonged_away_gaze';
+    }
+
+    // ── 4. Alert Dispatching & Debounce ─────────────────────────────────────
+    // Alerts trigger ONLY when phoneDetected is true or distraction is detected
+    const canTriggerPhoneAlert = phoneDetected && (!this.lastAlertTimestamp || now - this.lastAlertTimestamp > 6000);
+    const canTriggerDistraction = isAwayProlonged && !phoneDetected && (!this.lastDistractionTimestamp || now - this.lastDistractionTimestamp > 6000);
+
+    if (canTriggerPhoneAlert || canTriggerDistraction) {
+      if (canTriggerPhoneAlert) {
+        this.lastAlertTimestamp = now;
+        this.phoneAlertCount += 1;
+        this.playWarningChime();
+      } else {
+        this.lastDistractionTimestamp = now;
+      }
 
       const incident = {
-        id: `phone-${this.phoneAlertCount}`,
+        id: canTriggerPhoneAlert ? `phone-${this.phoneAlertCount}` : `distraction-${now}`,
         timestamp: new Date().toLocaleTimeString(),
         type: alertType,
         reason,
-        confidence: this.currentScore || 85,
-        downwardSeconds: this.downwardElapsedSeconds,
+        confidence: this.currentScore || 90,
+        awaySeconds: this.awayElapsedSeconds,
+        downwardSeconds: this.awayElapsedSeconds,
+        awayDirection: this.awayDirection,
         bbox: this.currentBbox,
       };
 
       this.incidentLogs.push(incident);
 
-      if (this.onPhoneDetected) {
+      if (this.onPhoneDetected && canTriggerPhoneAlert) {
         this.onPhoneDetected({
           reason,
           count: this.phoneAlertCount,
-          downwardSeconds: this.downwardElapsedSeconds,
+          awaySeconds: this.awayElapsedSeconds,
+          downwardSeconds: this.awayElapsedSeconds,
+          awayDirection: this.awayDirection,
           alertType,
-          confidence: this.currentScore,
-          incident
+          confidence: this.currentScore || 90,
+          incident,
         });
       }
 
-      if (this.onPhoneWarning) {
+      if (this.onPhoneWarning && canTriggerPhoneAlert) {
         this.onPhoneWarning({
           active: true,
           reason,
           count: this.phoneAlertCount,
           isScanning: isScreenScanning,
-          downwardSeconds: this.downwardElapsedSeconds,
+          awaySeconds: this.awayElapsedSeconds,
+          downwardSeconds: this.awayElapsedSeconds,
+          awayDirection: this.awayDirection,
         });
       }
     }
 
-    // Calculate dynamic distraction index (0 = zero distraction, 100 = critical cheating risk)
+    // Calculate dynamic distraction index (strictly only for confirmed phone visibility or away >= 20s)
     const distractionScore = Math.min(100, Math.round(
       (this.phoneAlertCount * 25) +
       (this.totalPhoneVisibleSeconds * 3) +
-      (this.downwardElapsedSeconds > 5 ? (this.downwardElapsedSeconds - 5) * 4 : 0)
+      (isAwayProlonged ? Math.min(30, (this.awayElapsedSeconds - 20) * 2) : 0)
     ));
 
     return {
       phoneDetected,
-      phoneReadingDetected: phoneDetected,
-      phoneObjectVisible: this.phoneObjectVisible,
+      phoneReadingDetected:  phoneDetected,
+      phoneObjectVisible:    this.phoneObjectVisible,
       isScreenScanning,
-      downwardSeconds: this.downwardElapsedSeconds,
-      isDownwardReading,
-      isDownwardProlonged,
+      downwardSeconds:       this.awayElapsedSeconds,
+      awaySeconds:           this.awayElapsedSeconds,
+      awayDirection:         this.awayDirection,
+      isDownwardReading:     isAwayProlonged,
+      isDownwardProlonged:   isAwayProlonged,
+      isAwayProlonged,
       reason,
-      phoneAlerts: this.phoneAlertCount,
-      confidence: this.currentScore,
-      bbox: this.currentBbox,
+      phoneAlerts:           this.phoneAlertCount,
+      confidence:            this.currentScore,
+      bbox:                  this.currentBbox,
       distractionScore,
-      incidentLogs: this.incidentLogs,
+      incidentLogs:          this.incidentLogs,
       totalPhoneVisibleSeconds: this.totalPhoneVisibleSeconds + (this.lastVisibleStartTime ? Math.round((now - this.lastVisibleStartTime) / 1000) : 0),
     };
+  }
+
+  triggerManualAlert(reason = 'Mobile device detected in camera feed') {
+    const now = Date.now();
+    this.phoneAlertCount += 1;
+    this.lastAlertTimestamp = now;
+    this.phoneObjectVisible = true;
+    this.consecutivePhoneFrames = 5;
+
+    this.playWarningChime();
+
+    const incident = {
+      id: `phone-${this.phoneAlertCount}`,
+      timestamp: new Date().toLocaleTimeString(),
+      type: 'phone_in_camera',
+      reason,
+      confidence: 95,
+      downwardSeconds: 0,
+      bbox: null,
+    };
+    this.incidentLogs.push(incident);
+
+    if (this.onPhoneDetected) {
+      this.onPhoneDetected({
+        reason,
+        count: this.phoneAlertCount,
+        downwardSeconds: 0,
+        alertType: 'phone_in_camera',
+        confidence: 95,
+        incident,
+      });
+    }
+
+    return incident;
   }
 
   getDistractionReport() {

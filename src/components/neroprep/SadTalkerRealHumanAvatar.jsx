@@ -77,6 +77,10 @@ export default function SadTalkerRealHumanAvatar({
     const video = videoRef.current;
     if (!video) return;
 
+    // Guarantee absolute acoustic silence — avatar is visual only
+    video.muted = true;
+    video.volume = 0;
+
     if (aiStatus === 'speaking') {
       video.playbackRate = 1.0;
       video.play().catch(() => {});

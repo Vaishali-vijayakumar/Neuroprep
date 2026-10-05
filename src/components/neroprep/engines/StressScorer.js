@@ -44,7 +44,10 @@ export class StressScorer {
     let audioScore   = 0;
     let anomalyScore = 0;
 
-    // ── 1. Face & Biometric Stream (35%) ────────────────────────────────────
+    // ── 1. Face & Biometric Stream ──────────────────────────────────────────
+    let baseFaceStress = 22;
+    let baseFear = 14;
+
     if (this.faceData) {
       const {
         blinkRate    = 15,
@@ -52,53 +55,56 @@ export class StressScorer {
         eyeContact   = 90,
         faceDetected = true,
         stressScore  = null,
+        fearScore    = null,
         actionUnits  = null,
       } = this.faceData;
 
+      if (stressScore != null && stressScore > 0) baseFaceStress = stressScore;
+      if (fearScore != null && fearScore > 0)     baseFear = fearScore;
+
       if (!faceDetected) {
-        faceScore += 45; // Candidate left frame / obscured camera
+        faceScore += 35; // Candidate left frame / obscured camera
       } else {
-        // Core facial strain score from FaceStressModel
-        if (stressScore != null && stressScore > 0) {
-          faceScore += stressScore * 0.60;
-        }
+        faceScore = baseFaceStress;
 
         // Direct Action Unit weighting if raw AUs are present
         if (actionUnits) {
-          if (actionUnits.au4 > 0.35) faceScore += actionUnits.au4 * 25; // Brow tension
-          if (actionUnits.au7 > 0.35) faceScore += actionUnits.au7 * 20; // Eye fatigue
-          if (actionUnits.au1 > 0.40) faceScore += actionUnits.au1 * 15; // Worry
+          if (actionUnits.au4 > 0.35) faceScore += actionUnits.au4 * 18; // Brow tension
+          if (actionUnits.au7 > 0.35) faceScore += actionUnits.au7 * 15; // Eye fatigue
+          if (actionUnits.au1 > 0.40) faceScore += actionUnits.au1 * 12; // Worry
         }
 
         // Blink rate extremes
         if (blinkRate > 28) {
-          faceScore += Math.min(30, (blinkRate - 25) * 3); // Rapid anxious blinking
+          faceScore += Math.min(20, (blinkRate - 25) * 2); // Rapid anxious blinking
         } else if (blinkRate > 0 && blinkRate < 6) {
-          faceScore += 22; // Cognitive freeze / hyper-fixation
+          faceScore += 15; // Cognitive freeze
         }
       }
+    } else {
+      faceScore = 22;
     }
 
-    // ── 2. Audio & Acoustic Stream (35%) ────────────────────────────────────
+    // ── 2. Audio & Acoustic Stream ──────────────────────────────────────────
     if (this.audioData) {
       const { volume = 0, wpm = 0, silenceDuration = 0, isVoice = false } = this.audioData;
 
       if (volume > 0) {
-        if (volume < 8)       audioScore += 24; // Mumbling / confidence loss
-        else if (volume > 82) audioScore += 20; // Vocal strain / shouting
+        if (volume < 8)       audioScore += 18; // Mumbling / confidence loss
+        else if (volume > 82) audioScore += 22; // Vocal strain / shouting
       }
 
       if (wpm > 0) {
-        if (wpm > 185)      audioScore += Math.min(35, (wpm - 170) * 0.8); // Rushing panic
-        else if (wpm < 55)  audioScore += 26; // Severe word-retrieval hesitation
+        if (wpm > 185)      audioScore += Math.min(30, (wpm - 170) * 0.8); // Rushing panic
+        else if (wpm < 55)  audioScore += 22; // Severe word-retrieval hesitation
       }
 
-      if (silenceDuration > 8000)      audioScore += 45; // 8s+ cognitive freeze
-      else if (silenceDuration > 4000) audioScore += 28; // 4s+ block
-      else if (silenceDuration > 2000) audioScore += 12;
+      if (silenceDuration > 8000)      audioScore += 35; // 8s+ cognitive freeze
+      else if (silenceDuration > 4000) audioScore += 20; // 4s+ block
+      else if (silenceDuration > 2000) audioScore += 10;
     }
 
-    // ── 3. Behavioral & Downward Gaze Anomaly Stream (30%) ──────────────────
+    // ── 3. Behavioral & Downward Gaze Anomaly Stream ─────────────────────────
     const eyeContact    = this.faceData?.eyeContact ?? 90;
     const headPose      = this.faceData?.headPose ?? 'forward';
     const isLookingDown = Boolean(
@@ -108,36 +114,39 @@ export class StressScorer {
     const isSpeaking = (this.audioData?.volume ?? 0) > 10;
     const currentWpm = this.audioData?.wpm ?? 0;
 
-    let phoneReadingDetected  = false;
-    let downwardFocusDetected = false;
+    const phoneReadingDetected = Boolean(
+      this.faceData?.phoneReadingDetected ||
+      this.faceData?.phoneDetected ||
+      this.contextData?.phoneDetected
+    );
+    const downwardFocusDetected = isLookingDown;
 
-    // Pattern 1: Speaking while looking down → Proctor Alert (Phone / Off-Screen Reading)
-    // Pattern 2: Silent while looking down → Elevated Cognitive Load (Deep thinking / notes / problem reading)
-    if (isLookingDown) {
-      if (isSpeaking) {
-        anomalyScore += 45;
-        phoneReadingDetected = true;
-      } else {
-        anomalyScore += 30;
-        downwardFocusDetected = true;
-      }
+    if (phoneReadingDetected) {
+      anomalyScore += 40;
+    } else if (isLookingDown) {
+      anomalyScore += 15;
     } else if (eyeContact < 40) {
       anomalyScore += Math.max(0, (50 - eyeContact) * 0.8);
     }
 
-    // Unnatural monotonic reading fluency: fast speech (WPM > 130) with 0 fillers on complex topics
     if (currentWpm > 130 && this.contextData.fillerCount === 0 && phoneReadingDetected) {
-      anomalyScore += 25;
+      anomalyScore += 20;
     }
 
-    // Frequent filler words indicating high cognitive uncertainty
     if (this.contextData.fillerCount > 0) {
-      anomalyScore += Math.min(25, this.contextData.fillerCount * 5);
+      anomalyScore += Math.min(20, this.contextData.fillerCount * 4);
     }
 
-    // ── Multi-Modal Fusion ──────────────────────────────────────────────────
-    const rawIndex = faceScore * 0.35 + audioScore * 0.35 + anomalyScore * 0.30;
-    const finalScore = Math.round(Math.min(100, Math.max(0, rawIndex)));
+    // ── Multi-Modal Fusion (Preserves physiologically rich baseline) ─────────
+    let combined = faceScore * 0.65 + baseFear * 0.35;
+    if (audioScore > 0) {
+      combined = combined * 0.70 + (faceScore * 0.30 + audioScore * 0.70) * 0.30;
+    }
+    if (anomalyScore > 0) {
+      combined = Math.min(100, combined + anomalyScore * 0.40);
+    }
+
+    const finalScore = Math.round(Math.min(100, Math.max(8, combined)));
 
     this.history.push(finalScore);
     if (this.history.length > this.WINDOW) this.history.shift();
@@ -148,7 +157,7 @@ export class StressScorer {
 
     let cognitiveLoad = 'Low';
     if (smoothed >= 56 || phoneReadingDetected) cognitiveLoad = 'High';
-    else if (smoothed >= 31 || downwardFocusDetected) cognitiveLoad = 'Moderate';
+    else if (smoothed >= 30 || downwardFocusDetected) cognitiveLoad = 'Moderate';
 
     const result = {
       score: smoothed,

@@ -224,3 +224,16 @@ export function slewRateLimit(currentVal, previousVal, maxStep = 2.0, smoothingA
   return previousVal + (target - previousVal) * smoothingAlpha;
 }
 
+/**
+ * Computes the trimmed mean of an array of numbers, discarding trimFraction from both ends.
+ */
+export function computeTrimmedMean(arr, trimFraction = 0.10) {
+  if (!arr || arr.length === 0) return 0;
+  const sorted = [...arr].filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
+  if (sorted.length === 0) return 0;
+  const k = Math.floor(sorted.length * trimFraction);
+  const trimmed = sorted.slice(k, sorted.length - k);
+  if (trimmed.length === 0) return sorted[Math.floor(sorted.length / 2)];
+  const sum = trimmed.reduce((acc, v) => acc + v, 0);
+  return sum / trimmed.length;
+}

@@ -245,15 +245,6 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  lastPhoneAlertTime.current = Date.now();
  setPhoneUseCount((prev) => prev + 1);
  }
- } else if (telemetry.headPose === 'down' || telemetry.isLookingDown) {
- consecutiveDownFrames.current += 1;
- // ~2.5s continuous downward gaze triggers phone/distraction alert
- if (consecutiveDownFrames.current > 75 && Date.now() - lastPhoneAlertTime.current > 5000) {
- lastPhoneAlertTime.current = Date.now();
- setPhoneUseCount((prev) => prev + 1);
- }
- } else if (telemetry.headPose === 'forward') {
- consecutiveDownFrames.current = 0;
  }
  setFaceData((prev) => ({ ...prev, ...telemetry }));
  },

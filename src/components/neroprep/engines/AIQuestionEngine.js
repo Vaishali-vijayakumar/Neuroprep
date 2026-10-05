@@ -750,71 +750,73 @@ export class AIQuestionEngine {
     const skillScores = {};
 
     matrix.forEach((metric) => {
-      let dimensionScore = 50;
+      let dimensionScore = 0;
       const mId = metric.id;
 
-      if (mId === 'culture_fit') {
-        if (isDisengagedAnywhere) {
-          dimensionScore = 15;
-        } else if (hasCompanyFit && totalWords > 20) {
-          dimensionScore = Math.min(95, Math.max(60, Math.round(avgScore + 15)));
-        } else if (totalWords < 10) {
-          dimensionScore = 28;
+      if (answeredReviews.length > 0) {
+        if (mId === 'culture_fit') {
+          if (isDisengagedAnywhere) {
+            dimensionScore = 15;
+          } else if (hasCompanyFit && totalWords > 20) {
+            dimensionScore = Math.min(95, Math.round(avgScore + 15));
+          } else if (totalWords < 10) {
+            dimensionScore = 28;
+          } else {
+            dimensionScore = avgScore;
+          }
+        } else if (mId === 'communication') {
+          if (avgWordsPerQ <= 3) {
+            dimensionScore = 22; // Single-word / bare name response
+          } else if (avgWordsPerQ < 12) {
+            dimensionScore = 48; // Brief response
+          } else {
+            const fluencyBonus = isOptimalPace ? 12 : 0;
+            dimensionScore = Math.min(96, Math.round((Math.min(100, totalWords * 1.5) * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2) + fluencyBonus));
+          }
+        } else if (mId === 'eq') {
+          if (isDisengagedAnywhere) {
+            dimensionScore = 18;
+          } else {
+            const avgMaturity = questionReviews.reduce((sum, q) => sum + (q.emotion?.emotionalMaturity || 70), 0) / Math.max(1, questionReviews.length);
+            dimensionScore = Math.min(96, Math.round(avgMaturity));
+          }
+        } else if (mId === 'growth_mindset') {
+          if (hasGrowthMindset && totalWords > 15) {
+            dimensionScore = Math.min(95, Math.round(avgScore + 18));
+          } else if (isDisengagedAnywhere || totalWords < 8) {
+            dimensionScore = 25;
+          } else {
+            dimensionScore = Math.min(80, Math.round(avgScore - 5));
+          }
+        } else if (mId === 'career_goals') {
+          if (isDisengagedAnywhere) {
+            dimensionScore = 8; // Disengaged / "nothing motivated me"
+          } else if (hasCareerGoals && totalWords > 15) {
+            dimensionScore = Math.min(95, Math.round(avgScore + 14));
+          } else if (totalWords < 8) {
+            dimensionScore = 30;
+          } else {
+            dimensionScore = avgScore;
+          }
+        } else if (mId === 'demeanor') {
+          // Tied directly to real-time eye-gaze tracking + facial calmness
+          dimensionScore = Math.min(96, Math.round((eyeContactScore * 0.6) + ((100 - stressIdx) * 0.4)));
+        } else if (mId === 'authenticity') {
+          if (hasOwnership && totalWords > 15) {
+            dimensionScore = Math.min(96, Math.round(avgScore + 10));
+          } else if (totalWords <= 4) {
+            dimensionScore = 35;
+          } else {
+            dimensionScore = avgScore;
+          }
+        } else if (mId === 'ethics') {
+          // Evaluates integrity + compliance (proctoring infractions)
+          const infractionPenalty = (faceTelemetry.phoneAlerts || 0) * 20;
+          dimensionScore = Math.max(0, 95 - infractionPenalty);
         } else {
-          dimensionScore = Math.min(85, Math.max(40, avgScore));
+          // General / Technical domain metrics
+          dimensionScore = avgScore;
         }
-      } else if (mId === 'communication') {
-        if (avgWordsPerQ <= 3) {
-          dimensionScore = 22; // Single-word / bare name response
-        } else if (avgWordsPerQ < 12) {
-          dimensionScore = 48; // Brief response
-        } else {
-          const fluencyBonus = isOptimalPace ? 12 : 0;
-          dimensionScore = Math.min(96, Math.max(45, Math.round((Math.min(100, totalWords * 1.5) * 0.5) + (paceScore * 0.3) + (fillerScore * 0.2) + fluencyBonus)));
-        }
-      } else if (mId === 'eq') {
-        if (isDisengagedAnywhere) {
-          dimensionScore = 18;
-        } else {
-          const avgMaturity = questionReviews.reduce((sum, q) => sum + (q.emotion?.emotionalMaturity || 70), 0) / Math.max(1, questionReviews.length);
-          dimensionScore = Math.min(96, Math.max(25, Math.round(avgMaturity)));
-        }
-      } else if (mId === 'growth_mindset') {
-        if (hasGrowthMindset && totalWords > 15) {
-          dimensionScore = Math.min(95, Math.max(65, Math.round(avgScore + 18)));
-        } else if (isDisengagedAnywhere || totalWords < 8) {
-          dimensionScore = 25;
-        } else {
-          dimensionScore = Math.min(80, Math.max(40, Math.round(avgScore - 5)));
-        }
-      } else if (mId === 'career_goals') {
-        if (isDisengagedAnywhere) {
-          dimensionScore = 8; // Disengaged / "nothing motivated me"
-        } else if (hasCareerGoals && totalWords > 15) {
-          dimensionScore = Math.min(95, Math.max(65, Math.round(avgScore + 14)));
-        } else if (totalWords < 8) {
-          dimensionScore = 30;
-        } else {
-          dimensionScore = Math.min(85, Math.max(45, avgScore));
-        }
-      } else if (mId === 'demeanor') {
-        // Tied directly to real-time eye-gaze tracking + facial calmness
-        dimensionScore = Math.min(96, Math.max(20, Math.round((eyeContactScore * 0.6) + ((100 - stressIdx) * 0.4))));
-      } else if (mId === 'authenticity') {
-        if (hasOwnership && totalWords > 15) {
-          dimensionScore = Math.min(96, Math.max(60, Math.round(avgScore + 10)));
-        } else if (totalWords <= 4) {
-          dimensionScore = 35;
-        } else {
-          dimensionScore = Math.min(85, Math.max(40, avgScore));
-        }
-      } else if (mId === 'ethics') {
-        // Evaluates integrity + compliance (proctoring infractions)
-        const infractionPenalty = (faceTelemetry.phoneAlerts || 0) * 20;
-        dimensionScore = Math.max(30, 95 - infractionPenalty);
-      } else {
-        // General / Technical domain metrics
-        dimensionScore = Math.min(95, Math.max(20, avgScore));
       }
 
       // Store by BOTH label and id to guarantee frontend lookup
@@ -823,30 +825,45 @@ export class AIQuestionEngine {
     });
 
     // ── CALIBRATED TRI-MODAL SCORING FORMULA ────────────────────────────────────
-    // 1. Question Audit Score (50% weight)
-    const questionAuditScore = avgScore;
+    
+    let finalScore = 0;
+    let questionAuditScore = 0;
+    let rubricAvgScore = 0;
+    let biometricsScore = 0;
+    let baseScore = 0;
+    let totalPenalties = 0;
+    let cogPenalty = 0;
+    let tabPenalty = 0;
+    let phonePenalty = 0;
 
-    // 2. Evaluation Rubrics Average (30% weight)
-    const rubricValues = matrix.map(m => skillScores[m.id] || skillScores[m.label] || avgScore);
-    const rubricAvgScore = rubricValues.length > 0
-      ? Math.round(rubricValues.reduce((a, b) => a + b, 0) / rubricValues.length)
-      : avgScore;
+    if (answeredReviews.length > 0) {
+      // 1. Question Audit Score (50% weight)
+      questionAuditScore = avgScore;
 
-    // 3. Real-time Biometrics & Telemetry Performance (20% weight)
-    const vocalScore = Math.round((paceScore * 0.6) + (fillerScore * 0.4));
-    const biometricsScore = Math.min(100, Math.max(10, Math.round((eyeContactScore * 0.35) + (vocalScore * 0.35) + ((100 - stressIdx) * 0.30))));
+      // 2. Evaluation Rubrics Average (30% weight)
+      // Only average the rubrics that got a score (or all if we want to reflect the demonstrated)
+      // Actually, since we want "score for that alone", let's average the rubric values that are > 0.
+      const validRubrics = matrix.map(m => skillScores[m.id] || skillScores[m.label] || 0).filter(v => v > 0);
+      rubricAvgScore = validRubrics.length > 0
+        ? Math.round(validRubrics.reduce((a, b) => a + b, 0) / validRubrics.length)
+        : avgScore;
 
-    // 4. Base & Final Calibrated Overall Score
-    const baseScore = Math.round((questionAuditScore * 0.50) + (rubricAvgScore * 0.30) + (biometricsScore * 0.20));
-    const cogPenalty = stressIdx > 70 ? 8 : (stressIdx > 45 ? 4 : 0);
-    const tabPenalty = (faceTelemetry.tabSwitches || 0) * 10;
-    const phonePenalty = (faceTelemetry.phoneAlerts || 0) * 12;
-    const totalPenalties = cogPenalty + tabPenalty + phonePenalty;
-    const finalScore = Math.max(0, Math.min(100, baseScore - totalPenalties));
+      // 3. Real-time Biometrics & Telemetry Performance (20% weight)
+      const vocalScore = Math.round((paceScore * 0.6) + (fillerScore * 0.4));
+      biometricsScore = Math.min(100, Math.round((eyeContactScore * 0.35) + (vocalScore * 0.35) + ((100 - stressIdx) * 0.30)));
 
-    const grade = finalScore >= 92 ? 'A+' : (finalScore >= 85 ? 'A' : (finalScore >= 78 ? 'B+' : (finalScore >= 70 ? 'B' : (finalScore >= 60 ? 'C' : 'D'))));
-    const hire = finalScore >= 88 ? 'Strong Yes — High Potential' : (finalScore >= 75 ? 'Yes — Ready for Next Round' : (finalScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation'));
-    const confidenceScore = Math.max(20, Math.min(100, Math.round((eyeContactScore * 0.5) + ((100 - stressIdx) * 0.5))));
+      // 4. Base & Final Calibrated Overall Score
+      baseScore = Math.round((questionAuditScore * 0.50) + (rubricAvgScore * 0.30) + (biometricsScore * 0.20));
+      cogPenalty = stressIdx > 70 ? 8 : (stressIdx > 45 ? 4 : 0);
+      tabPenalty = (faceTelemetry.tabSwitches || 0) * 10;
+      phonePenalty = (faceTelemetry.phoneAlerts || 0) * 12;
+      totalPenalties = cogPenalty + tabPenalty + phonePenalty;
+      finalScore = Math.max(0, Math.min(100, baseScore - totalPenalties));
+    }
+
+    const grade = answeredReviews.length === 0 ? '—' : (finalScore >= 92 ? 'A+' : (finalScore >= 85 ? 'A' : (finalScore >= 78 ? 'B+' : (finalScore >= 70 ? 'B' : (finalScore >= 60 ? 'C' : 'D')))));
+    const hire = answeredReviews.length === 0 ? 'No Data' : (finalScore >= 88 ? 'Strong Yes — High Potential' : (finalScore >= 75 ? 'Yes — Ready for Next Round' : (finalScore >= 50 ? 'Consider — With Focus on Weak Areas' : 'No — Needs Preparation')));
+    const confidenceScore = answeredReviews.length === 0 ? 0 : Math.max(20, Math.min(100, Math.round((eyeContactScore * 0.5) + ((100 - stressIdx) * 0.5))));
 
     const uniqueStrengths = Array.from(new Set(questionReviews.flatMap(q => q.strengths || []))).filter(Boolean).slice(0, 4);
     const uniqueWeaknesses = Array.from(new Set(questionReviews.flatMap(q => q.improvements || []))).filter(Boolean).slice(0, 3);

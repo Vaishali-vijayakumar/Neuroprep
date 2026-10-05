@@ -25,6 +25,7 @@ export class VoiceEngine {
     this._destroyed      = false;
     this._selectedVoice  = null;
     this._ttsKeepalive   = null;
+    this._speechId       = 0;
 
     // Buffer for continuous STT
     this._accumulatedFinal = '';
@@ -36,6 +37,8 @@ export class VoiceEngine {
     this.audioChunks     = [];
     this.mediaStream     = mediaStream || null;
     this._silenceTimer   = null;
+    this._restartTimer   = null;
+    this._watchdogTimer  = null;
 
     this._initRecognition();
     if (this.mediaStream) {
@@ -211,123 +214,143 @@ export class VoiceEngine {
       return;
     }
 
-    this.recognition = new SR();
-    this.recognition.continuous      = true;
-    this.recognition.interimResults  = true;
-    this.recognition.lang            = this.lang;
-    this.recognition.maxAlternatives = 1;
+    if (this.recognition) {
+      try {
+        this.recognition.onstart = null;
+        this.recognition.onend = null;
+        this.recognition.onerror = null;
+        this.recognition.onresult = null;
+        this.recognition.abort();
+      } catch (_) {}
+      this.recognition = null;
+    }
 
-    this.recognition.onstart = () => {
-      if (this._destroyed) return;
-      this.isListening = true;
-      this.onStateChange({ type: 'listening', value: true });
+    try {
+      this.recognition = new SR();
+      this.recognition.continuous      = true;
+      this.recognition.interimResults  = true;
+      this.recognition.lang            = this.lang;
+      this.recognition.maxAlternatives = 1;
 
-      // Start recording raw audio in parallel
-      if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
-        try {
-          this.audioChunks = [];
-          this.mediaRecorder.start(1000);
-        } catch (_) {}
-      }
-    };
+      this.recognition.onstart = () => {
+        if (this._destroyed) return;
+        this.isListening = true;
+        this.onStateChange({ type: 'listening', value: true });
 
-    this.recognition.onend = () => {
-      if (this._destroyed) return;
-      this.isListening = false;
+        // Start recording raw audio in parallel
+        if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
+          try {
+            this.audioChunks = [];
+            this.mediaRecorder.start(1000);
+          } catch (_) {}
+        }
+      };
 
-      // Commit the current session's final transcript to accumulated buffer
-      if (this._currentSessionFinal) {
-        this._accumulatedFinal = this._cleanTranscript(
-          (this._accumulatedFinal ? this._accumulatedFinal + ' ' : '') + this._currentSessionFinal
-        );
-        this._currentSessionFinal = '';
-      }
+      this.recognition.onend = () => {
+        if (this._destroyed) return;
+        this.isListening = false;
 
-      this.onStateChange({ type: 'listening', value: false });
+        // Commit current session's final transcript to accumulated buffer
+        if (this._currentSessionFinal) {
+          this._accumulatedFinal = this._cleanTranscript(
+            (this._accumulatedFinal ? this._accumulatedFinal + ' ' : '') + this._currentSessionFinal
+          );
+          this._currentSessionFinal = '';
+        }
 
-      // Restart continuous listening if required
-      if (this._shouldRestart && !this._destroyed) {
-        setTimeout(() => {
-          if (this._shouldRestart && !this._destroyed && !this.isListening) {
-            try {
-              this.recognition.start();
-            } catch (_) {}
-          }
-        }, 100);
-      }
-    };
+        this.onStateChange({ type: 'listening', value: false });
 
-    this.recognition.onresult = (event) => {
-      if (this._destroyed) return;
+        // Restart continuous listening safely if still required and not currently speaking
+        if (this._shouldRestart && !this._destroyed && !this.isSpeaking) {
+          clearTimeout(this._restartTimer);
+          this._restartTimer = setTimeout(() => {
+            if (this._shouldRestart && !this._destroyed && !this.isListening && !this.isSpeaking) {
+              this._startRecognitionInternal();
+            }
+          }, 120);
+        }
+      };
 
-      let sessionFinal = '';
-      let interimStr   = '';
+      this.recognition.onresult = (event) => {
+        if (this._destroyed) return;
 
-      for (let i = 0; i < event.results.length; i++) {
-        const res = event.results[i];
+        let sessionFinal = '';
+        let interimStr   = '';
 
-        // Best alternative candidate selection
-        let bestText = res[0]?.transcript || '';
-        if (res.length > 1) {
-          for (let k = 0; k < res.length; k++) {
-            const candidate = res[k]?.transcript || '';
-            if (candidate && res[k]?.confidence > (res[0]?.confidence || 0)) {
-              bestText = candidate;
-              break;
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+
+          // Best alternative candidate selection
+          let bestText = res[0]?.transcript || '';
+          if (res.length > 1) {
+            for (let k = 0; k < res.length; k++) {
+              const candidate = res[k]?.transcript || '';
+              if (candidate && res[k]?.confidence > (res[0]?.confidence || 0)) {
+                bestText = candidate;
+                break;
+              }
             }
           }
-        }
 
-        if (res.isFinal) {
-          sessionFinal += (sessionFinal ? ' ' : '') + bestText;
-        } else {
-          interimStr += (interimStr ? ' ' : '') + bestText;
-        }
-      }
-
-      this._currentSessionFinal = sessionFinal.trim();
-      this._interimText = interimStr.trim();
-
-      const combinedFinal = this._cleanTranscript(
-        (this._accumulatedFinal ? this._accumulatedFinal + ' ' : '') + this._currentSessionFinal
-      );
-
-      const fullCombined = this._cleanTranscript(
-        combinedFinal + (this._interimText ? (combinedFinal ? ' ' : '') + this._interimText : '')
-      );
-
-      this.onTranscript({
-        finalText: combinedFinal,
-        interimText: this._interimText,
-        fullText: fullCombined,
-        source: 'speech-api',
-      });
-
-      // Reset backend audio refinement silence timer
-      clearTimeout(this._silenceTimer);
-      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        this._silenceTimer = setTimeout(() => {
-          if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-            try {
-              this.mediaRecorder.stop();
-              setTimeout(() => {
-                if (this.isListening && this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
-                  this.audioChunks = [];
-                  this.mediaRecorder.start(1000);
-                }
-              }, 200);
-            } catch (_) {}
+          if (res.isFinal) {
+            sessionFinal += (sessionFinal ? ' ' : '') + bestText;
+          } else {
+            interimStr += (interimStr ? ' ' : '') + bestText;
           }
-        }, 2200);
-      }
-    };
+        }
 
-    this.recognition.onerror = (event) => {
-      if (event.error === 'no-speech' || event.error === 'aborted') {
-        return;
-      }
-      console.warn('[VoiceEngine] STT error:', event.error);
-    };
+        this._currentSessionFinal = sessionFinal.trim();
+        this._interimText = interimStr.trim();
+
+        const combinedFinal = this._cleanTranscript(
+          (this._accumulatedFinal ? this._accumulatedFinal + ' ' : '') + this._currentSessionFinal
+        );
+
+        const fullCombined = this._cleanTranscript(
+          combinedFinal + (this._interimText ? (combinedFinal ? ' ' : '') + this._interimText : '')
+        );
+
+        this.onTranscript({
+          finalText: combinedFinal,
+          interimText: this._interimText,
+          fullText: fullCombined,
+          source: 'speech-api',
+        });
+
+        // Reset backend audio refinement silence timer
+        clearTimeout(this._silenceTimer);
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+          this._silenceTimer = setTimeout(() => {
+            if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+              try {
+                this.mediaRecorder.stop();
+                setTimeout(() => {
+                  if (this.isListening && this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
+                    this.audioChunks = [];
+                    this.mediaRecorder.start(1000);
+                  }
+                }, 200);
+              } catch (_) {}
+            }
+          }, 2200);
+        }
+      };
+
+      this.recognition.onerror = (event) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          // Expected during pauses; onend automatically restarts recognition
+          return;
+        }
+        console.warn('[VoiceEngine] STT error:', event.error);
+        if (event.error === 'network' || event.error === 'not-allowed') {
+          if (this._shouldRestart && !this._destroyed) {
+            setTimeout(() => this._initRecognition(), 600);
+          }
+        }
+      };
+    } catch (e) {
+      console.warn('[VoiceEngine] Recognition creation error:', e);
+    }
   }
 
   /** Smart transcript cleaner: removes duplicate words, fixes capitalization & punctuation, and caps at 400 words max */
@@ -355,10 +378,13 @@ export class VoiceEngine {
     return cleaned;
   }
 
-  startListening() {
-    if (!this.recognition || this._destroyed) return;
-    this._shouldRestart = true;
+  _startRecognitionInternal() {
+    if (this._destroyed || !this._shouldRestart || this.isSpeaking) return;
     if (this.isListening) return;
+
+    if (!this.recognition) {
+      this._initRecognition();
+    }
 
     try {
       this.recognition.start();
@@ -369,17 +395,20 @@ export class VoiceEngine {
         this.isListening = true;
         this.onStateChange({ type: 'listening', value: true });
       } else {
-        setTimeout(() => {
-          if (this._shouldRestart && !this._destroyed && !this.isListening) {
-            try {
-              this.recognition.start();
-              this.isListening = true;
-              this.onStateChange({ type: 'listening', value: true });
-            } catch (_) {}
-          }
-        }, 200);
+        // Re-create clean recognition instance to recover from corrupted state
+        try {
+          this._initRecognition();
+          this.recognition?.start();
+          this.isListening = true;
+          this.onStateChange({ type: 'listening', value: true });
+        } catch (_) {}
       }
     }
+  }
+
+  startListening() {
+    this._shouldRestart = true;
+    this._startRecognitionInternal();
 
     if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
       try {
@@ -387,10 +416,20 @@ export class VoiceEngine {
         this.mediaRecorder.start(1000);
       } catch (_) {}
     }
+
+    // Watchdog timer: checks every 2s while in listening mode
+    clearInterval(this._watchdogTimer);
+    this._watchdogTimer = setInterval(() => {
+      if (this._shouldRestart && !this._destroyed && !this.isListening && !this.isSpeaking) {
+        this._startRecognitionInternal();
+      }
+    }, 2000);
   }
 
   stopListening() {
     this._shouldRestart = false;
+    clearInterval(this._watchdogTimer);
+    clearTimeout(this._restartTimer);
     clearTimeout(this._silenceTimer);
     this.isListening = false;
     this.onStateChange({ type: 'listening', value: false });
@@ -418,8 +457,11 @@ export class VoiceEngine {
   }
 
   getTranscript() {
-    return this._cleanTranscript(
+    const combinedFinal = this._cleanTranscript(
       (this._accumulatedFinal ? this._accumulatedFinal + ' ' : '') + this._currentSessionFinal
+    );
+    return this._cleanTranscript(
+      combinedFinal + (this._interimText ? (combinedFinal ? ' ' : '') + this._interimText : '')
     );
   }
 
@@ -432,11 +474,39 @@ export class VoiceEngine {
     this.onStateChange({ type: 'speaking', value: false });
   }
 
-  async speak(text, { rate = 0.95, pitch = 1.05, onSentenceChange } = {}) {
+  unlockAudio() {
+    if (!this.synthesis) return;
+    try {
+      if (this.synthesis.paused) {
+        this.synthesis.resume();
+      }
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0.01;
+      this.synthesis.speak(u);
+    } catch (_) {}
+  }
+
+  async speak(text, { rate = 1.0, pitch = 1.0, onSentenceChange } = {}) {
     if (!this.synthesis || !text || this._destroyed) return Promise.resolve();
 
+    // Increment speechId to unconditionally cancel any previous in-flight speakChain
+    const currentSpeechId = ++this._speechId;
+
     await this._ensureVoicesLoaded();
-    try { this.synthesis.cancel(); } catch (_) {}
+
+    // In Chrome, flush pending queue and resume if paused
+    try {
+      this.synthesis.cancel();
+      if (this.synthesis.paused) {
+        this.synthesis.resume();
+      }
+    } catch (_) {}
+
+    // Small tick to let browser audio subsystem flush cleanly after cancel
+    await new Promise(r => setTimeout(r, 60));
+    if (this._destroyed || currentSpeechId !== this._speechId) {
+      return Promise.resolve();
+    }
 
     return new Promise((resolve) => {
       const cleanText = text
@@ -465,23 +535,26 @@ export class VoiceEngine {
 
       clearInterval(this._ttsKeepalive);
       this._ttsKeepalive = setInterval(() => {
-        if (this.synthesis.speaking) {
+        if (this.synthesis?.speaking) {
           this.synthesis.pause();
           this.synthesis.resume();
         } else {
           clearInterval(this._ttsKeepalive);
         }
-      }, 8000);
+      }, 7000);
 
       this.isSpeaking = true;
       this.onStateChange({ type: 'speaking', value: true });
 
       const speakChain = (index = 0) => {
-        if (this._destroyed || index >= sentences.length) {
+        // Abort if destroyed, if a new speech was triggered, or if reached end of sentences
+        if (this._destroyed || currentSpeechId !== this._speechId || index >= sentences.length) {
           clearInterval(this._ttsKeepalive);
-          this.isSpeaking = false;
-          this.onStateChange({ type: 'speaking', value: false });
-          if (onSentenceChange) onSentenceChange(-1, '');
+          if (currentSpeechId === this._speechId) {
+            this.isSpeaking = false;
+            this.onStateChange({ type: 'speaking', value: false });
+            if (onSentenceChange) onSentenceChange(-1, '');
+          }
           resolve();
           return;
         }
@@ -490,34 +563,51 @@ export class VoiceEngine {
         if (onSentenceChange) onSentenceChange(index, sentenceText);
 
         const utterance  = new SpeechSynthesisUtterance(sentenceText);
-        utterance.rate   = rate;
-        utterance.pitch  = pitch;
+        utterance.rate   = Math.max(0.75, Math.min(1.4, rate));
+        utterance.pitch  = Math.max(0.8, Math.min(1.3, pitch));
         utterance.volume = 1.0;
+        utterance.lang   = this.lang || 'en-US';
         if (voice) utterance.voice = voice;
 
-        // Safety timeout per sentence (in case browser blocks autoplay without user click)
-        const sentenceTimeout = setTimeout(() => {
-          speakChain(index + 1);
-        }, Math.max(3000, sentenceText.length * 90));
+        // Retain global reference to prevent Chrome garbage-collection mid-speech
+        if (typeof window !== 'undefined') {
+          window.__activeUtterance = utterance;
+        }
 
-        utterance.onend = () => {
+        let finished = false;
+        const advance = () => {
+          if (finished || currentSpeechId !== this._speechId) return;
+          finished = true;
           clearTimeout(sentenceTimeout);
           speakChain(index + 1);
+        };
+
+        // Generous safety timeout per sentence (at least 15s) so speech is never cut off
+        const sentenceTimeout = setTimeout(advance, Math.max(15000, sentenceText.length * 200));
+
+        utterance.onend = () => {
+          advance();
         };
 
         utterance.onerror = (e) => {
-          clearTimeout(sentenceTimeout);
-          if (e.error !== 'interrupted') {
-            console.warn('[VoiceEngine] TTS sentence error:', e.error);
+          // If cancelled or interrupted, do NOT advance — speech was purposefully stopped or replaced
+          if (e.error === 'interrupted' || e.error === 'canceled') {
+            finished = true;
+            clearTimeout(sentenceTimeout);
+            resolve();
+            return;
           }
-          speakChain(index + 1);
+          console.info('[VoiceEngine] TTS sentence notice:', e.error);
+          advance();
         };
 
         try {
+          if (this.synthesis.paused) {
+            this.synthesis.resume();
+          }
           this.synthesis.speak(utterance);
         } catch (_) {
-          clearTimeout(sentenceTimeout);
-          speakChain(index + 1);
+          advance();
         }
       };
 
@@ -525,9 +615,22 @@ export class VoiceEngine {
     });
   }
 
+  stopSpeaking() {
+    this._speechId++;
+    clearInterval(this._ttsKeepalive);
+    try {
+      this.synthesis?.cancel();
+    } catch (_) {}
+    this.isSpeaking = false;
+    this.onStateChange({ type: 'speaking', value: false });
+  }
+
   destroy() {
     this._destroyed     = true;
+    this._speechId++;
     this._shouldRestart = false;
+    clearInterval(this._watchdogTimer);
+    clearTimeout(this._restartTimer);
     clearTimeout(this._silenceTimer);
     clearInterval(this._ttsKeepalive);
 

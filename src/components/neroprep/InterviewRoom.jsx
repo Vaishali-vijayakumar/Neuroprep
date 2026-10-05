@@ -118,8 +118,25 @@ export default function InterviewRoom() {
  const [playbackSpeed, setPlaybackSpeed] = useState(1.0); // 0.85 | 1.0 | 1.15
  const [activeSentenceIdx, setActiveSentenceIdx] = useState(-1);
  const streamRef = useRef(null);
- const [audioMetrics, setAudioMetrics] = useState({ volume: 0, wpm: 0, isVoice: false });
- const [faceTelemetry, setFaceTelemetry] = useState({ faceDetected: false, blinkRate: 0, headPose: 'forward', eyeContact: 100 });
+ const [faceTelemetry, setFaceTelemetry] = useState({
+   faceDetected: true,
+   blinkRate: 16,
+   headPose: 'forward',
+   eyeContact: 92,
+   stressScore: 22,
+   cognitiveLoad: 'Optimal',
+   primaryEmotion: 'Calm',
+   fearScore: 8,
+   facialStressScore: 12,
+   hrBpm: 72,
+   hrvMs: 48,
+   baselineCalibration: { isCalibrated: false, progress: 0, baseline: { hr: 72, hrv: 45 } },
+   phoneReadingDetected: false,
+   phoneObjectVisible: false,
+   phoneAlerts: 0,
+   phoneAlertReason: '',
+   phoneDistractionScore: 0,
+ });
   const BREATH_PHASES = [
     { key: 'inhale', name: 'Inhale', hint: 'Slowly breathe in fresh oxygen & confidence', color: 'var(--btn-sage)' },
     { key: 'hold1', name: 'Hold', hint: 'Pause with calm, steady composure', color: 'var(--accent-terracotta)' },
@@ -129,6 +146,8 @@ export default function InterviewRoom() {
   const [breathPhaseIdx, setBreathPhaseIdx] = useState(0);
   const [breathSeconds, setBreathSeconds] = useState(4);
   const [vocalAnalysis, setVocalAnalysis] = useState(null);
+  // ── Live Audio Metrics from AudioAnalyser ──────────────────────────────────
+  const [audioMetrics, setAudioMetrics] = useState({ volume: 0, wpm: 0, isVoice: false, silenceDuration: 0 });
   // ── Distraction & Cognitive Load (30-second continuous threshold) Tracker ─────────
   const [isCalmModalActive, setIsCalmModalActive] = useState(false);
   const [distractionSeconds, setDistractionSeconds] = useState(0);
@@ -216,15 +235,15 @@ export default function InterviewRoom() {
     ? faceTelemetry.stressScore
     : (faceTelemetry?.cognitiveLoad === 'High' ? 82 : (stressIndex || 0));
 
-  // Condition: Continuous distraction, high fear/stress, or masked panic >= 75%
-  const isDistractedOrStressed = liveDistractionScore >= 75 || effectiveCognitiveLoad >= 75 || (faceTelemetry?.fearScore || 0) >= 75 || Boolean(faceTelemetry?.maskedPanicDetected);
+  // Tactical Pause • Cognitive Reset: ONLY if fear reaches 75% continuously for 30 seconds
+  const isHighFearContinuous = (faceTelemetry?.fearScore || 0) >= 75;
 
-  // Track if distraction / high load remains continuous for 30 seconds
+  // Track if fear >= 75% remains strictly continuous for 30 seconds
   useEffect(() => {
     if (isCalmModalActive) return;
 
-    const distractionTimer = setInterval(() => {
-      if (isDistractedOrStressed) {
+    const fearTimer = setInterval(() => {
+      if (isHighFearContinuous) {
         setDistractionSeconds((prev) => {
           const nextVal = prev + 1;
           if (nextVal >= 30) {
@@ -234,12 +253,13 @@ export default function InterviewRoom() {
           return nextVal;
         });
       } else {
-        setDistractionSeconds((prev) => (prev > 0 ? Math.max(0, prev - 1) : 0));
+        // Continuous requirement: reset immediately to 0 if fear drops below 75%
+        setDistractionSeconds(0);
       }
     }, 1000);
 
-    return () => clearInterval(distractionTimer);
-  }, [isDistractedOrStressed, isCalmModalActive]);
+    return () => clearInterval(fearTimer);
+  }, [isHighFearContinuous, isCalmModalActive]);
 
   // Handler for closing the modal and resuming interview
   const handleReadyResume = () => {
@@ -290,38 +310,44 @@ export default function InterviewRoom() {
     "Remember, explaining the trade-offs is what matters most. Feel free to talk through your initial reasoning step by step."
   ];
 
-  // 4-Second High Stress Detection -> Triggers AI Avatar Empathy Nudge
+  // Ref bindings to prevent rapid telemetry updates from resetting timers
+  const stressRefs = useRef({});
+  stressRefs.current = {
+    isElevated: (effectiveCognitiveLoad >= 60) ||
+                ((faceTelemetry?.fearScore || 0) >= 45) ||
+                ((faceTelemetry?.facialStressScore || 0) >= 50) ||
+                (liveDistractionScore >= 60) ||
+                Boolean(faceTelemetry?.maskedPanicDetected),
+    hasNudged: hasNudgedForQ,
+    aiStatus,
+    isCalmModalActive
+  };
+
+  const hasNudgedRef = useRef(false);
+
+  // High Stress / Fear Detection -> Triggers Visual AI Avatar Empathy Nudge (Visual Only, No Audio Intrusion)
   useEffect(() => {
-    if (isCalmModalActive || hasNudgedForQ || aiStatus !== 'listening') {
-      setHighStressSeconds(0);
-      return;
-    }
-
-    const isElevatedStress = effectiveCognitiveLoad >= 65 || (faceTelemetry?.fearScore || 0) >= 55 || (faceTelemetry?.facialStressScore || 0) >= 60 || liveDistractionScore >= 65;
-
     const timer = setInterval(() => {
-      if (isElevatedStress) {
+      const { isElevated, aiStatus: currentAiStatus, isCalmModalActive: calmActive } = stressRefs.current;
+      if (calmActive || hasNudgedRef.current || currentAiStatus !== 'listening') {
+        setHighStressSeconds(0);
+        return;
+      }
+
+      if (isElevated) {
         setHighStressSeconds((prev) => {
           const next = prev + 1;
-          if (next >= 4 && !hasNudgedForQ) {
+          if (next >= 4 && !hasNudgedRef.current) {
+            hasNudgedRef.current = true;
             const phrase = EMPATHY_NUDGE_PHRASES[Math.floor(Math.random() * EMPATHY_NUDGE_PHRASES.length)];
             setIsEmpathyNudgeActive(true);
             setEmpathyNudgeText(phrase);
             setHasNudgedForQ(true);
 
-            // AI Interviewer speaks the supportive validation phrase via HeyGen or VoiceEngine
-            try {
-              if (isHeyGenStreaming && heyGenServiceRef.current) {
-                heyGenServiceRef.current.reactToInterviewee(phrase);
-              } else {
-                voiceRef.current?.speak?.(phrase);
-              }
-            } catch (_) {}
-
-            // Auto-settle empathy banner after 8.5 seconds
+            // Silent visual posture only — never speak over candidate or hijack speech synthesis!
             setTimeout(() => {
               setIsEmpathyNudgeActive(false);
-            }, 8500);
+            }, 6000);
 
             return 0;
           }
@@ -333,12 +359,12 @@ export default function InterviewRoom() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isCalmModalActive, hasNudgedForQ, aiStatus, effectiveCognitiveLoad, faceTelemetry, liveDistractionScore, isHeyGenStreaming]);
+  }, [isHeyGenStreaming]);
 
-  // Strict Tab switch / Window blur proctoring detection
+  // Strict Tab switch / Window blur proctoring detection with Visual Modal Alert
   useEffect(() => {
     let lastAlertTime = 0;
-    const triggerViolation = () => {
+    const triggerViolation = (reason = 'Tab switch or window defocus detected') => {
       const now = Date.now();
       if (now - lastAlertTime < 800) return;
       lastAlertTime = now;
@@ -348,18 +374,26 @@ export default function InterviewRoom() {
         if (nextCount >= 3) {
           setIsTerminated(true);
         }
+        setShowViolationModal(true);
+
+        useInterviewStore.getState().addPhoneIncident?.({
+          reason: `Proctoring Violation: ${reason} (Violation #${nextCount})`,
+          timestamp: new Date().toLocaleTimeString(),
+          count: nextCount,
+        });
+
         return nextCount;
       });
     };
 
     const handleVis = () => {
       if (document.hidden) {
-        triggerViolation();
+        triggerViolation('Tab switch detected (navigated away)');
       }
     };
 
     const handleBlur = () => {
-      triggerViolation();
+      triggerViolation('Window defocused (application blur)');
     };
 
     document.addEventListener('visibilitychange', handleVis);
@@ -413,14 +447,13 @@ export default function InterviewRoom() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [aiStatus, forceStartListening]);
 
-  // Helper to safely speak question via HeyGen Avatar or TTS with chunked teleprompter & speed support
+  const pendingSpeechRef = useRef(null);
+  const speakQuestionRef = useRef(null);
+
+  // Helper to safely speak question via TTS with chunked teleprompter & speed support
   const speakQuestion = useCallback((text) => {
     if (!text) return;
     
-    // Prevent duplicate triggers of the exact same question
-    if (speakingQRef.current === text && aiStatus === 'listening') {
-      return;
-    }
     speakingQRef.current = text;
 
     setAiStatus('speaking');
@@ -429,6 +462,7 @@ export default function InterviewRoom() {
     setUserAnswerText('');
     setInterimText('');
     setHasNudgedForQ(false);
+    hasNudgedRef.current = false;
     setHighStressSeconds(0);
     setIsEmpathyNudgeActive(false);
     setActiveSentenceIdx(0);
@@ -440,8 +474,9 @@ export default function InterviewRoom() {
       voiceRef.current?.stopListening();
     } catch (_) {}
 
-    // Dynamic recovery timeout: switch to listening within 4s max if avatar/TTS gets blocked
-    const autoAdvanceMs = Math.min(4800, Math.max(2200, text.split(/\s+/).length * 200));
+    // Generous emergency recovery timeout (35s max) so speech is never prematurely cut off
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const safetyTimeoutMs = Math.max(30000, wordCount * 1400);
     const safetyTimer = setTimeout(() => {
       setAiStatus((prev) => {
         if (prev === 'speaking') {
@@ -453,7 +488,7 @@ export default function InterviewRoom() {
         }
         return prev;
       });
-    }, autoAdvanceMs);
+    }, safetyTimeoutMs);
 
     const onFinishSpeaking = () => {
       clearTimeout(safetyTimer);
@@ -463,12 +498,21 @@ export default function InterviewRoom() {
       toggleMicHardware(true);
       setTimeout(() => {
         try { voiceRef.current?.startListening(); } catch (_) {}
-      }, 60);
+      }, 100);
     };
 
     if (isHeyGenStreaming && heyGenServiceRef.current) {
       heyGenServiceRef.current.speak(text).then((ok) => {
         if (!ok && voiceRef.current?.speak) {
+          voiceRef.current.speak(text, {
+            rate: playbackSpeed,
+            onSentenceChange: (idx) => setActiveSentenceIdx(idx)
+          }).then(onFinishSpeaking).catch(onFinishSpeaking);
+        } else {
+          onFinishSpeaking();
+        }
+      }).catch(() => {
+        if (voiceRef.current?.speak) {
           voiceRef.current.speak(text, {
             rate: playbackSpeed,
             onSentenceChange: (idx) => setActiveSentenceIdx(idx)
@@ -485,24 +529,34 @@ export default function InterviewRoom() {
         .then(onFinishSpeaking)
         .catch(onFinishSpeaking);
     } else {
-      onFinishSpeaking();
+      // VoiceEngine is still mounting — save and speak when initialized
+      pendingSpeechRef.current = text;
+      // Safety advance only if engine fails to mount within 3.5s
+      setTimeout(() => {
+        if (pendingSpeechRef.current === text && !voiceRef.current?.speak) {
+          onFinishSpeaking();
+        }
+      }, 3500);
     }
-  }, [aiStatus, isHeyGenStreaming, playbackSpeed, toggleMicHardware]);
+  }, [playbackSpeed, isHeyGenStreaming, toggleMicHardware]);
+  speakQuestionRef.current = speakQuestion;
 
-  // Dynamic Teleprompter: highlights the currently vocalized sentence in real time
+  // Dynamic Teleprompter: highlights the currently vocalized sentence in real time with zero text loss
   const renderTeleprompterQuestion = (questionText, activeIdx, status) => {
     let qStr = questionText;
     if (qStr && typeof qStr === 'object') {
-      qStr = qStr.question || qStr.text || qStr.title || '';
+      qStr = qStr.question || qStr.text || qStr.title || qStr.prompt || '';
     }
     if (!qStr || typeof qStr !== 'string' || !qStr.trim()) {
       return 'Please introduce yourself and explain your academic background and key technical strengths.';
     }
+
+    // When not vocalizing, output full intact string
     if (status !== 'speaking' || activeIdx < 0) {
       return qStr;
     }
 
-    const sentences = qStr.match(/[^.!?]+[.!?]+|\S[^.!?]+$/g) || [qStr];
+    const sentences = qStr.match(/[^.!?]+(?:[.!?]+|$)/g) || [qStr];
     return sentences.map((sentence, idx) => {
       const isCurrent = idx === activeIdx;
       return (
@@ -600,35 +654,71 @@ export default function InterviewRoom() {
  return () => clearTimeout(timeout);
  }, [aiStatus, userAnswerText, trackId, addTranscriptLine, speakQuestion, config, questionNum]);
 
- // Voice Engine setup (initialized once on mount)
- useEffect(() => {
- try {
- const langMap = {
- 'English': 'en-US',
- 'Hindi': 'hi-IN',
- 'Tamil': 'ta-IN',
- 'Telugu': 'te-IN',
- 'Malayalam': 'ml-IN',
- };
- const chosenLang = langMap[config?.language] || 'en-US';
+  // Voice Engine setup (initialized cleanly without stream or callback recreation)
+  useEffect(() => {
+    try {
+      const langMap = {
+        'English': 'en-US',
+        'Hindi': 'hi-IN',
+        'Tamil': 'ta-IN',
+        'Telugu': 'te-IN',
+        'Malayalam': 'ml-IN',
+      };
+      const chosenLang = langMap[config?.language] || 'en-US';
 
-    const ve = new VoiceEngine({
-      lang: chosenLang,
-      mediaStream: stream || sharedStream || streamRef.current,
-      onTranscript: ({ fullText, interimText: it }) => {
-        setUserAnswerText(fullText || '');
-        setInterimText(it || '');
-      },
-    });
-    voiceRef.current = ve;
-  } catch (e) {
-    console.warn('[InterviewRoom] VoiceEngine init error:', e);
-  }
+      const ve = new VoiceEngine({
+        lang: chosenLang,
+        mediaStream: streamRef.current || sharedStream || stream,
+        onTranscript: ({ fullText, finalText, interimText: it }) => {
+          const mainText = (fullText || finalText || '').trim();
+          if (mainText) {
+            setUserAnswerText(mainText);
+          }
+          setInterimText(it || '');
+        },
+      });
+      voiceRef.current = ve;
 
-  return () => {
-    try { voiceRef.current?.destroy(); } catch (_) {}
-  };
- }, [config?.language, stream, sharedStream]);
+      // If an initial question was queued before voice engine mounted, speak it now
+      if (pendingSpeechRef.current) {
+        const pending = pendingSpeechRef.current;
+        pendingSpeechRef.current = null;
+        speakQuestionRef.current?.(pending);
+      }
+    } catch (e) {
+      console.warn('[InterviewRoom] VoiceEngine init error:', e);
+    }
+
+    return () => {
+      try { voiceRef.current?.destroy(); } catch (_) {}
+    };
+  }, [config?.language]);
+
+  // Pass active media stream dynamically without re-instantiating speech synthesis engine
+  useEffect(() => {
+    if (stream && voiceRef.current) {
+      voiceRef.current.mediaStream = stream;
+    }
+  }, [stream]);
+
+  // Global user interaction unblocker for browser autoplay audio policy (one-time only)
+  useEffect(() => {
+    let unlocked = false;
+    const handleUserInteraction = () => {
+      if (unlocked) return;
+      unlocked = true;
+      voiceRef.current?.unlockAudio?.();
+      if (typeof window !== 'undefined' && window.speechSynthesis?.paused) {
+        window.speechSynthesis.resume();
+      }
+    };
+    window.addEventListener('click', handleUserInteraction, { passive: true, once: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true, once: true });
+    return () => {
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, []);
 
   // Skip to next question immediately
   const handleSkipQuestion = useCallback(() => {
@@ -652,7 +742,9 @@ export default function InterviewRoom() {
 
   // Handle user answer submission (Voice-first)
   const handleUserAnswer = useCallback((overrideText) => {
-    const textToSend = (overrideText !== undefined ? overrideText : userAnswerText || '').trim();
+    const liveVoice = voiceRef.current?.getTranscript?.() || '';
+    const pendingText = [userAnswerText, interimText, liveVoice].filter(Boolean).join(' ').trim();
+    const textToSend = (overrideText !== undefined ? overrideText : (userAnswerText || pendingText || '')).trim();
 
     if (!textToSend || textToSend.split(/\s+/).filter(Boolean).length < 1) {
       setSubmitWarning('Please speak your response clearly into your microphone, type your answer, or click "Next Question" to proceed.');
@@ -750,8 +842,14 @@ export default function InterviewRoom() {
       blinkRate: 16,
       headPose: 'forward',
       eyeContact: 92,
-      stressScore: 24,
+      stressScore: 22,
       cognitiveLoad: 'Optimal',
+      primaryEmotion: 'Calm',
+      fearScore: 8,
+      facialStressScore: 12,
+      hrBpm: 72,
+      hrvMs: 48,
+      baselineCalibration: { isCalibrated: false, progress: 0, baseline: { hr: 72, hrv: 45 } },
       phoneReadingDetected: false,
       phoneObjectVisible: false,
       phoneAlerts: 0,
@@ -1078,7 +1176,7 @@ return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
 return (
 <div style={{
-  display: 'flex', flexDirection: 'column', height: '100vh',
+  display: 'flex', flexDirection: 'column', height: 'calc(100vh - 108px)', minHeight: '520px',
   background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', fontFamily: 'var(--font-body)', overflow: 'hidden',
 }}>
 
@@ -1149,7 +1247,120 @@ return (
   <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
 
     {/* Left View: Question + AI Persona + Video / Code */}
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: BG }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: BG }}>
+
+      {/* ── HIGH PRIORITY: PROMINENT TOP QUESTION CARD ── */}
+      <div style={{
+        background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.98) 0%, rgba(246, 240, 234, 0.94) 100%)',
+        border: `1.5px solid ${BORDER}`,
+        borderRadius: '16px',
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        boxShadow: 'var(--shadow-3d-card)',
+        position: 'relative',
+        overflow: 'visible',
+        flexShrink: 0,
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: '12px', fontWeight: 800, color: '#374151',
+              textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'var(--font-body)',
+              backgroundColor: '#F3F4F6', padding: '4px 10px', borderRadius: '7px',
+              border: '1px solid #E5E7EB'
+            }}>
+              QUESTION {String(questionNum || 1).padStart(2, '0')}
+            </span>
+            <span style={{
+              fontSize: '11.5px', fontWeight: 700,
+              backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: '7px',
+              border: '1px solid #DBEAFE', textTransform: 'uppercase'
+            }}>
+              {trackId || 'INTERVIEW'}
+            </span>
+            {aiStatus === 'speaking' ? (
+              <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ animation: 'microCalmPulse 1s infinite' }}>●</span> AI Speaking...
+              </span>
+            ) : aiStatus === 'listening' ? (
+              <span style={{ fontSize: '11.5px', color: '#166534', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span>🎤</span> Listening for your response
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Direct Play/Replay Question Button */}
+            <button
+              type="button"
+              onClick={replayQuestion}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px', fontSize: '12px', fontWeight: 700,
+                backgroundColor: aiStatus === 'speaking' ? '#FEF3C7' : '#FFFFFF',
+                color: aiStatus === 'speaking' ? '#92400E' : '#374151',
+                border: `1.5px solid ${aiStatus === 'speaking' ? '#FCD34D' : '#D1D5DB'}`,
+                borderRadius: '8px', cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Click to hear the AI interviewer speak this question aloud"
+            >
+              <span>{aiStatus === 'speaking' ? '🔊 Speaking...' : '🔊 Play Voice'}</span>
+            </button>
+
+            {/* Direct Next Question Button */}
+            <button
+              type="button"
+              onClick={handleSkipQuestion}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px', fontSize: '12px', fontWeight: 700,
+                backgroundColor: '#F0FDF4', color: '#166534',
+                border: '1.5px solid #BBF7D0', borderRadius: '8px', cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Skip or proceed to the next interview question"
+            >
+              <span>Next Question ➡️</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Full Question Text with complete visibility and word wrapping */}
+        <div style={{
+          fontSize: '1.24rem',
+          fontWeight: 700,
+          color: '#111827',
+          margin: '2px 0 0 0',
+          lineHeight: 1.6,
+          fontFamily: 'var(--font-heading)',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+          minHeight: '44px'
+        }}>
+          {renderTeleprompterQuestion(currentQ || 'Please introduce yourself and explain your academic background and key technical strengths.', activeSentenceIdx, aiStatus)}
+        </div>
+
+        {/* Tactical Pause Wave Banner (3-4 seconds when a new question arrives) */}
+        {responseTimer <= 4 && aiStatus === 'listening' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '8px 14px', borderRadius: '10px',
+            backgroundColor: '#EAECE8', border: '1.5px solid #526257',
+            fontSize: '12px', color: '#526257', fontWeight: 700,
+            animation: 'microCalmPulse 3.5s infinite ease-in-out',
+            marginTop: '2px'
+          }}>
+            <span style={{ fontSize: '15px' }}>⏱️</span>
+            <span><strong>Preparation Tip:</strong> Take 3–4 seconds to inhale, collect your thoughts, and map out your structure before speaking.</span>
+          </div>
+        )}
+      </div>
 
       {/* AI INTERVIEWER CARD WITH HEYGEN INTERACTIVE STREAMING AVATAR & EMPATHY NUDGE */}
       <div style={{
@@ -1289,11 +1500,19 @@ return (
             </button>
           )}
 
-          <button onClick={replayQuestion} className="btn-secondary-spec" style={{
-            padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-            borderRadius: '8px',
-          }}>
-            Replay Question
+          <button
+            type="button"
+            onClick={replayQuestion}
+            className="btn-secondary-spec"
+            style={{
+              padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+              borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px',
+              backgroundColor: aiStatus === 'speaking' ? '#FEF3C7' : '#FFFFFF',
+              color: aiStatus === 'speaking' ? '#92400E' : 'var(--main-heading)',
+              border: `1px solid ${aiStatus === 'speaking' ? '#FCD34D' : BORDER}`
+            }}
+          >
+            <span>{aiStatus === 'speaking' ? '🔊 Speaking...' : '🔊 Replay Question'}</span>
           </button>
         </div>
       </div>
@@ -1376,77 +1595,46 @@ return (
         </div>
       )}
 
-      {/* LARGE QUESTION CARD */}
-      <div style={{
-        background: 'linear-gradient(168deg, rgba(254, 252, 250, 0.96) 0%, rgba(246, 240, 234, 0.92) 100%)', border: `1px solid ${BORDER}`, borderRadius: '16px',
-        padding: '26px 30px', display: 'flex', flexDirection: 'column', gap: '12px',
-        boxShadow: 'var(--shadow-3d-card)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Phone Detector Security Notice: Non-blocking alert banner so question is always 100% visible */}
-        {faceTelemetry.phoneObjectVisible && (
-          <div style={{
-            backgroundColor: '#FEF2F2',
-            border: '1.5px solid #EF4444',
-            borderRadius: '10px',
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-            marginBottom: '6px',
-            animation: 'fadeIn 0.2s ease-in-out'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>📵</span>
-              <div>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#B91C1C' }}>
-                  Mobile Device Detected in Camera View
-                </span>
-                <span style={{ fontSize: '11.5px', color: '#991B1B', display: 'block', fontWeight: 500 }}>
-                  Screen scanning (Google Lens / photo capture) is prohibited. Please keep your device lowered.
-                </span>
+      {/* High-Visibility Fear / Anxiety Detection Banner (Triggers only on genuine acute fear >= 55%) */}
+      {((faceTelemetry?.fearScore || 0) >= 55 || (faceTelemetry?.maskedPanicDetected && (faceTelemetry?.fearScore || 0) >= 45)) && !faceTelemetry.phoneReadingDetected && (
+        <div style={{
+          backgroundColor: '#FFFBEB',
+          border: '1.5px solid #F59E0B',
+          borderRadius: '12px',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          boxShadow: '0 4px 16px rgba(245, 158, 11, 0.15)',
+          animation: 'bubbleFloatIn 0.3s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '20px' }}>🧘</span>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#92400E' }}>
+                {faceTelemetry?.maskedPanicDetected ? 'Autonomic Surge & Masked Panic Detected' : 'Elevated Fear & Stress Detected'}
+              </div>
+              <div style={{ fontSize: '11.5px', color: '#B45309', marginTop: '1px' }}>
+                Take a gentle breath. You can pause and structure your answer at your own pace.
               </div>
             </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, backgroundColor: '#FEE2E2', color: '#991B1B', padding: '3px 8px', borderRadius: '6px' }}>
-              Violation #{faceTelemetry.phoneAlerts || 1}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              backgroundColor: '#FEF3C7',
+              color: '#92400E',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              border: '1px solid #FCD34D'
+            }}>
+              {faceTelemetry.fearScore}% Fear Index
             </span>
           </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'var(--font-body)' }}>
-            QUESTION {String(questionNum || 1).padStart(2, '0')}
-          </span>
-          {aiStatus === 'speaking' && activeSentenceIdx >= 0 && (
-            <span style={{ fontSize: '11px', color: '#D97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>●</span> Teleprompter Sync Active
-            </span>
-          )}
         </div>
-        <div style={{
-          fontSize: '1.28rem', fontWeight: 700, color: '#1F2937', margin: 0,
-          lineHeight: 1.6, fontFamily: 'var(--font-heading)',
-        }}>
-          "{renderTeleprompterQuestion(currentQ || 'Please introduce yourself and explain your academic background and key technical strengths.', activeSentenceIdx, aiStatus)}"
-        </div>
-
-        {/* Tactical Pause Wave Banner (3-4 seconds when a new question arrives) */}
-        {responseTimer <= 4 && aiStatus === 'listening' && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '8px 14px', borderRadius: '10px',
-            backgroundColor: '#EAECE8', border: '1.5px solid #526257',
-            fontSize: '12.5px', color: '#526257', fontWeight: 700,
-            animation: 'microCalmPulse 3.5s infinite ease-in-out',
-            marginTop: '4px'
-          }}>
-            <span style={{ fontSize: '16px' }}>⏱️</span>
-            <span><strong>Tactical Pause:</strong> Take 3–4 seconds to inhale, collect your thoughts, and map out your structure before speaking.</span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* CANDIDATE VOICE-FIRST RESPONSE PANEL WITH LIVE TRANSCRIPT */}
       <div style={{
@@ -1470,7 +1658,7 @@ return (
                 {aiStatus === 'listening' ? 'Speech-to-Text Active — Speak your answer' : 'AI Turn'}
               </p>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                Speaking Time: {formatTimer(responseTimer)} · {userAnswerText ? `${userAnswerText.split(/\s+/).filter(Boolean).length} words` : 'Waiting for voice...'}
+                Speaking Time: {formatTimer(responseTimer)} · {((userAnswerText || interimText || '').trim().split(/\s+/).filter(Boolean).length) > 0 ? `${(userAnswerText || interimText || '').trim().split(/\s+/).filter(Boolean).length} words` : 'Waiting for voice...'}
               </p>
             </div>
           </div>
@@ -1479,11 +1667,11 @@ return (
             {/* Word Count Indicator (Cap: 400 words max to prevent STT freezes) */}
             <span style={{
               fontSize: '12px', fontWeight: 600,
-              color: (userAnswerText.split(/\s+/).filter(Boolean).length) > 380 ? 'var(--accent-terracotta)' : 'var(--text-muted)',
+              color: ((userAnswerText || interimText || '').trim().split(/\s+/).filter(Boolean).length) > 380 ? 'var(--accent-terracotta)' : 'var(--text-muted)',
               backgroundColor: '#EAECE8', padding: '4px 8px', borderRadius: '4px', border: `1px solid ${BORDER}`,
               fontFamily: 'var(--font-body)'
             }}>
-              {userAnswerText.split(/\s+/).filter(Boolean).length} / 400 words max
+              {(userAnswerText || interimText || '').trim().split(/\s+/).filter(Boolean).length} / 400 words max
             </span>
 
             {/* Cognitive Defusion: Reset Mindset Button */}
@@ -1583,7 +1771,7 @@ return (
         {/* Editable Live Speech Transcript Box */}
         <div style={{ position: 'relative' }}>
           <textarea
-            value={userAnswerText + (interimText ? (userAnswerText ? ' ' : '') + interimText : '')}
+            value={userAnswerText ? (interimText && !userAnswerText.endsWith(interimText) ? `${userAnswerText} ${interimText}` : userAnswerText) : (interimText || '')}
             onChange={(e) => {
               setUserAnswerText(e.target.value);
               setInterimText('');
@@ -1658,7 +1846,7 @@ return (
               }}>
                 <span style={{ fontSize: '15px' }}>📱</span>
                 <span>
-                  {faceTelemetry.phoneAlertReason || 'Phone Detected in Camera or Extended Downward Gaze (>40s)'}
+                  {faceTelemetry.phoneAlertReason || 'Phone Detected in Camera or Continuous Downward/Sideward Gaze (≥20s)'}
                 </span>
               </div>
             )}
@@ -1793,6 +1981,8 @@ return (
           onSendAnswer={handleUserAnswer}
           aiStatus={aiStatus}
           elapsedSeconds={elapsedSeconds}
+          tabSwitchCount={tabSwitchCount}
+          liveDistractionScore={liveDistractionScore}
         />
       </div>
 

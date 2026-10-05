@@ -52,6 +52,8 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
+      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      if (path && path !== 'index.html') return path;
       const hash = window.location.hash.replace(/^#/, '');
       if (hash) return hash;
       const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
@@ -70,12 +72,13 @@ export default function App() {
     if (main) main.scrollTop = 0;
   };
 
-  // Sync activeTab with localStorage, URL hash, and enforce top scroll on tab change
+  // Sync activeTab with localStorage, clean pathname URL, and enforce top scroll on tab change
   useEffect(() => {
     try {
       localStorage.setItem(TAB_STORAGE_KEY, activeTab);
-      if (window.location.hash !== `#${activeTab}`) {
-        window.history.replaceState(null, '', `#${activeTab}`);
+      const targetPath = activeTab === 'dashboard' ? '/' : `/${activeTab}`;
+      if (window.location.pathname !== targetPath || window.location.hash) {
+        window.history.replaceState(null, '', targetPath);
       }
     } catch (e) {}
 
@@ -104,16 +107,22 @@ export default function App() {
     };
   }, []);
 
-  // Support browser Back/Forward navigation through hashchange
+  // Support browser Back/Forward navigation through popstate & path/hash
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
       const hash = window.location.hash.replace(/^#/, '');
-      if (hash && hash !== activeTab) {
-        setActiveTab(hash);
+      const current = path || hash || 'dashboard';
+      if (current && current !== activeTab) {
+        setActiveTab(current);
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, [activeTab]);
 
   // Student profile initialized from saved session or pure empty state

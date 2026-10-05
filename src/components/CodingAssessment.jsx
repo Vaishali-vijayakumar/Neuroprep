@@ -256,11 +256,29 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  {compilerProblem.difficulty}
  </span>
  <button 
- onClick={() => setCompilerProblem(null)} 
- style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: '#6B7280', fontWeight: 600 }}
- >
- Close Compiler 
- </button>
+              onClick={() => setCompilerProblem(null)} 
+              title="Close Compiler"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#0F172A',
+                color: '#FFFFFF',
+                border: '1px solid #020617',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1E293B'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0F172A'; }}
+            >
+              <span style={{ fontSize: '13px', fontWeight: 800 }}>✕</span>
+              <span>Close Compiler</span>
+            </button>
  </div>
 
  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>

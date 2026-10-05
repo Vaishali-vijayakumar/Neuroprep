@@ -481,7 +481,34 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  flexShrink: 0,
  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
  }}>
- <button onClick={() => onBack && onBack(isCompleted ? question.title : null)} style={{
+ <button 
+          onClick={() => onBack && onBack(isCompleted ? question.title : null)}
+          title="Close Editor"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            border: '1px solid #020617',
+            fontSize: '14px',
+            fontWeight: 800,
+            lineHeight: 1,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            flexShrink: 0,
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1E293B'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0F172A'; }}
+        >
+          ✕
+        </button>
+
+        <button onClick={() => onBack && onBack(isCompleted ? question.title : null)} style={{
  display: 'flex', alignItems: 'center', gap: '5px',
  padding: '5px 12px', borderRadius: '6px',
  border: `1px solid ${C.border}`, backgroundColor: C.bg,

@@ -231,8 +231,8 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     const isMrk = !!markedForReview[q.id];
     const isVis = !!visitedQs[q.id];
 
-    if (isAns && isMrk) return { bg: 'var(--secondary-olive)', color: 'var(--btn-text)', label: 'Ans & Marked' };
-    if (isMrk) return { bg: 'var(--accent-terracotta)', color: '#FFFFFF', label: 'Marked' };
+    if (isAns && isMrk) return { bg: '#4338CA', color: '#FFFFFF', label: 'Ans & Marked' };
+    if (isMrk) return { bg: '#7C3AED', color: '#FFFFFF', label: 'Marked' };
     if (isAns) return { bg: 'var(--btn-sage)', color: 'var(--btn-text)', label: 'Answered' };
     if (isVis) return { bg: '#EAECE8', color: 'var(--secondary-heading)', label: 'Not Ans' };
     return { bg: '#FCF9F6', color: 'var(--text-muted)', label: 'Not Visited' };
@@ -582,9 +582,9 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                           style={{
                             padding: '10px 18px',
                             borderRadius: '10px',
-                            backgroundColor: markedForReview[currentQuestion.id] ? 'var(--accent-terracotta)' : 'var(--bg-card-solid)',
+                            backgroundColor: markedForReview[currentQuestion.id] ? '#7C3AED' : 'var(--bg-card-solid)',
                             color: markedForReview[currentQuestion.id] ? '#FFF' : 'var(--secondary-heading)',
-                            borderColor: markedForReview[currentQuestion.id] ? 'var(--accent-terracotta)' : 'var(--border-color)'
+                            borderColor: markedForReview[currentQuestion.id] ? '#6D28D9' : 'var(--border-color)'
                           }}
                         >
                           {markedForReview[currentQuestion.id] ? 'Marked for Review' : 'Mark for Review'}
@@ -636,11 +636,11 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
                       <span>Answered ({Object.keys(userAnswers).length})</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--accent-terracotta)' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#7C3AED' }}></span>
                       <span>Marked ({Object.values(markedForReview).filter(Boolean).length})</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--secondary-olive)' }}></span>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#4338CA' }}></span>
                       <span>Ans & Marked</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

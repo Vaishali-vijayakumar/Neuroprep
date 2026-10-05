@@ -774,6 +774,32 @@ export default function CodingRoom({ config = {}, onEndSession }) {
  Question {currentIdx + 1} of {Math.max(sessionList.length, 1)}
  </span>
  <button
+            onClick={handleFinishSession}
+            title="Close Interview"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              border: '1px solid #020617',
+              fontSize: '14px',
+              fontWeight: 800,
+              lineHeight: 1,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              flexShrink: 0,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1E293B'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0F172A'; }}
+          >
+            ✕
+          </button>
+          <button
  onClick={handleFinishSession}
  style={{
  padding: '6px 14px',

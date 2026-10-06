@@ -98,6 +98,66 @@ export const GOLDEN_BOOKS = [
     pdfUrl: "https://github.com/progit/progit2/releases/download/2.1.423/progit.pdf",
     format: "Official Full PDF (574 pages)",
     topics: ["Git Basics", "Branching Workflows", "Distributed Git", "Git Internals", "Custom Git"]
+  },
+  {
+    keywords: ["java", "jvm", "spring", "oop in java", "core java", "multithreading java"],
+    title: "Introduction to Programming in Java",
+    author: "Robert Sedgewick and Kevin Wayne (Princeton University)",
+    year: "Academic Edition",
+    description: "Rigorous introduction to computer science, data structures, and object-oriented programming in Java.",
+    whyRecommended: "Adopted by Princeton and university CS departments worldwide. Emphasizes clean OO design and algorithmic thinking.",
+    readUrl: "https://introcs.cs.princeton.edu/java/home/",
+    pdfUrl: "https://introcs.cs.princeton.edu/java/10elements/",
+    format: "Free Online Textbook & Code Archive",
+    topics: ["Elements of Programming", "Object-Oriented Programming", "Algorithms and Data Structures", "Theory of Computing"]
+  },
+  {
+    keywords: ["c++", "cpp", "c programming", "pointers", "stl", "templates"],
+    title: "Open Data Structures (in C++)",
+    author: "Pat Morin (Carleton University)",
+    year: "Edition 0.1G",
+    description: "Comprehensive textbook covering classic data structures implemented in modern C++ with full source code and complexity proofs.",
+    whyRecommended: "Top-tier reference for placements. Teaches BSTs, Hash Tables, Heaps, and B-Trees with real C++ implementations.",
+    readUrl: "https://opendatastructures.org/",
+    pdfUrl: "https://opendatastructures.org/ods-cpp.pdf",
+    format: "Free Open-Access PDF (336 pages)",
+    topics: ["Array-Based Lists", "Linked Lists", "Skiplists", "Binary Trees", "Heaps", "Sorting Algorithms"]
+  },
+  {
+    keywords: ["compiler", "compiler design", "parsing", "lexical", "automata", "cfg", "syntax"],
+    title: "Basics of Compiler Design",
+    author: "Torben Ægidius Mogensen (University of Copenhagen)",
+    year: "Anniversary Edition",
+    description: "In-depth modern introduction to lexical analysis, parsing, type checking, intermediate code, and machine code generation.",
+    whyRecommended: "One of the most accessible textbooks for understanding compiler construction and abstract syntax trees.",
+    readUrl: "https://hjemmesider.diku.dk/~torbenm/Basics/",
+    pdfUrl: "https://hjemmesider.diku.dk/~torbenm/Basics/basics_print.pdf",
+    format: "Full Textbook PDF (310 pages)",
+    topics: ["Lexical Analysis", "Context-Free Grammars", "LL and LR Parsing", "Symbol Tables", "Code Generation"]
+  },
+  {
+    keywords: ["machine learning", "ml", "deep learning", "neural network", "artificial intelligence", "nlp"],
+    title: "Understanding Machine Learning: From Theory to Algorithms",
+    author: "Shai Shalev-Shwartz and Shai Ben-David (Cambridge University Press)",
+    year: "Cambridge Open Access",
+    description: "Comprehensive graduate-level textbook covering PAC learning, SVMs, neural networks, decision trees, and generative models.",
+    whyRecommended: "Provides both mathematical rigor and algorithmic intuition required for advanced AI/ML technical interviews.",
+    readUrl: "https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/",
+    pdfUrl: "https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/understanding-machine-learning-theory-algorithms.pdf",
+    format: "Official Cambridge PDF (449 pages)",
+    topics: ["PAC Learning Model", "Linear Classifiers & SVM", "Neural Networks", "Kernel Methods", "Unsupervised Learning"]
+  },
+  {
+    keywords: ["web development", "full stack", "html", "css", "mern", "express", "backend"],
+    title: "Full Stack Open (Modern Web Development)",
+    author: "University of Helsinki & Open Contributors",
+    year: "2025 Edition",
+    description: "Comprehensive hands-on curriculum covering modern React, Node.js, Express, REST APIs, GraphQL, TypeScript, and CI/CD pipelines.",
+    whyRecommended: "Industry-standard free curriculum built with top engineering teams. Directly prepares candidates for full-stack engineering roles.",
+    readUrl: "https://fullstackopen.com/en/",
+    pdfUrl: "https://fullstackopen.com/en/",
+    format: "Interactive Web Curriculum & Code Labs",
+    topics: ["React Fundamentals", "Communicating with Server", "Node.js & Express", "Testing & CI/CD", "TypeScript"]
   }
 ];
 
@@ -105,22 +165,43 @@ export function findAiRecommendedBook(query) {
   const cleanQ = (query || '').trim().toLowerCase();
   for (const item of GOLDEN_BOOKS) {
     if (item.keywords.some(kw => cleanQ.includes(kw) || kw.includes(cleanQ))) {
-      return item;
+      return {
+        ...item,
+        book_title: item.title,
+        edition_or_year: item.year,
+        why_recommended: item.whyRecommended,
+        read_url: item.readUrl,
+        free_source_url: item.readUrl,
+        pdf_url: item.pdfUrl,
+        pdf_download_url: item.pdfUrl,
+        topics_covered: item.topics
+      };
     }
   }
 
   const titleTopic = (query || 'Technical Concept').trim();
   const encoded = encodeURIComponent(titleTopic);
+  const readLink = `https://openlibrary.org/search?q=${encoded}&has_fulltext=true`;
+  const pdfLink = `https://archive.org/search.php?query=${encoded}+and+mediatype%3Atexts`;
+
   return {
-    title: `The Essential Guide to ${titleTopic}`,
+    title: `The Comprehensive Guide to ${titleTopic}`,
+    book_title: `The Comprehensive Guide to ${titleTopic}`,
     author: "Open-Access Computing Archive",
     year: "2025 Edition",
+    edition_or_year: "2025 Edition",
     description: `Comprehensive open-access reference text covering foundational architecture, mathematical models, implementation blueprints, and design trade-offs for ${titleTopic}.`,
     whyRecommended: `Widely recommended textbook resource providing full conceptual coverage, interview questions, and practical code solutions for ${titleTopic}.`,
-    readUrl: `https://openlibrary.org/search?q=${encoded}&has_fulltext=true`,
-    pdfUrl: `https://archive.org/search?query=${encoded}+format%3Apdf`,
+    why_recommended: `Widely recommended textbook resource providing full conceptual coverage, interview questions, and practical code solutions for ${titleTopic}.`,
+    readUrl: readLink,
+    read_url: readLink,
+    free_source_url: readLink,
+    pdfUrl: pdfLink,
+    pdf_url: pdfLink,
+    pdf_download_url: pdfLink,
     format: "Free Full-Text Online Book & PDF",
-    topics: [`${titleTopic} Fundamentals`, "Core Architecture", "Algorithm Efficiency", "Interview Q&A"]
+    topics: [`${titleTopic} Fundamentals`, "Core Architecture", "Algorithm Efficiency", "Interview Q&A"],
+    topics_covered: [`${titleTopic} Fundamentals`, "Core Architecture", "Algorithm Efficiency", "Interview Q&A"]
   };
 }
 

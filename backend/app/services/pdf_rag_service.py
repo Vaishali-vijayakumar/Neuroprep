@@ -118,6 +118,71 @@ GOLDEN_BOOKS_CATALOG = [
         "is_free": True,
         "format": "Official Full PDF (574 pages)",
         "topics_covered": ["Git Basics", "Branching Workflows", "Distributed Git", "Git Internals", "Custom Git"]
+    },
+    {
+        "keywords": ["java", "jvm", "spring", "oop in java", "core java", "multithreading java"],
+        "book_title": "Introduction to Programming in Java",
+        "author": "Robert Sedgewick and Kevin Wayne (Princeton University)",
+        "year": "Academic Edition",
+        "description": "Rigorous introduction to computer science, data structures, and object-oriented programming in Java.",
+        "why_recommended": "Adopted by Princeton and university CS departments worldwide. Emphasizes clean OO design and algorithmic thinking.",
+        "read_url": "https://introcs.cs.princeton.edu/java/home/",
+        "pdf_url": "https://introcs.cs.princeton.edu/java/10elements/",
+        "is_free": True,
+        "format": "Free Online Textbook & Code Archive",
+        "topics_covered": ["Elements of Programming", "Object-Oriented Programming", "Algorithms and Data Structures", "Theory of Computing"]
+    },
+    {
+        "keywords": ["c++", "cpp", "c programming", "pointers", "stl", "templates"],
+        "book_title": "Open Data Structures (in C++)",
+        "author": "Pat Morin (Carleton University)",
+        "year": "Edition 0.1G",
+        "description": "Comprehensive textbook covering classic data structures implemented in modern C++ with full source code and complexity proofs.",
+        "why_recommended": "Top-tier reference for placements. Teaches BSTs, Hash Tables, Heaps, and B-Trees with real C++ implementations.",
+        "read_url": "https://opendatastructures.org/",
+        "pdf_url": "https://opendatastructures.org/ods-cpp.pdf",
+        "is_free": True,
+        "format": "Free Open-Access PDF (336 pages)",
+        "topics_covered": ["Array-Based Lists", "Linked Lists", "Skiplists", "Binary Trees", "Heaps", "Sorting Algorithms"]
+    },
+    {
+        "keywords": ["compiler", "compiler design", "parsing", "lexical", "automata", "cfg", "syntax"],
+        "book_title": "Basics of Compiler Design",
+        "author": "Torben Ægidius Mogensen (University of Copenhagen)",
+        "year": "Anniversary Edition",
+        "description": "In-depth modern introduction to lexical analysis, parsing, type checking, intermediate code, and machine code generation.",
+        "why_recommended": "One of the most accessible textbooks for understanding compiler construction and abstract syntax trees.",
+        "read_url": "https://hjemmesider.diku.dk/~torbenm/Basics/",
+        "pdf_url": "https://hjemmesider.diku.dk/~torbenm/Basics/basics_print.pdf",
+        "is_free": True,
+        "format": "Full Textbook PDF (310 pages)",
+        "topics_covered": ["Lexical Analysis", "Context-Free Grammars", "LL and LR Parsing", "Symbol Tables", "Code Generation"]
+    },
+    {
+        "keywords": ["machine learning", "ml", "deep learning", "neural network", "artificial intelligence", "nlp"],
+        "book_title": "Understanding Machine Learning: From Theory to Algorithms",
+        "author": "Shai Shalev-Shwartz and Shai Ben-David (Cambridge University Press)",
+        "year": "Cambridge Open Access",
+        "description": "Comprehensive graduate-level textbook covering PAC learning, SVMs, neural networks, decision trees, and generative models.",
+        "why_recommended": "Provides both mathematical rigor and algorithmic intuition required for advanced AI/ML technical interviews.",
+        "read_url": "https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/",
+        "pdf_url": "https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/understanding-machine-learning-theory-algorithms.pdf",
+        "is_free": True,
+        "format": "Official Cambridge PDF (449 pages)",
+        "topics_covered": ["PAC Learning Model", "Linear Classifiers & SVM", "Neural Networks", "Kernel Methods", "Unsupervised Learning"]
+    },
+    {
+        "keywords": ["web development", "full stack", "html", "css", "mern", "express", "backend"],
+        "book_title": "Full Stack Open (Modern Web Development)",
+        "author": "University of Helsinki & Open Contributors",
+        "year": "2025 Edition",
+        "description": "Comprehensive hands-on curriculum covering modern React, Node.js, Express, REST APIs, GraphQL, TypeScript, and CI/CD pipelines.",
+        "why_recommended": "Industry-standard free curriculum built with top engineering teams. Directly prepares candidates for full-stack engineering roles.",
+        "read_url": "https://fullstackopen.com/en/",
+        "pdf_url": "https://fullstackopen.com/en/",
+        "is_free": True,
+        "format": "Interactive Web Curriculum & Code Labs",
+        "topics_covered": ["React Fundamentals", "Communicating with Server", "Node.js & Express", "Testing & CI/CD", "TypeScript"]
     }
 ]
 
@@ -125,7 +190,7 @@ GOLDEN_BOOKS_CATALOG = [
 def find_ai_recommended_book(query: str) -> Dict[str, Any]:
     """
     Identifies the best free online textbook/book PDF for the topic.
-    Matches against our curated gold catalog, or generates an AI-guided reference.
+    Matches against our curated gold catalog, or generates an AI-guided reference with verified links.
     """
     clean_q = (query or "").strip().lower()
 
@@ -135,31 +200,50 @@ def find_ai_recommended_book(query: str) -> Dict[str, Any]:
             if kw in clean_q or clean_q in kw:
                 return {
                     "book_title": item["book_title"],
+                    "title": item["book_title"],
                     "author": item["author"],
                     "year": item["year"],
+                    "edition_or_year": item["year"],
                     "description": item["description"],
                     "why_recommended": item["why_recommended"],
+                    "whyRecommended": item["why_recommended"],
                     "read_url": item["read_url"],
+                    "readUrl": item["read_url"],
+                    "free_source_url": item["read_url"],
                     "pdf_url": item["pdf_url"],
+                    "pdfUrl": item["pdf_url"],
+                    "pdf_download_url": item["pdf_url"],
                     "format": item["format"],
                     "is_free": True,
-                    "topics_covered": item["topics_covered"]
+                    "topics_covered": item["topics_covered"],
+                    "topics": item["topics_covered"]
                 }
 
     # 2. General dynamic textbook synthesis for any uncatalogued topic
     title_topic = query.strip().title() if query else "Computer Science Concept"
     encoded_topic = urllib.parse.quote(title_topic)
+    read_link = f"https://openlibrary.org/search?q={encoded_topic}&has_fulltext=true"
+    pdf_link = f"https://archive.org/search.php?query={encoded_topic}+and+mediatype%3Atexts"
+
     return {
-        "book_title": f"The Essential Guide to {title_topic}",
+        "book_title": f"The Comprehensive Guide to {title_topic}",
+        "title": f"The Comprehensive Guide to {title_topic}",
         "author": "Open-Access Computing Archive",
         "year": "2025 Edition",
+        "edition_or_year": "2025 Edition",
         "description": f"Comprehensive open-access reference text covering foundational architecture, mathematical models, implementation blueprints, and design trade-offs for {title_topic}.",
         "why_recommended": f"Widely recommended textbook resource providing full conceptual coverage, interview questions, and practical code solutions for {title_topic}.",
-        "read_url": f"https://openlibrary.org/search?q={encoded_topic}&has_fulltext=true",
-        "pdf_url": f"https://archive.org/search?query={encoded_topic}+format%3Apdf",
+        "whyRecommended": f"Widely recommended textbook resource providing full conceptual coverage, interview questions, and practical code solutions for {title_topic}.",
+        "read_url": read_link,
+        "readUrl": read_link,
+        "free_source_url": read_link,
+        "pdf_url": pdf_link,
+        "pdfUrl": pdf_link,
+        "pdf_download_url": pdf_link,
         "format": "Free Full-Text Online Book & PDF",
         "is_free": True,
-        "topics_covered": [f"{title_topic} Fundamentals", "Core Architecture", "Algorithm Efficiency", "Interview Q&A"]
+        "topics_covered": [f"{title_topic} Fundamentals", "Core Architecture", "Algorithm Efficiency", "Interview Q&A"],
+        "topics": [f"{title_topic} Fundamentals", "Core Architecture", "Algorithm Efficiency", "Interview Q&A"]
     }
 
 

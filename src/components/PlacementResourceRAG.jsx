@@ -225,6 +225,37 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     if (!bookRec) {
       bookRec = findAiRecommendedBook(cleanQ);
     }
+
+    if (bookRec) {
+      const read = bookRec.read_url || bookRec.readUrl || bookRec.free_source_url || bookRec.url || `https://openlibrary.org/search?q=${encodeURIComponent(cleanQ)}&has_fulltext=true`;
+      const pdf = bookRec.pdf_url || bookRec.pdfUrl || bookRec.pdf_download_url || bookRec.download_url || read;
+      bookRec = {
+        ...bookRec,
+        book_title: bookRec.book_title || bookRec.title || `The Comprehensive Guide to ${cleanQ}`,
+        title: bookRec.book_title || bookRec.title || `The Comprehensive Guide to ${cleanQ}`,
+        author: bookRec.author || 'Open-Access Computing Archive',
+        edition_or_year: bookRec.edition_or_year || bookRec.year || '2025 Edition',
+        year: bookRec.edition_or_year || bookRec.year || '2025 Edition',
+        why_recommended: bookRec.why_recommended || bookRec.whyRecommended || bookRec.description || `Key placement textbook covering core architecture and interview preparation for ${cleanQ}.`,
+        read_url: read,
+        readUrl: read,
+        free_source_url: read,
+        pdf_url: pdf,
+        pdfUrl: pdf,
+        pdf_download_url: pdf,
+        topics_covered: bookRec.topics_covered || bookRec.topics || [`${cleanQ} Fundamentals`, 'Core Architecture', 'Interview Q&A'],
+        format: bookRec.format || 'Free Full-Text Online Book & PDF'
+      };
+    }
+
+    if (libBooks && libBooks.length > 0) {
+      libBooks = libBooks.map(b => ({
+        ...b,
+        read_online_url: b.read_online_url || b.read_url || b.borrow_url || `https://openlibrary.org/search?q=${encodeURIComponent(b.title || cleanQ)}&has_fulltext=true`,
+        borrow_url: b.borrow_url || b.read_online_url || `https://archive.org/search?query=${encodeURIComponent(b.title || cleanQ)}`
+      }));
+    }
+
     if (!docs || docs.length === 0) {
       docs = fetchSlideSharePresentations(cleanQ, 4).map(d => ({
         pdf_id: d.title,
@@ -666,116 +697,128 @@ export default function PlacementResourceRAG({ setActiveTab }) {
 
 
         {/* ── 1. AI-RECOMMENDED FREE ONLINE TEXTBOOK HERO CARD ── */}
-        {!isPdfSearching && recommendedBook && (
-          <div 
-            className="saas-card-spec"
-            style={{
-              padding: '26px 28px',
-              borderRadius: '16px',
-              border: '2px solid var(--btn-sage)',
-              backgroundColor: '#FBFDF9',
-              boxShadow: '0 8px 24px rgba(82, 98, 87, 0.12)',
-              marginBottom: '26px',
-              position: 'relative'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="pill-tag" style={{ backgroundColor: 'var(--btn-sage)', color: 'var(--btn-text)', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Sparkles size={13} /> AI Recommended Free Textbook
-                </span>
-                <span className="pill-tag" style={{ backgroundColor: '#E0E7FF', color: '#3730A3', fontSize: '0.72rem', fontWeight: 700 }}>
-                  {recommendedBook.format || 'Free Online Textbook'}
-                </span>
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                100% Free & Legal Open Access
-              </div>
-            </div>
+        {!isPdfSearching && recommendedBook && (() => {
+          const bookTitle = recommendedBook.book_title || recommendedBook.title || 'Recommended Placement Textbook';
+          const bookAuthor = recommendedBook.author || 'Open-Access Computing Archive';
+          const bookYear = recommendedBook.edition_or_year || recommendedBook.year || '2025 Edition';
+          const whyRec = recommendedBook.why_recommended || recommendedBook.whyRecommended || recommendedBook.description;
+          const topicsCovered = recommendedBook.topics_covered || recommendedBook.topics || [];
+          const readUrl = recommendedBook.read_url || recommendedBook.readUrl || recommendedBook.free_source_url || recommendedBook.url || recommendedBook.pdf_url || recommendedBook.pdfUrl || `https://openlibrary.org/search?q=${encodeURIComponent(pdfQuery || 'Computer Science')}&has_fulltext=true`;
+          const pdfUrl = recommendedBook.pdf_url || recommendedBook.pdfUrl || recommendedBook.pdf_download_url || recommendedBook.download_url || readUrl;
 
-            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.45rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
-              {recommendedBook.book_title}
-            </h2>
-
-            <div style={{ fontSize: '0.86rem', color: 'var(--secondary-heading)', fontWeight: 600, marginBottom: '12px' }}>
-              Author: <span style={{ color: 'var(--main-heading)' }}>{recommendedBook.author}</span> • <span>{recommendedBook.edition_or_year}</span>
-            </div>
-
-            {recommendedBook.why_recommended && (
-              <div style={{
-                backgroundColor: '#F3F6F1',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                fontSize: '0.86rem',
-                color: 'var(--body-text)',
-                lineHeight: 1.55,
-                marginBottom: '14px',
-                borderLeft: '3px solid var(--btn-sage)'
-              }}>
-                <strong style={{ color: 'var(--main-heading)' }}>Why this book: </strong>
-                {recommendedBook.why_recommended}
-              </div>
-            )}
-
-            {recommendedBook.topics_covered && recommendedBook.topics_covered.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '18px' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>Key Chapters:</span>
-                {recommendedBook.topics_covered.map((t, tidx) => (
-                  <span key={tidx} className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.72rem', fontWeight: 600 }}>
-                    {t}
+          return (
+            <div 
+              className="saas-card-spec"
+              style={{
+                padding: '26px 28px',
+                borderRadius: '16px',
+                border: '2px solid var(--btn-sage)',
+                backgroundColor: '#FBFDF9',
+                boxShadow: '0 8px 24px rgba(82, 98, 87, 0.12)',
+                marginBottom: '26px',
+                position: 'relative'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="pill-tag" style={{ backgroundColor: 'var(--btn-sage)', color: 'var(--btn-text)', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Sparkles size={13} /> AI Recommended Free Textbook
                   </span>
-                ))}
+                  <span className="pill-tag" style={{ backgroundColor: '#E0E7FF', color: '#3730A3', fontSize: '0.72rem', fontWeight: 700 }}>
+                    {recommendedBook.format || 'Free Online Textbook'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  100% Free & Legal Open Access
+                </div>
               </div>
-            )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <a
-                href={recommendedBook.free_source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary-spec"
-                style={{
-                  padding: '10px 20px',
-                  fontSize: '0.86rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
+              <h2 style={{ margin: '0 0 6px 0', fontSize: '1.45rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+                {bookTitle}
+              </h2>
+
+              <div style={{ fontSize: '0.86rem', color: 'var(--secondary-heading)', fontWeight: 600, marginBottom: '12px' }}>
+                Author: <span style={{ color: 'var(--main-heading)' }}>{bookAuthor}</span> • <span>{bookYear}</span>
+              </div>
+
+              {whyRec && (
+                <div style={{
+                  backgroundColor: '#F3F6F1',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  backgroundColor: 'var(--btn-sage)',
-                  color: 'var(--btn-text)',
-                  textDecoration: 'none'
-                }}
-              >
-                <BookOpen size={16} /> Read Online Free
-              </a>
+                  fontSize: '0.86rem',
+                  color: 'var(--body-text)',
+                  lineHeight: 1.55,
+                  marginBottom: '14px',
+                  borderLeft: '3px solid var(--btn-sage)'
+                }}>
+                  <strong style={{ color: 'var(--main-heading)' }}>Why this book: </strong>
+                  {whyRec}
+                </div>
+              )}
 
-              {recommendedBook.pdf_download_url && (
+              {topicsCovered && topicsCovered.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>Key Chapters:</span>
+                  {topicsCovered.map((t, tidx) => (
+                    <span key={tidx} className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.72rem', fontWeight: 600 }}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <a
-                  href={recommendedBook.pdf_download_url}
+                  href={readUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-outline-spec"
+                  className="btn-primary-spec"
                   style={{
-                    padding: '10px 18px',
+                    padding: '10px 20px',
                     fontSize: '0.86rem',
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
                     borderRadius: '10px',
-                    border: '1.5px solid var(--btn-sage)',
-                    color: 'var(--btn-sage)',
+                    backgroundColor: 'var(--btn-sage)',
+                    color: 'var(--btn-text)',
                     textDecoration: 'none',
-                    backgroundColor: '#FFFFFF'
+                    cursor: 'pointer'
                   }}
                 >
-                  <Download size={15} /> Download Book PDF
+                  <BookOpen size={16} /> Read Online Free
                 </a>
-              )}
+
+                {pdfUrl && (
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-outline-spec"
+                    style={{
+                      padding: '10px 18px',
+                      fontSize: '0.86rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      borderRadius: '10px',
+                      border: '1.5px solid var(--btn-sage)',
+                      color: 'var(--btn-sage)',
+                      textDecoration: 'none',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Download size={15} /> Download Book PDF
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── 2. MULTI-FORMAT DOCUMENTS & PRESENTATION SLIDES (PPT / PDF / DOC) ── */}
         {!isPdfSearching && (docList.length > 0 || slideShareDecks.length > 0) && (

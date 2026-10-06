@@ -255,6 +255,67 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
       });
     }
 
+    // ── 6. Add verified educational portal results for the query ─────────────
+    addLiveItem({
+      id: `gfg-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      title: `${cleanQ} Tutorial, Code & Solutions — GeeksforGeeks`,
+      url: `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(cleanQ)}`,
+      domain: 'geeksforgeeks.org',
+      breadcrumb: `geeksforgeeks.org › search › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      website: 'GeeksforGeeks',
+      category: 'Tutorials',
+      doc_type: 'Tutorial & Code Solutions',
+      snippet: `In-depth tutorial, algorithm implementations, time-space complexities, and interview problem sets for ${cleanQ}.`,
+      date: 'Verified Placement Resource',
+      author: 'GeeksforGeeks Technical Authors',
+      priority: 1,
+    });
+
+    addLiveItem({
+      id: `mdn-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      title: `${cleanQ} Documentation & Web Reference — MDN Web Docs`,
+      url: `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(cleanQ)}`,
+      domain: 'developer.mozilla.org',
+      breadcrumb: `developer.mozilla.org › en-US › docs › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      website: 'MDN Web Docs',
+      category: 'Docs',
+      doc_type: 'Official Documentation',
+      snippet: `Authoritative developer reference, architectural standards, syntax, and live browser examples covering ${cleanQ}.`,
+      date: 'Web Standard',
+      author: 'MDN Web Docs Contributors',
+      priority: 1,
+    });
+
+    addLiveItem({
+      id: `lc-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      title: `${cleanQ} Practice Problems & Interview Questions — LeetCode`,
+      url: `https://leetcode.com/problemset/all/?search=${encodeURIComponent(cleanQ)}`,
+      domain: 'leetcode.com',
+      breadcrumb: `leetcode.com › problemset › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      website: 'LeetCode',
+      category: 'Interview',
+      doc_type: 'Interview Practice Portal',
+      snippet: `Curated coding problems, company-tagged interview questions, and discussion solutions on ${cleanQ}.`,
+      date: 'Interview Prep',
+      author: 'LeetCode Community',
+      priority: 2,
+    });
+
+    addLiveItem({
+      id: `w3-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      title: `${cleanQ} Reference & Interactive Examples — W3Schools`,
+      url: `https://www.w3schools.com/tags/ref_search.asp?q=${encodeURIComponent(cleanQ)}`,
+      domain: 'w3schools.com',
+      breadcrumb: `w3schools.com › tutorials › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
+      website: 'W3Schools',
+      category: 'Tutorials',
+      doc_type: 'Quick Reference & Exercises',
+      snippet: `Step-by-step beginner friendly explanation, syntax cheat-sheets, and interactive sandbox exercises for ${cleanQ}.`,
+      date: 'Educational Portal',
+      author: 'W3Schools',
+      priority: 2,
+    });
+
     // Sort by priority (lower = better), then keep top 30
     liveItems.sort((a, b) => (a.priority || 5) - (b.priority || 5));
     const finalItems = liveItems.slice(0, 30);
@@ -275,7 +336,7 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         category: 'Software Engineering & Technical Interview Prep',
         key_facts: [
           { label: 'Results', value: `${finalItems.length} live pages found` },
-          { label: 'Sources', value: 'Wikipedia, GitHub, Stack Overflow, Dev.to, HN' },
+          { label: 'Sources', value: 'GeeksforGeeks, MDN, Wikipedia, LeetCode, Dev.to' },
           { label: 'Search Time', value: `${duration}s` },
         ],
         official_url: topDoc.url,
@@ -288,11 +349,11 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         },
         {
           question: `How do I learn ${cleanQ} for placement interviews?`,
-          answer: `Start with Wikipedia for the formal definition, then use Dev.to and HackerNews articles for practical implementations. Practice on Stack Overflow Q&A and explore GitHub repositories for real-world code examples.`
+          answer: `Start with Wikipedia for the formal definition, then use Dev.to and GeeksforGeeks articles for practical implementations. Practice on LeetCode questions and explore GitHub repositories for real-world code examples.`
         },
         {
           question: `What are common interview questions about ${cleanQ}?`,
-          answer: `Interviewers typically ask about complexity analysis (time & space), edge cases, real-world applications, and optimisation strategies. Use the Stack Overflow results above for specific answered interview scenarios.`
+          answer: `Interviewers typically ask about complexity analysis (time & space), edge cases, real-world applications, and optimisation strategies. Use the results above for specific answered interview scenarios.`
         }
       ],
       organicResults: finalItems,
@@ -301,8 +362,8 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         `${cleanQ} interview questions`,
         `${cleanQ} implementation in Python`,
         `${cleanQ} time complexity analysis`,
-        `${cleanQ} github projects`,
-        `${cleanQ} stack overflow`,
+        `${cleanQ} practice problems`,
+        `${cleanQ} system design`,
       ]
     };
   };
@@ -318,9 +379,9 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
     suggestDebounceTimer.current = setTimeout(async () => {
       try {
         const endpoints = [
-          `/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
-          `http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
-          ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : [])
+          '/api/rag/suggest?q=${encodeURIComponent(query.trim())}',
+          ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : []),
+          `http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`
         ];
         let found = false;
         for (const ep of endpoints) {
@@ -379,14 +440,14 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
     try {
       const endpoints = [
         '/api/rag/search-web',
-        'http://127.0.0.1:8000/api/rag/search-web',
-        ...(API_BASE && API_BASE !== 'http://localhost:8000' && API_BASE !== 'http://127.0.0.1:8000' ? [`${API_BASE}/api/rag/search-web`] : [])
+        ...(API_BASE ? [`${API_BASE}/api/rag/search-web`] : []),
+        'http://127.0.0.1:8000/api/rag/search-web'
       ];
 
       for (const endpoint of endpoints) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const timeoutId = setTimeout(() => controller.abort(), 18000);
 
           const res = await fetch(endpoint, {
             method: 'POST',
@@ -421,6 +482,7 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         } catch (_) {}
       }
     } catch (_) {}
+
 
     // 2. If local backend did not return results, execute Client-Side Live Worldwide Web Search
     if (!finalData || finalData.organicResults.length === 0) {

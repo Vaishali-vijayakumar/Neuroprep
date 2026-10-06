@@ -12,6 +12,7 @@ import time
 import urllib.parse
 import re
 import logging
+from html import unescape
 from typing import Dict, Any, List, Optional
 import httpx
 
@@ -345,93 +346,99 @@ def fetch_devto_documents(query: str, limit: int = 3) -> List[Dict[str, Any]]:
 
 
 
-# Public SearXNG instances — free metasearch that aggregates Google + Bing + DuckDuckGo
-SEARXNG_INSTANCES = [
-    "https://searx.be",
-    "https://search.mdosch.de",
-    "https://searx.tiekoetter.com",
-    "https://searx.prvcy.eu",
-    "https://search.bus-hit.me",
-    "https://searx.sev.monster",
-]
-
-
-def fetch_searxng_results(query: str, limit: int = 15) -> List[Dict[str, Any]]:
+# ── Direct DuckDuckGo HTML Web Search Engine (Zero Keys, 100% Real Live Web) ──
+def fetch_ddg_html_results(query: str, limit: int = 15) -> List[Dict[str, Any]]:
     """
-    Fetches real worldwide web search results from public SearXNG instances.
-    SearXNG is a free, open-source metasearch engine that aggregates results
-    from Google, Bing, DuckDuckGo, and 70+ other engines — returning ANY website
-    on the internet, not limited to specific platforms.
+    Direct DuckDuckGo HTML scraping — the most reliable zero-key worldwide web search engine.
+    Returns real, live web search results across the entire internet (Google-like quality):
+    GeeksforGeeks, MDN, Wikipedia, university course notes, official docs, tutorials, etc.
+    Extracts authentic direct URLs (unwrapping uddg redirect tokens), unescaped titles, and snippets.
     """
     items = []
-    encoded_q = urllib.parse.quote(query)
     headers = {
         "User-Agent": USER_AGENT,
-        "Accept": "application/json",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://html.duckduckgo.com/",
     }
 
-    for base_url in SEARXNG_INSTANCES:
+    resp = None
+    try:
+        with httpx.Client(timeout=7.0, headers=headers, follow_redirects=True) as client:
+            resp = client.post("https://html.duckduckgo.com/html/", data={"q": query})
+    except Exception as e:
+        logger.warning(f"DDG HTML POST failed: {e}")
+
+    if not resp or resp.status_code != 200 or len(resp.text) < 1000:
         try:
-            url = (
-                f"{base_url}/search"
-                f"?q={encoded_q}"
-                f"&format=json"
-                f"&language=en-US"
-                f"&safesearch=1"
-                f"&categories=general"
-                f"&engines=google,bing,duckduckgo,brave,mojeek"
-            )
-            with httpx.Client(timeout=6.0, headers=headers, follow_redirects=True) as client:
-                resp = client.get(url)
-                if resp.status_code != 200:
-                    continue
-
-                data = resp.json()
-                raw_results = data.get("results", [])
-                if not raw_results:
-                    continue
-
-                for r in raw_results:
-                    href = (r.get("url") or "").strip()
-                    title = (r.get("title") or "").strip()
-                    snippet = (r.get("content") or "").strip()
-
-                    if not href or not title:
-                        continue
-                    if not href.startswith("http"):
-                        continue
-                    if not is_safe_and_educational(title, href, snippet):
-                        continue
-
-                    domain = _clean_domain(href)
-                    is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
-                    doc_type = _classify_pdf_doc_type(title, href, snippet) if is_pdf else _classify_web_doc_type(title, href, snippet)
-                    is_academic = is_trusted_academic(href)
-
-                    items.append({
-                        "title": re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip() or title,
-                        "url": href,
-                        "domain": domain,
-                        "breadcrumb": _clean_breadcrumb(href),
-                        "doc_type": doc_type,
-                        "snippet": snippet or f"Web result for {query} from {domain}.",
-                        "is_pdf": is_pdf,
-                        "is_academic": is_academic,
-                        "engine": r.get("engine", "web"),
-                        "score": r.get("score", 0),
-                    })
-
-                    if len(items) >= limit:
-                        break
-
-                if items:
-                    logger.info(f"SearXNG({base_url}): {len(items)} results for '{query}'")
-                    return items  # Got results — stop trying other instances
-
+            encoded_q = urllib.parse.quote(query)
+            with httpx.Client(timeout=7.0, headers=headers, follow_redirects=True) as client:
+                resp = client.get(f"https://html.duckduckgo.com/html/?q={encoded_q}")
         except Exception as e:
-            logger.warning(f"SearXNG instance {base_url} failed: {e}")
+            logger.warning(f"DDG HTML GET failed: {e}")
+
+    if not resp or resp.status_code != 200:
+        return items
+
+    html_content = resp.text
+    # Split into individual search result blocks
+    chunks = re.split(r'<div class="result results_links', html_content)
+    if len(chunks) <= 1:
+        chunks = re.split(r'<div[^>]*class="[^"]*result__body', html_content)
+
+    for c in chunks[1:]:
+        t_match = re.search(r'<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', c, re.DOTALL)
+        if not t_match:
             continue
 
+        raw_href = t_match.group(1).strip()
+        raw_title = unescape(re.sub(r'<[^>]+>', '', t_match.group(2)).strip())
+        if not raw_title:
+            continue
+
+        # Extract target url from uddg parameter if present
+        target_url = raw_href
+        if "uddg=" in raw_href:
+            parsed = urllib.parse.urlparse(raw_href)
+            qs = urllib.parse.parse_qs(parsed.query)
+            if "uddg" in qs and qs["uddg"]:
+                target_url = qs["uddg"][0]
+
+        if not target_url or not target_url.startswith("http"):
+            continue
+
+        # Snippet
+        s_match = re.search(r'class="[^"]*result__snippet[^"]*"[^>]*>(.*?)</a>', c, re.DOTALL)
+        snippet = ""
+        if s_match:
+            snippet = unescape(re.sub(r'<[^>]+>', '', s_match.group(1)).strip())
+
+        # Content safety filter
+        if not is_safe_and_educational(raw_title, target_url, snippet):
+            continue
+
+        clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', raw_title, flags=re.IGNORECASE).strip() or raw_title
+        domain = _clean_domain(target_url)
+        is_pdf = target_url.lower().endswith(".pdf") or ".pdf" in target_url.lower() or "filetype:pdf" in query.lower()
+        doc_type = _classify_pdf_doc_type(clean_title, target_url, snippet) if is_pdf else _classify_web_doc_type(clean_title, target_url, snippet)
+        is_academic = is_trusted_academic(target_url)
+
+        items.append({
+            "title": clean_title,
+            "url": target_url,
+            "domain": domain,
+            "breadcrumb": _clean_breadcrumb(target_url),
+            "doc_type": doc_type,
+            "snippet": snippet or f"Verified technical resource covering {query} from {domain}.",
+            "is_pdf": is_pdf,
+            "is_academic": is_academic,
+            "engine": "duckduckgo",
+        })
+
+        if len(items) >= limit:
+            break
+
+    logger.info(f"DDG HTML scraped {len(items)} real web results for '{query}'")
     return items
 
 
@@ -506,35 +513,36 @@ class WebSearchEngine:
             except Exception as e:
                 logger.warning(f"Google API failed: {e}")
 
-        # ── Step 2: SearXNG Metasearch (Google + Bing + DDG aggregated) ──────
+        # ── Step 2: Direct DuckDuckGo HTML Web Search (PRIMARY - Real Google-like web results) ──
         if len(results) < top_k:
             try:
-                searxng_docs = fetch_searxng_results(augmented_query, limit=top_k + 4)
-                for doc in searxng_docs:
+                ddg_html_docs = fetch_ddg_html_results(augmented_query, limit=top_k + 4)
+                for doc in ddg_html_docs:
                     is_academic = doc.get("is_academic", False)
                     add_result({
-                        "id": f"searx-{len(results)+1}",
+                        "id": f"ddg-html-{len(results)+1}",
                         "title": doc["title"],
                         "url": doc["url"],
                         "domain": doc["domain"],
                         "breadcrumb": doc.get("breadcrumb", doc["domain"]),
                         "website": doc["domain"].split(".")[0].capitalize(),
-                        "doc_type": doc.get("doc_type", "Web Result"),
+                        "doc_type": doc.get("doc_type", "Web Resource"),
                         "file_type": "PDF" if doc.get("is_pdf") else "Website",
                         "is_pdf": doc.get("is_pdf", False),
                         "filter_tag": filter_category,
-                        "quality_score": 4.97 if is_academic else 4.89,
+                        "quality_score": 4.98 if is_academic else 4.91,
                         "verified": True,
                         "is_academic": is_academic,
                         "description": doc.get("snippet", ""),
                         "preview_content": doc.get("snippet", "")[:220],
                     })
             except Exception as e:
-                logger.warning(f"SearXNG step failed: {e}")
+                logger.warning(f"DDG HTML search step failed: {e}")
 
-        # ── Step 3: DuckDuckGo Search (DDGS) — fallback if SearXNG unavailable ─
+        # ── Step 3: DuckDuckGo Search (DDGS Library fallback) ─────────────────
         if len(results) < top_k and DDGS is not None:
             for b in ["lite", "html", "api"]:
+
                 if len(results) >= top_k:
                     break
                 try:

@@ -25,27 +25,70 @@ import { recordActivity } from './services/gamificationService';
 const SESSION_STORAGE_KEY = 'neuroprep_user_session';
 
 export default function App() {
-  // Load saved session on initial render so refresh keeps user logged in
-  const [session, setSession] = useState(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-
-  const TAB_STORAGE_KEY = 'neuroprep_active_tab';
-
-  const [isLanding, setIsLanding] = useState(() => {
-    // Always show landing page if not authenticated
-    if (session) return false;
-    return true;
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(session));
+  // Start unauthenticated — Supabase session is verified asynchronously below
+  const [session, setSession] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
+  const [sessionLoading, setSessionLoading] = useState(true); // show nothing until verified
+
+  // Verify session with Supabase on every app load — reject stale localStorage sessions
+  useEffect(() => {
+    let mounted = true;
+    const verifySession = async () => {
+      try {
+        const { data: { session: sbSession } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (sbSession?.user) {
+          // Valid Supabase session — restore profile from localStorage if it matches
+          const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+          const parsed = stored ? JSON.parse(stored) : null;
+          const matchesEmail = parsed?.email?.toLowerCase() === sbSession.user.email?.toLowerCase();
+          const userProfile = matchesEmail ? parsed : {
+            email: sbSession.user.email,
+            name: sbSession.user.user_metadata?.name || sbSession.user.email.split('@')[0],
+            college: sbSession.user.user_metadata?.college || '',
+            department: sbSession.user.user_metadata?.department || '',
+            graduationYear: sbSession.user.user_metadata?.graduation_year || '',
+          };
+          setSession(userProfile);
+          setProfile(userProfile);
+          setIsAuthenticated(true);
+          setIsLanding(false);
+          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(userProfile));
+        } else {
+          // No valid Supabase session — clear any stale localStorage session
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+          setSession(null);
+          setIsAuthenticated(false);
+          setIsLanding(true);
+        }
+      } catch (e) {
+        console.warn('Session verification failed:', e);
+        // On error, clear session to be safe
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        if (mounted) { setIsAuthenticated(false); setIsLanding(true); }
+      } finally {
+        if (mounted) setSessionLoading(false);
+      }
+    };
+    verifySession();
+
+    // Subscribe to Supabase auth changes (logout, token expiry, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sbSession) => {
+      if (!sbSession) {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        setIsAuthenticated(false);
+        setIsLanding(true);
+        setSession(null);
+      }
+    });
+
+    return () => { mounted = false; subscription?.unsubscribe(); };
+  }, []);
+
+  const TAB_STORAGE_KEY = 'neuroprep_active_tab';
+  const [isLanding, setIsLanding] = useState(true); // default: show landing until Supabase confirms auth
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -123,24 +166,17 @@ export default function App() {
     };
   }, [activeTab]);
 
-  // Student profile initialized from saved session or pure empty state
-  const [profile, setProfile] = useState(() => {
-    if (session?.email) {
-      const stored = dbService.getUserProfile(session.email);
-      if (stored) return { ...stored, ...session };
-      return session;
-    }
-    return {
-      name: '',
-      email: '',
-      college: '',
-      department: '',
-      cgpa: '',
-      graduationYear: '',
-      skills: [],
-      targetCompany: '',
-      targetRole: ''
-    };
+  // Student profile — always starts empty; set by Supabase session verification above
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    college: '',
+    department: '',
+    cgpa: '',
+    graduationYear: '',
+    skills: [],
+    targetCompany: '',
+    targetRole: ''
   });
 
   // Keep saved profile and session in sync whenever profile changes
@@ -156,22 +192,15 @@ export default function App() {
   // User email key for per-user scoped data
   const userEmail = profile?.email || 'guest';
 
-  const savedScore = dbService.getSavedReadinessScore(userEmail);
-
   const [moodState, setMoodState] = useState({
     emoji: '',
-    label: savedScore?.stressScore ? (savedScore.stressScore >= 7 ? 'Anxious' : 'Moderate') : 'Not Checked-in',
-    stress: savedScore?.stressScore || 0,
+    label: 'Not Checked-in',
+    stress: 0,
     confidence: 0
   });
 
-  // Load per-user journals on mount / when userEmail changes
-  const [journalEntries, setJournalEntries] = useState(() => {
-    if (session?.email) {
-      return dbService.getJournalsForUser(session.email);
-    }
-    return [];
-  });
+  // Load per-user journals — starts empty, loaded after session verification
+  const [journalEntries, setJournalEntries] = useState([]);
 
   const [selectedDistortion, setSelectedDistortion] = useState(DISTORTIONS.CATASTROPHIZING);
 
@@ -386,6 +415,19 @@ export default function App() {
     window.addEventListener('neuroprep-nav', handleNavEvent);
     return () => window.removeEventListener('neuroprep-nav', handleNavEvent);
   }, []);
+
+  // Show nothing (or a minimal spinner) while Supabase verifies the session
+  if (sessionLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-page, #FAF8F5)', fontFamily: 'var(--font-main, Inter, sans-serif)' }}>
+        <div style={{ textAlign: 'center', color: 'var(--body-text, #6B7280)' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid #E5E7EB', borderTopColor: 'var(--btn-sage, #5B6B55)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ fontSize: '0.88rem', margin: 0 }}>Loading NeuroPrep...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

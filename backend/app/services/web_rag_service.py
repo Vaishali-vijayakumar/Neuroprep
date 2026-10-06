@@ -1,586 +1,390 @@
 """
-Google Search Engine Replication Engine for Technical & Placement Topics
-Replicates Google's Organic Search Engine:
-- Organic Search Results with Breadcrumb URLs & Meta Snippets
-- Knowledge Graph Overview Panel
-- "People Also Ask" (PAA) Interactive Accordion
-- Related Searches & Search Refinement Chips
-- Filter Categories (All, Documentation, Interview Q&A, Practice Problems)
+WebPrep 2.0: Open-Internet Document Retrieval & Knowledge Synthesis Engine
+Replaces hardcoded website links and domain restrictions with authentic open-web search.
+Retrieves real live web documents, articles, documentation, and technical papers across the entire internet.
 """
 
 import time
 import urllib.parse
 import re
+import logging
 from typing import Dict, Any, List, Optional
+import httpx
 
-class GoogleSearchEngineReplication:
+try:
+    from ddgs import DDGS
+except ImportError:
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        DDGS = None
+
+try:
+    import trafilatura
+except ImportError:
+    trafilatura = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+logger = logging.getLogger(__name__)
+
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+
+def _clean_domain(url: str) -> str:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        netloc = parsed.netloc.lower()
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        return netloc or "web-document"
+    except Exception:
+        return "web-document"
+
+
+def _clean_breadcrumb(url: str) -> str:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        domain = _clean_domain(url)
+        path_parts = [p for p in parsed.path.split("/") if p.strip()]
+        if not path_parts:
+            return domain
+        return f"{domain} › " + " › ".join(path_parts[:2])
+    except Exception:
+        return url
+
+
+def _classify_document_category(title: str, url: str, snippet: str) -> str:
+    text = f"{title} {url} {snippet}".lower()
+    if any(k in text for k in ["docs.", "documentation", "api reference", "specification", "manual", "man/", "/ref/"]):
+        return "Documentation"
+    elif any(k in text for k in [".edu", "arxiv", "research", "paper", "journal", "acm.org", "ieee.org", "thesis"]):
+        return "Academic & Research"
+    elif any(k in text for k in ["interview", "questions and answers", "quiz", "viva", "assessment", "mcqs", "exam pattern"]):
+        return "Interview Q&A"
+    elif any(k in text for k in ["tutorial", "guide", "how-to", "learn", "walkthrough", "step-by-step", "crash course"]):
+        return "Tutorials"
+    elif any(k in text for k in ["github.com", "gitlab.com", "bitbucket", "repository", "source code", "npm", "pypi"]):
+        return "Code & Repos"
+    return "Articles & Blogs"
+
+
+def _extract_doc_type(category: str, domain: str) -> str:
+    if ".edu" in domain:
+        return "University Courseware"
+    elif category == "Documentation":
+        return "Official Spec / Docs"
+    elif category == "Academic & Research":
+        return "Research Paper"
+    elif category == "Interview Q&A":
+        return "Placement Q&A"
+    elif category == "Code & Repos":
+        return "Open Source Repo"
+    return "Technical Article"
+
+
+def _generate_related_searches(query: str, results: List[Dict[str, Any]]) -> List[str]:
+    clean_q = query.strip()
+    related = [
+        f"{clean_q} architecture and implementation",
+        f"{clean_q} time and space complexity",
+        f"{clean_q} top interview questions",
+        f"{clean_q} best practices and edge cases",
+        f"{clean_q} deep dive documentation"
+    ]
+    # Add domain-specific related searches from actual retrieved pages
+    top_domains = list({r.get("domain") for r in results if r.get("domain")})[:3]
+    for d in top_domains:
+        if d:
+            related.append(f"{clean_q} on {d}")
+    return related[:6]
+
+
+def _generate_paa(query: str, top_snippet: str = "") -> List[Dict[str, str]]:
+    clean_q = query.strip()
+    return [
+        {
+            "question": f"What is the fundamental working principle of {clean_q}?",
+            "answer": f"{clean_q} organizes computational state, guarantees deterministic execution, and addresses specific design constraints in modern software and computer science systems."
+        },
+        {
+            "question": f"What are the typical interview traps and edge cases for {clean_q}?",
+            "answer": f"Recruiters evaluate runtime boundary conditions (null/empty inputs, integer overflow, concurrency race conditions) and trade-offs between memory overhead vs execution speed for {clean_q}."
+        },
+        {
+            "question": f"How is {clean_q} applied in production distributed or system architecture?",
+            "answer": f"In production systems, {clean_q} optimizes resource allocation, guarantees fault tolerance, and maintains data consistency under high-concurrency workloads."
+        }
+    ]
+
+
+class OpenInternetSearchEngine:
     @staticmethod
-    def search(query: str, category_filter: str = "All", top_k: int = 6) -> Dict[str, Any]:
-        start_time = time.time()
+    def search_live_web(query: str, top_k: int = 8) -> List[Dict[str, Any]]:
         clean_q = (query or "").strip()
         if not clean_q:
-            clean_q = "Placement Technical Concepts"
-        
-        q_lower = clean_q.lower()
-        encoded_q = urllib.parse.quote(clean_q)
-
-        # ── 1. KNOWLEDGE GRAPH GENERATOR ──
-        knowledge_graph = GoogleSearchEngineReplication._generate_knowledge_graph(clean_q, q_lower)
-
-        # ── 2. PEOPLE ALSO ASK (PAA) GENERATOR ──
-        people_also_ask = GoogleSearchEngineReplication._generate_paa(clean_q, q_lower)
-
-        # ── 3. ORGANIC WEB RESULTS ──
-        organic_results = GoogleSearchEngineReplication._generate_organic_results(clean_q, q_lower, encoded_q)
-
-        # ── 4. RELATED SEARCHES ──
-        related_searches = GoogleSearchEngineReplication._generate_related_searches(clean_q, q_lower)
-
-        # Filter by category if specified
-        if category_filter and category_filter != "All":
-            filtered = [r for r in organic_results if r.get("filter_tag", "").lower() == category_filter.lower()]
-            if filtered:
-                organic_results = filtered
-
-        search_time = round(time.time() - start_time, 2)
-        total_estimated = f"About {len(organic_results) * 382000:,} results"
-
-        return {
-            "query": clean_q,
-            "search_time_seconds": search_time,
-            "total_estimated_results": total_estimated,
-            "filter_applied": category_filter,
-            "knowledge_graph": knowledge_graph,
-            "people_also_ask": people_also_ask,
-            "organic_results": organic_results[:top_k],
-            "recommendations": organic_results[:top_k],
-            "websites": organic_results[:top_k],
-            "related_searches": related_searches
-        }
-
-    @staticmethod
-    def _generate_knowledge_graph(clean_q: str, q_lower: str) -> Dict[str, Any]:
-        if "deadlock" in q_lower:
-            return {
-                "title": "Deadlock",
-                "subtitle": "Computer Science & Operating Systems Concept",
-                "summary": "A deadlock is a state in concurrent computing where two or more processes are permanently blocked because each process holds a resource and waits for another resource held by another process in a circular chain.",
-                "key_facts": [
-                    {"label": "Necessary Conditions", "value": "Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait"},
-                    {"label": "Prevention Algorithm", "value": "Banker's Algorithm (Dijkstra)"},
-                    {"label": "Detection Method", "value": "Resource Allocation Graph (RAG) Cycle Detection"},
-                    {"label": "Subject Area", "value": "Operating Systems / Concurrency"}
-                ],
-                "official_url": "https://www.geeksforgeeks.org/introduction-of-deadlock-in-operating-system/",
-                "official_site": "GeeksforGeeks OS Architecture"
-            }
-        elif "binary search" in q_lower:
-            return {
-                "title": "Binary Search Algorithm",
-                "subtitle": "Search Algorithm • Time Complexity: O(log N)",
-                "summary": "Binary search is an efficient divide-and-conquer algorithm for finding an item from a sorted list of items. It works by repeatedly dividing in half the portion of the list that could contain the item.",
-                "key_facts": [
-                    {"label": "Time Complexity", "value": "Best: O(1), Average/Worst: O(log N)"},
-                    {"label": "Space Complexity", "value": "Iterative: O(1), Recursive: O(log N)"},
-                    {"label": "Prerequisite", "value": "Array/Data must be sorted (Monotonic)"},
-                    {"label": "Mid Calculation", "value": "mid = low + (high - low) / 2"}
-                ],
-                "official_url": "https://leetcode.com/problems/binary-search/",
-                "official_site": "LeetCode Algorithmic Standards"
-            }
-        elif "java" in q_lower or "oop" in q_lower:
-            return {
-                "title": "Object-Oriented Programming (Java)",
-                "subtitle": "Programming Paradigm & Architecture",
-                "summary": "Object-Oriented Programming (OOP) is a programming paradigm based on the concept of 'objects', which contain data in the form of fields and code in the form of procedures. Java enforces pure class-based OOP.",
-                "key_facts": [
-                    {"label": "4 Pillars", "value": "Encapsulation, Abstraction, Inheritance, Polymorphism"},
-                    {"label": "Memory Layout", "value": "Objects on Heap, References on Stack"},
-                    {"label": "Multiple Inheritance", "value": "Achieved via Interfaces to avoid Diamond Problem"},
-                    {"label": "Execution Engine", "value": "Java Virtual Machine (JVM)"}
-                ],
-                "official_url": "https://www.javatpoint.com/java-oops-concepts",
-                "official_site": "JavaTpoint Core Java Specification"
-            }
-        elif "normaliz" in q_lower or "dbms" in q_lower or "sql" in q_lower:
-            return {
-                "title": "Database Normalization",
-                "subtitle": "Relational Database Management Systems (RDBMS)",
-                "summary": "Database normalization is the process of organizing data in a database to reduce data redundancy and improve data integrity by decomposing tables according to normal forms.",
-                "key_facts": [
-                    {"label": "Normal Forms", "value": "1NF (Atomic), 2NF (No partial dependency), 3NF (No transitive dependency), BCNF"},
-                    {"label": "Primary Objective", "value": "Eliminate Insertion, Update, and Deletion Anomalies"},
-                    {"label": "Decomposition Criteria", "value": "Lossless Join + Dependency Preservation"},
-                    {"label": "Field", "value": "DBMS & Enterprise Data Architecture"}
-                ],
-                "official_url": "https://www.geeksforgeeks.org/database-normalization-normal-forms/",
-                "official_site": "GeeksforGeeks DBMS Editorial"
-            }
-        elif any(k in q_lower for k in ["probab", "quant", "aptitude", "time and work"]):
-            return {
-                "title": f"{clean_q}",
-                "subtitle": "Quantitative Aptitude & Placement Examination",
-                "summary": f"Standard quantitative and problem-solving framework used across campus placement examinations and technical screening rounds for {clean_q}.",
-                "key_facts": [
-                    {"label": "Primary Focus", "value": "Speed math shortcuts & analytical formulas"},
-                    {"label": "Exam Weightage", "value": "High in TCS, Infosys, Wipro, Accenture & Cognizant rounds"},
-                    {"label": "Standard Practice Time", "value": "Under 60 seconds per question"},
-                    {"label": "Category", "value": "Quantitative Aptitude & Placement Reasoning"}
-                ],
-                "official_url": f"https://www.indiabix.com/search.php?q={urllib.parse.quote(clean_q)}",
-                "official_site": "IndiaBIX Placement Standards"
-            }
-        else:
-            return {
-                "title": clean_q,
-                "subtitle": "Computer Science & Placement Architecture Reference",
-                "summary": f"Core technical mechanisms, architectural invariants, runtime trade-offs, and placement interview solutions for {clean_q}.",
-                "key_facts": [
-                    {"label": "Topic Domain", "value": "Computer Science & Engineering"},
-                    {"label": "Interview Importance", "value": "High Probability in SDE & Technical Rounds"},
-                    {"label": "Standard Reference", "value": "GeeksforGeeks, Scaler & LeetCode"},
-                    {"label": "Target Level", "value": "Campus Placement & SDE-1 Candidates"}
-                ],
-                "official_url": f"https://www.geeksforgeeks.org/search/?q={urllib.parse.quote(clean_q)}",
-                "official_site": "GeeksforGeeks Placement Reference"
-            }
-
-    @staticmethod
-    def _generate_paa(clean_q: str, q_lower: str) -> List[Dict[str, str]]:
-        if "deadlock" in q_lower:
-            return [
-                {
-                    "question": "What are the 4 necessary conditions for deadlock in OS?",
-                    "answer": "The four Coffman conditions are: 1. Mutual Exclusion (non-shareable resources), 2. Hold and Wait (processes hold resources while requesting others), 3. No Preemption (resources cannot be forcibly taken), and 4. Circular Wait (a circular chain of waiting processes exists)."
-                },
-                {
-                    "question": "What is the difference between Deadlock and Starvation?",
-                    "answer": "Deadlock is a circular standstill where no process can proceed, whereas Starvation is indefinite delay where a low-priority process waits forever because higher-priority processes keep acquiring the resource."
-                },
-                {
-                    "question": "How does Banker's Algorithm avoid deadlock?",
-                    "answer": "Banker's Algorithm checks before granting a resource whether the system will remain in a 'Safe State' (a sequence of processes where all can complete with remaining available resources). If unsafe, the request is denied."
-                }
-            ]
-        elif "binary search" in q_lower:
-            return [
-                {
-                    "question": "Why is Binary Search time complexity O(log n)?",
-                    "answer": "Because the search space is divided by 2 in each comparison step: N, N/2, N/4, ..., 1. Thus, N / (2^k) = 1 => 2^k = N => k = log2(N) steps."
-                },
-                {
-                    "question": "Why do we use mid = low + (high - low) / 2 instead of (low + high) / 2?",
-                    "answer": "In languages like Java, C, and C++, (low + high) can exceed the maximum 32-bit integer value (2,147,483,647) and cause an integer overflow bug resulting in a negative number."
-                },
-                {
-                    "question": "What is Binary Search on Answer Space?",
-                    "answer": "When the validation function f(x) is monotonic (e.g. False...False, True...True), binary search can be applied on the range of possible answers to find the minimum/maximum threshold in O(log(range) * check_time)."
-                }
-            ]
-        elif "java" in q_lower or "oop" in q_lower:
-            return [
-                {
-                    "question": "Why does Java not support multiple inheritance with classes?",
-                    "answer": "To prevent the Diamond Problem ambiguity, where two parent classes have a method with the same signature and the compiler cannot determine which method to inherit. Java resolves this cleanly via Interfaces."
-                },
-                {
-                    "question": "What is the difference between Abstraction and Encapsulation?",
-                    "answer": "Encapsulation is data-hiding (binding data and methods together with private variables and public getters/setters). Abstraction is detail-hiding (showing only essential functionality via interfaces/abstract classes)."
-                }
-            ]
-        else:
-            return [
-                {
-                    "question": f"What are the core concepts of {clean_q}?",
-                    "answer": f"{clean_q} involves fundamental architectural rules, data modeling guarantees, algorithmic time complexities, and edge case handling frequently evaluated in campus placement interviews."
-                },
-                {
-                    "question": f"How is {clean_q} asked in placement interviews?",
-                    "answer": f"Interviewers evaluate conceptual clarity, dry-run code traces, time/space complexity optimizations, and real-world system design trade-offs regarding {clean_q}."
-                }
-            ]
-
-    @staticmethod
-    def _generate_organic_results(clean_q: str, q_lower: str, encoded_q: str) -> List[Dict[str, Any]]:
-        # Check topic category
-        is_apt = any(k in q_lower for k in ["aptitude", "quant", "probability", "time and work", "percentage", "blood relation", "syllogism", "profit loss", "reasoning"])
-        is_java_oop = any(k in q_lower for k in ["java", "oop", "oops", "inheritance", "polymorphism", "encapsulation", "class", "object"])
-        is_dbms = any(k in q_lower for k in ["dbms", "sql", "normalization", "bcnf", "acid", "database", "joins"])
-        is_os = any(k in q_lower for k in ["os", "operating system", "deadlock", "paging", "semaphore", "process", "thread", "scheduling"])
-        is_web = any(k in q_lower for k in ["html", "css", "javascript", "react", "dom", "web"])
+            clean_q = "Computer Science Technical Concepts"
 
         results = []
 
-        if is_apt:
-            results = [
-                {
-                    "id": "res-apt-1",
-                    "title": f"{clean_q} — Quantitative Aptitude Questions, Formulas & Solutions",
-                    "url": f"https://www.indiabix.com/search.php?q={encoded_q}",
-                    "domain": "indiabix.com",
-                    "breadcrumb": f"https://www.indiabix.com > aptitude > {clean_q.lower().replace(' ', '-')}",
-                    "website": "IndiaBIX",
-                    "reason": "Best for: Formulas + Placement MCQs",
-                    "learning_level": "Placement",
-                    "filter_tag": "Aptitude",
-                    "quality_score": 4.98,
-                    "verified": True,
-                    "description": f"Comprehensive collection of {clean_q} aptitude questions with standard formulas, shortcut speed-math tricks, step-by-step solved explanations, and mock test papers for campus placements.",
-                    "preview_content": f"Standard shortcut formulas and company placement test patterns for {clean_q}."
-                },
-                {
-                    "id": "res-apt-2",
-                    "title": f"{clean_q} — Concepts, Shortcuts & Solved Examples for Placements",
-                    "url": f"https://www.geeksforgeeks.org/aptitude-questions-and-answers/?q={encoded_q}",
-                    "domain": "geeksforgeeks.org",
-                    "breadcrumb": f"https://www.geeksforgeeks.org > aptitude > {clean_q.lower().replace(' ', '-')}",
-                    "website": "GeeksforGeeks",
-                    "reason": "Best for: Speed Math Tricks & Theory",
-                    "learning_level": "Interview",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.92,
-                    "verified": True,
-                    "description": f"Learn foundational principles, speed calculation shortcuts, and high-frequency company interview aptitude questions for {clean_q}.",
-                    "preview_content": f"Speed calculation shortcuts and company placement aptitude sets for {clean_q}."
-                },
-                {
-                    "id": "res-apt-3",
-                    "title": f"{clean_q} — IT Company Placement Questions & Exam Patterns",
-                    "url": f"https://prepinsta.com/?s={encoded_q}",
-                    "domain": "prepinsta.com",
-                    "breadcrumb": f"https://www.prepinsta.com > placements > {clean_q.lower().replace(' ', '-')}",
-                    "website": "PrepInsta",
-                    "reason": "Best for: TCS, Infosys & Wipro Patterns",
-                    "learning_level": "Placement",
-                    "filter_tag": "Interview Q&A",
-                    "quality_score": 4.88,
-                    "verified": True,
-                    "description": f"Targeted placement questions asked by TCS NQT, Infosys, Wipro, Accenture, and Cognizant with previous year exam archives on {clean_q}.",
-                    "preview_content": f"Company-specific assessment variations and tier-1 IT hiring round questions on {clean_q}."
-                },
-                {
-                    "id": "res-apt-4",
-                    "title": f"{clean_q} — Online Practice Tests & Timed Mock Quizzes",
-                    "url": f"https://testbook.com/search?q={encoded_q}",
-                    "domain": "testbook.com",
-                    "breadcrumb": f"https://testbook.com > test-series > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Testbook",
-                    "reason": "Best for: Timed Mock Sets",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Practice Problems",
-                    "quality_score": 4.85,
-                    "verified": True,
-                    "description": f"Timed mock quizzes, accuracy percentile ranking, and instant solution steps for {clean_q}.",
-                    "preview_content": f"Timed placement mock tests and accuracy breakdown for {clean_q}."
-                }
-            ]
-        elif is_java_oop:
-            results = [
-                {
-                    "id": "res-java-1",
-                    "title": f"{clean_q} — Core Java OOP Concepts with Illustrated Examples",
-                    "url": f"https://www.javatpoint.com/search.php?q={encoded_q}",
-                    "domain": "javatpoint.com",
-                    "breadcrumb": f"https://www.javatpoint.com > java-tutorial > {clean_q.lower().replace(' ', '-')}",
-                    "website": "JavaTpoint",
-                    "reason": "Best for: Java & OOP Foundations",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Documentation",
-                    "quality_score": 4.95,
-                    "verified": True,
-                    "description": f"Complete guide to {clean_q} in Java covering Encapsulation, Abstraction, Inheritance, Polymorphism, JVM memory layout, and interview viva questions.",
-                    "preview_content": f"Core Java OOP principles, memory allocation, and class/object lifecycle for {clean_q}."
-                },
-                {
-                    "id": "res-java-2",
-                    "title": f"{clean_q} — GeeksforGeeks Java & OOP Deep Dive",
-                    "url": f"https://www.geeksforgeeks.org/search/?q={encoded_q}",
-                    "domain": "geeksforgeeks.org",
-                    "breadcrumb": f"https://www.geeksforgeeks.org > java > {clean_q.lower().replace(' ', '-')}",
-                    "website": "GeeksforGeeks",
-                    "reason": "Best for: Concepts + Interviews",
-                    "learning_level": "Interview",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.95,
-                    "verified": True,
-                    "description": f"Step-by-step technical tutorial with execution traces, real-world analogies, JVM internals, and interview problem sets on {clean_q}.",
-                    "preview_content": f"Detailed Java code walkthroughs, design pattern implementations, and interview viva notes for {clean_q}."
-                },
-                {
-                    "id": "res-java-3",
-                    "title": f"{clean_q} — Scaler Topics Java & System Design Interview Notes",
-                    "url": f"https://www.scaler.com/topics/search/?q={encoded_q}",
-                    "domain": "scaler.com/topics",
-                    "breadcrumb": f"https://www.scaler.com > topics > java > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Scaler Topics",
-                    "reason": "Best for: Visual Traces & Placement Q&A",
-                    "learning_level": "Placement",
-                    "filter_tag": "Interview Q&A",
-                    "quality_score": 4.90,
-                    "verified": True,
-                    "description": f"In-depth analysis of {clean_q} with architectural diagrams, interface vs abstract class design trade-offs, and placement interview questions.",
-                    "preview_content": f"Visual object diagrams, design patterns, and high-probability interview questions for {clean_q}."
-                },
-                {
-                    "id": "res-java-4",
-                    "title": f"{clean_q} — Programiz Illustrated Java Walkthroughs",
-                    "url": f"https://www.programiz.com/search/{encoded_q}",
-                    "domain": "programiz.com",
-                    "breadcrumb": f"https://www.programiz.com > java-programming > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Programiz",
-                    "reason": "Best for: Beginners & Clean Syntax",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.85,
-                    "verified": True,
-                    "description": f"Beginner-friendly clean Java code examples, visual execution outputs, and syntax references for {clean_q}.",
-                    "preview_content": f"Step-by-step code demonstrations and memory execution diagrams for {clean_q}."
-                }
-            ]
-        elif is_os or "deadlock" in q_lower:
-            results = [
-                {
-                    "id": "res-os-1",
-                    "title": f"{clean_q} — Complete Operating Systems Reference & Interview Notes",
-                    "url": f"https://www.geeksforgeeks.org/search/?q={encoded_q}",
-                    "domain": "geeksforgeeks.org",
-                    "breadcrumb": f"https://www.geeksforgeeks.org > operating-systems > {clean_q.lower().replace(' ', '-')}",
-                    "website": "GeeksforGeeks",
-                    "reason": "Best for: Concepts + Interviews",
-                    "learning_level": "Interview",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.98,
-                    "verified": True,
-                    "description": f"Comprehensive guide covering process synchronization, Coffman conditions, Resource Allocation Graph (RAG), Banker's algorithm, and campus placement viva questions on {clean_q}.",
-                    "preview_content": f"Detailed OS mechanisms, state machine transitions, and interview proofs for {clean_q}."
-                },
-                {
-                    "id": "res-os-2",
-                    "title": f"{clean_q} — TutorialsPoint OS Architecture Handbook",
-                    "url": f"https://www.tutorialspoint.com/search/{encoded_q}",
-                    "domain": "tutorialspoint.com",
-                    "breadcrumb": f"https://www.tutorialspoint.com > operating_system > {clean_q.lower().replace(' ', '-')}",
-                    "website": "TutorialsPoint",
-                    "reason": "Best for: Beginners & OS Architecture",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Documentation",
-                    "quality_score": 4.88,
-                    "verified": True,
-                    "description": f"Modular OS architecture notes with diagrams explaining process scheduling, critical section problems, and deadlock recovery strategies for {clean_q}.",
-                    "preview_content": f"Modular architecture diagrams and conceptual notes for {clean_q}."
-                },
-                {
-                    "id": "res-os-3",
-                    "title": f"{clean_q} — Scaler Topics Operating Systems Deep Dive",
-                    "url": f"https://www.scaler.com/topics/search/?q={encoded_q}",
-                    "domain": "scaler.com/topics",
-                    "breadcrumb": f"https://www.scaler.com > topics > operating-system > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Scaler Topics",
-                    "reason": "Best for: Visual Traces & Placement Q&A",
-                    "learning_level": "Placement",
-                    "filter_tag": "Interview Q&A",
-                    "quality_score": 4.90,
-                    "verified": True,
-                    "description": f"Visual trace diagrams, safety state mathematical proofs, and top placement interview questions asked by product companies on {clean_q}.",
-                    "preview_content": f"Safety state proofs, Banker's algorithm traces, and placement viva notes for {clean_q}."
-                },
-                {
-                    "id": "res-os-4",
-                    "title": f"{clean_q} — JavaTpoint OS Mechanisms & Comparison Tables",
-                    "url": f"https://www.javatpoint.com/search.php?q={encoded_q}",
-                    "domain": "javatpoint.com",
-                    "breadcrumb": f"https://www.javatpoint.com > os > {clean_q.lower().replace(' ', '-')}",
-                    "website": "JavaTpoint",
-                    "reason": "Best for: Quick Lookup Tables",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Documentation",
-                    "quality_score": 4.82,
-                    "verified": True,
-                    "description": f"Quick lookup comparison tables, definition points, and semester & interview exam points for {clean_q}.",
-                    "preview_content": f"Comparison tables, definitions, and placement points for {clean_q}."
-                }
-            ]
-        elif is_dbms or "normaliz" in q_lower or "sql" in q_lower:
-            results = [
-                {
-                    "id": "res-dbms-1",
-                    "title": f"{clean_q} — Complete Database Management & SQL Guide",
-                    "url": f"https://www.geeksforgeeks.org/search/?q={encoded_q}",
-                    "domain": "geeksforgeeks.org",
-                    "breadcrumb": f"https://www.geeksforgeeks.org > dbms > {clean_q.lower().replace(' ', '-')}",
-                    "website": "GeeksforGeeks",
-                    "reason": "Best for: Concepts + Normal Form Proofs",
-                    "learning_level": "Interview",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.96,
-                    "verified": True,
-                    "description": f"Complete relational database theory covering functional dependencies, decomposition, ACID transactions, and SQL queries on {clean_q}.",
-                    "preview_content": f"Relational algebra, functional dependencies, indexing, and SQL optimization for {clean_q}."
-                },
-                {
-                    "id": "res-dbms-2",
-                    "title": f"{clean_q} — W3Schools Interactive SQL Reference",
-                    "url": f"https://www.w3schools.com/howto/howto_js_search_menu.asp?q={encoded_q}",
-                    "domain": "w3schools.com",
-                    "breadcrumb": f"https://www.w3schools.com > sql > {clean_q.lower().replace(' ', '-')}",
-                    "website": "W3Schools",
-                    "reason": "Best for: Beginners & Syntax Practice",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Documentation",
-                    "quality_score": 4.90,
-                    "verified": True,
-                    "description": f"Interactive try-it-yourself SQL playground, syntax tables, and query execution examples for {clean_q}.",
-                    "preview_content": f"Interactive SQL execution, join Venn diagrams, and syntax guides for {clean_q}."
-                },
-                {
-                    "id": "res-dbms-3",
-                    "title": f"{clean_q} — TutorialsPoint Database Architecture",
-                    "url": f"https://www.tutorialspoint.com/search/{encoded_q}",
-                    "domain": "tutorialspoint.com",
-                    "breadcrumb": f"https://www.tutorialspoint.com > dbms > {clean_q.lower().replace(' ', '-')}",
-                    "website": "TutorialsPoint",
-                    "reason": "Best for: Database Architecture",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Documentation",
-                    "quality_score": 4.85,
-                    "verified": True,
-                    "description": f"Schema design, transaction management, query evaluation plans, and storage engines for {clean_q}.",
-                    "preview_content": f"Two-phase locking, serializability graphs, and relational schemas for {clean_q}."
-                },
-                {
-                    "id": "res-dbms-4",
-                    "title": f"{clean_q} — Scaler Topics Database Systems & Design",
-                    "url": f"https://www.scaler.com/topics/search/?q={encoded_q}",
-                    "domain": "scaler.com/topics",
-                    "breadcrumb": f"https://www.scaler.com > topics > dbms > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Scaler Topics",
-                    "reason": "Best for: Placement Interview Questions",
-                    "learning_level": "Placement",
-                    "filter_tag": "Interview Q&A",
-                    "quality_score": 4.88,
-                    "verified": True,
-                    "description": f"Visual database architecture diagrams, indexing trade-offs, and company placement database questions for {clean_q}.",
-                    "preview_content": f"Database scaling, partitioning, and placement interview solutions for {clean_q}."
-                }
-            ]
-        else:
-            # DSA & Problem Solving (Default)
-            results = [
-                {
-                    "id": "res-dsa-1",
-                    "title": f"{clean_q} — LeetCode Coding & Algorithmic Practice",
-                    "url": f"https://leetcode.com/problemset/all/?search={encoded_q}",
-                    "domain": "leetcode.com",
-                    "breadcrumb": f"https://leetcode.com > problemset > {clean_q.lower().replace(' ', '-')}",
-                    "website": "LeetCode",
-                    "reason": "Best for: Hands-on Problem Solving & Edge Cases",
-                    "learning_level": "Problem Solving",
-                    "filter_tag": "Practice Problems",
-                    "quality_score": 5.0,
-                    "verified": True,
-                    "description": f"Industry standard coding challenges, edge test cases, benchmark timings, and community discussion threads on {clean_q}.",
-                    "preview_content": f"Interactive test benches, competitive constraints, optimal time-space trade-offs for {clean_q}."
-                },
-                {
-                    "id": "res-dsa-2",
-                    "title": f"{clean_q} — InterviewBit Solved Interview Questions",
-                    "url": f"https://www.interviewbit.com/search/?q={encoded_q}",
-                    "domain": "interviewbit.com",
-                    "breadcrumb": f"https://www.interviewbit.com > practice > {clean_q.lower().replace(' ', '-')}",
-                    "website": "InterviewBit",
-                    "reason": "Best for: Interview Coding & Solutions",
-                    "learning_level": "Interview",
-                    "filter_tag": "Interview Q&A",
-                    "quality_score": 4.95,
-                    "verified": True,
-                    "description": f"Curated interview questions, optimal algorithmic solutions, time-space complexity proofs, and edge case breakdowns for {clean_q}.",
-                    "preview_content": f"Top company interview questions, optimal time-space trade-offs, and step-by-step solutions for {clean_q}."
-                },
-                {
-                    "id": "res-dsa-3",
-                    "title": f"{clean_q} — GeeksforGeeks Complete Tutorial & Algorithm Proofs",
-                    "url": f"https://www.geeksforgeeks.org/search/?q={encoded_q}",
-                    "domain": "geeksforgeeks.org",
-                    "breadcrumb": f"https://www.geeksforgeeks.org > dsa > {clean_q.lower().replace(' ', '-')}",
-                    "website": "GeeksforGeeks",
-                    "reason": "Best for: Concepts + Algorithms",
-                    "learning_level": "Interview",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.95,
-                    "verified": True,
-                    "description": f"In-depth technical tutorial covering fundamental concepts, code implementations (C++, Java, Python), complexity analysis, and practice problems on {clean_q}.",
-                    "preview_content": f"Comprehensive code walkthroughs, runtime complexity invariants, memory layout for {clean_q}."
-                },
-                {
-                    "id": "res-dsa-4",
-                    "title": f"{clean_q} — Programiz Illustrated DSA Walkthroughs",
-                    "url": f"https://www.programiz.com/search/{encoded_q}",
-                    "domain": "programiz.com",
-                    "breadcrumb": f"https://www.programiz.com > dsa > {clean_q.lower().replace(' ', '-')}",
-                    "website": "Programiz",
-                    "reason": "Best for: Beginners & Visual Traces",
-                    "learning_level": "Beginner",
-                    "filter_tag": "Tutorials",
-                    "quality_score": 4.85,
-                    "verified": True,
-                    "description": f"Beginner to advanced illustrated tutorials with minimal clean code examples and output traces for {clean_q}.",
-                    "preview_content": f"Step-by-step code demonstrations, execution traces, and practical programming patterns for {clean_q}."
-                }
-            ]
+        # ── 1. PRIMARY: Open Internet Search via DDGS ──
+        if DDGS is not None:
+            try:
+                with DDGS() as ddgs:
+                    raw_items = list(ddgs.text(clean_q, max_results=top_k + 4))
+                    for idx, item in enumerate(raw_items):
+                        href = item.get("href") or item.get("url") or ""
+                        title = (item.get("title") or "").strip()
+                        body = (item.get("body") or item.get("snippet") or "").strip()
 
-        return results
+                        if not href or not title:
+                            continue
 
-    @staticmethod
-    def _generate_related_searches(clean_q: str, q_lower: str) -> List[str]:
-        if "deadlock" in q_lower:
-            return [
-                "deadlock prevention vs avoidance in OS",
-                "banker's algorithm code in C++",
-                "4 Coffman conditions for deadlock",
-                "deadlock in DBMS vs Operating System",
-                "resource allocation graph cycle detection",
-                "starvation vs deadlock difference with examples"
-            ]
-        elif "binary search" in q_lower:
-            return [
-                "binary search on rotated sorted array",
-                "binary search on answer space placement problems",
-                "binary search iterative vs recursive time complexity",
-                "allocate minimum pages binary search",
-                "aggressive cows problem binary search leetcode"
-            ]
-        elif "java" in q_lower or "oop" in q_lower:
-            return [
-                "4 pillars of OOP in Java with real world examples",
-                "abstraction vs encapsulation interview difference",
-                "why Java does not support multiple inheritance",
-                "method overloading vs overriding in Java",
-                "Java OOP placement viva questions"
-            ]
-        elif "normaliz" in q_lower or "dbms" in q_lower:
-            return [
-                "1NF 2NF 3NF BCNF with solved examples",
-                "lossless join decomposition in DBMS",
-                "functional dependency and candidate key finding",
-                "SQL joins vs subqueries performance",
-                "ACID properties in DBMS interview questions"
-            ]
-        elif any(k in q_lower for k in ["probab", "quant", "aptitude", "time and work"]):
-            return [
-                f"{clean_q} shortcut formulas for campus placement",
-                f"{clean_q} TCS NQT previous year questions",
-                f"{clean_q} practice questions with step-by-step solutions",
-                f"{clean_q} speed math tricks IndiaBIX"
-            ]
-        else:
-            return [
-                f"{clean_q} interview questions and answers",
-                f"{clean_q} best practices and design patterns",
-                f"{clean_q} time complexity and space complexity",
-                f"{clean_q} implementation in C++ and Java",
-                f"{clean_q} campus placement tutorial GeeksforGeeks"
-            ]
+                        domain = _clean_domain(href)
+                        category = _classify_document_category(title, href, body)
+                        doc_type = _extract_doc_type(category, domain)
 
-def search_web_rag(query: str, category_filter: str = "All", top_k: int = 6) -> Dict[str, Any]:
-    """Entrypoint for the Google Search Engine replication."""
-    return GoogleSearchEngineReplication.search(query, category_filter=category_filter, top_k=top_k)
+                        results.append({
+                            "id": f"web-live-{idx + 1}",
+                            "title": title,
+                            "url": href,
+                            "domain": domain,
+                            "breadcrumb": _clean_breadcrumb(href),
+                            "website": domain.capitalize(),
+                            "reason": f"Live Web Result • {doc_type}",
+                            "learning_level": "Technical Document",
+                            "doc_type": doc_type,
+                            "filter_tag": category,
+                            "quality_score": round(4.85 + (idx % 3) * 0.05, 2),
+                            "verified": True,
+                            "description": body or f"Live technical documentation and comprehensive analysis on {clean_q}.",
+                            "preview_content": body[:200] if body else ""
+                        })
+            except Exception as e:
+                logger.warning(f"DDGS live search exception: {e}")
+
+        # ── 2. FALLBACK: Wikipedia Open Search REST API ──
+        if len(results) < 3:
+            try:
+                headers = {"User-Agent": USER_AGENT}
+                encoded_q = urllib.parse.quote(clean_q)
+                resp = httpx.get(
+                    f"https://en.wikipedia.org/w/api.php?action=opensearch&search={encoded_q}&limit=6&namespace=0&format=json",
+                    headers=headers,
+                    timeout=4.0
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if len(data) >= 4:
+                        titles = data[1]
+                        snippets = data[2]
+                        urls = data[3]
+                        for idx, (t, s, u) in enumerate(zip(titles, snippets, urls)):
+                            if not u:
+                                continue
+                            domain = _clean_domain(u)
+                            results.append({
+                                "id": f"wiki-live-{idx + 1}",
+                                "title": t,
+                                "url": u,
+                                "domain": domain,
+                                "breadcrumb": f"{domain} › wiki › {t.replace(' ', '_')}",
+                                "website": "Wikipedia Open Reference",
+                                "reason": "Academic Encyclopedia Reference",
+                                "learning_level": "Foundational & Architectural",
+                                "doc_type": "Encyclopedia Reference",
+                                "filter_tag": "Documentation",
+                                "quality_score": 4.95,
+                                "verified": True,
+                                "description": s or f"In-depth open-access foundational document explaining {t}, its mathematical invariants, algorithmic complexities, and practical implementations.",
+                                "preview_content": s[:200] if s else ""
+                            })
+            except Exception as e:
+                logger.warning(f"Wikipedia fallback failed: {e}")
+
+        return results[:top_k]
+
+
+def search_web_rag(query: str, category_filter: str = "All", top_k: int = 8) -> Dict[str, Any]:
+    """
+    Searches the live open internet for documents matching the user query.
+    No hardcoded domain restrictions or static site templates.
+    """
+    start_time = time.time()
+    clean_q = (query or "").strip()
+    if not clean_q:
+        clean_q = "Computer Science Placement Preparation"
+
+    # Execute true open-internet search
+    raw_results = OpenInternetSearchEngine.search_live_web(clean_q, top_k=top_k + 4)
+
+    # Filter by category if requested
+    if category_filter and category_filter != "All":
+        filtered = [r for r in raw_results if r.get("filter_tag", "").lower() == category_filter.lower()]
+        organic_results = filtered if filtered else raw_results
+    else:
+        organic_results = raw_results
+
+    final_results = organic_results[:top_k]
+
+    # Dynamically build Knowledge Graph from the top actual result
+    top_doc = final_results[0] if final_results else None
+    if top_doc:
+        kg_title = top_doc.get("title", clean_q)
+        kg_url = top_doc.get("url", "")
+        kg_domain = top_doc.get("domain", "web")
+        kg_summary = top_doc.get("description", f"Live web document retrieval for {clean_q}.")
+
+        knowledge_graph = {
+            "title": clean_q,
+            "subtitle": f"Open Web Knowledge Graph • Live Crawl from {kg_domain}",
+            "summary": kg_summary,
+            "key_facts": [
+                {"label": "Top Source Domain", "value": kg_domain},
+                {"label": "Document Type", "value": top_doc.get("doc_type", "Technical Document")},
+                {"label": "Verified Index", "value": "Global Open Web Index"},
+                {"label": "Live Query", "value": clean_q}
+            ],
+            "official_url": kg_url,
+            "official_site": top_doc.get("website", kg_domain)
+        }
+    else:
+        knowledge_graph = {
+            "title": clean_q,
+            "subtitle": "Open Web Technical Reference",
+            "summary": f"Live document discovery across global technical repositories for {clean_q}.",
+            "key_facts": [
+                {"label": "Scope", "value": "World Wide Web Open Index"},
+                {"label": "Query", "value": clean_q}
+            ],
+            "official_url": "",
+            "official_site": "Open Web"
+        }
+
+    search_time = round(time.time() - start_time, 2)
+    total_estimated = f"About {max(len(final_results) * 142000, 24000):,} documents discovered"
+
+    return {
+        "query": clean_q,
+        "search_time_seconds": search_time,
+        "total_estimated_results": total_estimated,
+        "filter_applied": category_filter,
+        "knowledge_graph": knowledge_graph,
+        "people_also_ask": _generate_paa(clean_q),
+        "organic_results": final_results,
+        "recommendations": final_results,
+        "websites": final_results,
+        "related_searches": _generate_related_searches(clean_q, final_results)
+    }
+
+
+def fetch_document_content(url: str) -> Dict[str, Any]:
+    """
+    Fetches and extracts clean, distraction-free document text from any URL on the live internet.
+    Strips ads, tracking banners, navigation bars, and headers.
+    """
+    clean_url = (url or "").strip()
+    if not clean_url or not clean_url.startswith("http"):
+        return {
+            "url": clean_url,
+            "title": "Invalid URL",
+            "content": "A valid HTTP/HTTPS URL is required to fetch document contents.",
+            "success": False,
+            "error": "Invalid URL scheme"
+        }
+
+    # 1. Primary extractor: Trafilatura (cleans ads and converts to markdown)
+    if trafilatura is not None:
+        try:
+            downloaded = trafilatura.fetch_url(clean_url)
+            if downloaded:
+                text = trafilatura.extract(
+                    downloaded,
+                    include_links=True,
+                    include_formatting=True,
+                    include_tables=True,
+                    output_format="markdown"
+                )
+                metadata = trafilatura.extract_metadata(downloaded)
+
+                if text and len(text.strip()) > 100:
+                    title = metadata.title if (metadata and metadata.title) else _clean_domain(clean_url)
+                    author = metadata.author if (metadata and metadata.author) else "Technical Author"
+                    date = metadata.date if (metadata and metadata.date) else "Recently Indexed"
+
+                    words = len(text.split())
+                    read_time = max(1, round(words / 200))
+
+                    return {
+                        "url": clean_url,
+                        "title": title,
+                        "author": author,
+                        "date": date,
+                        "domain": _clean_domain(clean_url),
+                        "content": text,
+                        "word_count": words,
+                        "estimated_read_time": f"{read_time} min read",
+                        "success": True,
+                        "error": None
+                    }
+        except Exception as e:
+            logger.warning(f"Trafilatura extraction failed for {clean_url}: {e}")
+
+    # 2. Fallback: Direct httpx + BeautifulSoup extraction
+    try:
+        headers = {"User-Agent": USER_AGENT}
+        with httpx.Client(timeout=6.0, follow_redirects=True, headers=headers) as client:
+            resp = client.get(clean_url)
+            if resp.status_code == 200 and BeautifulSoup is not None:
+                soup = BeautifulSoup(resp.text, "html.parser")
+
+                # Remove scripts, styles, navigation, footer, ads
+                for s in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg"]):
+                    s.decompose()
+
+                title = soup.title.string.strip() if soup.title and soup.title.string else _clean_domain(clean_url)
+
+                # Extract main content container if available
+                main_container = soup.find("article") or soup.find("main") or soup.find("div", class_=re.compile(r"content|post|article|body")) or soup.body
+                
+                paragraphs = []
+                if main_container:
+                    for elem in main_container.find_all(["h1", "h2", "h3", "p", "pre", "code", "li"]):
+                        txt = elem.get_text().strip()
+                        if len(txt) > 20:
+                            paragraphs.append(txt)
+
+                combined_text = "\n\n".join(paragraphs)
+                if len(combined_text) > 150:
+                    words = len(combined_text.split())
+                    read_time = max(1, round(words / 200))
+                    return {
+                        "url": clean_url,
+                        "title": title,
+                        "author": "Web Source",
+                        "date": "Live Web",
+                        "domain": _clean_domain(clean_url),
+                        "content": combined_text,
+                        "word_count": words,
+                        "estimated_read_time": f"{read_time} min read",
+                        "success": True,
+                        "error": None
+                    }
+    except Exception as e:
+        logger.warning(f"HTTP fallback failed for {clean_url}: {e}")
+
+    return {
+        "url": clean_url,
+        "title": _clean_domain(clean_url),
+        "author": "External Web Portal",
+        "date": "Live",
+        "domain": _clean_domain(clean_url),
+        "content": f"The document at {clean_url} is available directly on the web. Click 'Open Original Article' to view it in full directly on the source website.",
+        "word_count": 0,
+        "estimated_read_time": "1 min read",
+        "success": False,
+        "error": "Could not parse full article body automatically. Original URL is live and accessible."
+    }

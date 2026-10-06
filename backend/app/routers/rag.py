@@ -3,9 +3,24 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from app.services.youtube_rag_service import search_youtube_video_rag
 from app.services.pdf_rag_service import search_pdf_rag
-from app.services.web_rag_service import search_web_rag
+from app.services.web_rag_service import search_web_rag, fetch_document_content
 
 router = APIRouter(tags=["Video, PDF & Web RAG Engine"])
+
+class FetchDocRequest(BaseModel):
+    url: str = Field(..., description="Target document URL to retrieve and extract")
+
+class FetchDocResponse(BaseModel):
+    url: str
+    title: Optional[str] = ""
+    author: Optional[str] = ""
+    date: Optional[str] = ""
+    domain: Optional[str] = ""
+    content: Optional[str] = ""
+    word_count: Optional[int] = 0
+    estimated_read_time: Optional[str] = "1 min read"
+    success: bool = True
+    error: Optional[str] = None
 
 class VideoRagRequest(BaseModel):
     query: str = Field(..., description="Technical topic or natural language question")
@@ -77,6 +92,16 @@ async def search_web_rag_post(request: WebRagRequest):
     if not request.query or not request.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
-        return search_web_rag(request.query, category_filter=request.category_filter or "All", top_k=request.top_k or 6)
+        return search_web_rag(request.query, category_filter=request.category_filter or "All", top_k=request.top_k or 8)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Web RAG failed: {str(e)}")
+
+@router.post("/fetch-document", response_model=FetchDocResponse)
+async def fetch_document_post(request: FetchDocRequest):
+    if not request.url or not request.url.strip():
+        raise HTTPException(status_code=400, detail="URL cannot be empty")
+    try:
+        return fetch_document_content(request.url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Document retrieval failed: {str(e)}")
+

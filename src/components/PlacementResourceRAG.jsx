@@ -471,7 +471,7 @@ export default function PlacementResourceRAG({ setActiveTab }) {
             </button>
           </div>
 
-          {/* 3. WebPrep (Google Search Engine Replication for Web Articles) Card */}
+          {/* 3. WebPrep (Live Technical Web Search Engine) Card */}
           <div 
             onClick={() => setResourceMode('website')}
             className="saas-card-spec"
@@ -494,12 +494,12 @@ export default function PlacementResourceRAG({ setActiveTab }) {
                   WebPrep
                 </h2>
                 <span className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.7rem', fontWeight: 800 }}>
-                  Open Internet Search & Reader
+                  Technical Web Search Engine
                 </span>
               </div>
 
               <p style={{ fontSize: '0.88rem', color: 'var(--body-text)', lineHeight: 1.55, margin: '0 0 16px 0' }}>
-                Searches the live World Wide Web for real technical documents, university courseware, API specs, and research papers for any keyword.
+                Searches the live web for top technical documentation, interactive tutorials, interview preparation portals, and developer guides for any topic.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>

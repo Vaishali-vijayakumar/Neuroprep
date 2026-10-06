@@ -78,9 +78,24 @@ def _classify_pdf_doc_type(title: str, url: str, snippet: str) -> str:
     return "Technical PDF Document"
 
 
+def _classify_web_doc_type(title: str, url: str, snippet: str) -> str:
+    text = f"{title} {url} {snippet}".lower()
+    if any(k in text for k in ["interview", "questions", "placement", "solutions", "leetcode", "interviewbit"]):
+        return "Interview Prep Portal"
+    elif any(k in text for k in ["documentation", "docs", "spec", "reference", "manual", "developer.mozilla"]):
+        return "Official Documentation"
+    elif any(k in text for k in ["tutorial", "guide", "learn", "how to", "introduction", "w3schools", "freecodecamp"]):
+        return "Tutorial & Guide"
+    elif any(k in text for k in ["github.com", "repo", "repository", "code", "source"]):
+        return "Code & Repository"
+    elif any(k in text for k in ["cheat sheet", "quick reference", "summary"]):
+        return "Quick Revision Cheat Sheet"
+    return "Technical Website"
+
+
 def fetch_google_suggestions(query: str, limit: int = 8) -> List[str]:
     """
-    Fetches real-time predictive Google search suggestions (typeahead).
+    Fetches real-time predictive search suggestions (typeahead).
     """
     clean_q = (query or "").strip()
     if not clean_q or len(clean_q) < 2:
@@ -336,45 +351,69 @@ def generate_keyword_matched_web_docs(clean_q: str, file_format: str, filter_cat
 
     return [
         {
-            "title": f"{clean_q} - Technical Architecture, Deep-Dives & Practical Guides",
-            "url": f"https://dev.to/search?q={encoded_q}",
-            "domain": "dev.to",
-            "doc_type": "Technical Architecture",
-            "snippet": f"Engineering writeups, architecture breakdowns, and production implementation guides for {clean_q} from developers worldwide.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"Complete {clean_q} Handbook & Developer Guide",
-            "url": f"https://www.freecodecamp.org/news/search/?query={encoded_q}",
-            "domain": "freecodecamp.org",
-            "doc_type": "Developer Handbook",
-            "snippet": f"Comprehensive handbook, code examples, syntax cheat sheets, and fundamental trade-offs for {clean_q}.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"{clean_q} Interview Concepts, Edge Cases & Solutions",
+            "title": f"Introduction to {clean_q} - GeeksforGeeks",
             "url": f"https://www.geeksforgeeks.org/{slug}/",
             "domain": "geeksforgeeks.org",
             "doc_type": "Technical Guide",
-            "snippet": f"Detailed concept explanations, algorithmic complexity tables, and real-world placement problems on {clean_q}.",
+            "snippet": f"Comprehensive guide to {clean_q}: theoretical foundations, step-by-step algorithms, complexity trade-offs, and frequently asked placement interview questions.",
             "is_pdf": is_pdf
         },
         {
-            "title": f"Awesome {clean_q} Open Source Projects & Cheat Sheets",
+            "title": f"Learn {clean_q} - W3Schools Technical Tutorial",
+            "url": f"https://www.w3schools.com/search/search.asp?q={encoded_q}",
+            "domain": "w3schools.com",
+            "doc_type": "Tutorial & Guide",
+            "snippet": f"Beginner to advanced tutorial on {clean_q} with interactive examples, code snippets, syntax breakdown, and hands-on exercises.",
+            "is_pdf": is_pdf
+        },
+        {
+            "title": f"{clean_q} - MDN Web Docs & Technical Specifications",
+            "url": f"https://developer.mozilla.org/en-US/search?q={encoded_q}",
+            "domain": "developer.mozilla.org",
+            "doc_type": "Official Documentation",
+            "snippet": f"Standards-compliant technical documentation, architecture blueprints, API specifications, and browser/system implementation details for {clean_q}.",
+            "is_pdf": is_pdf
+        },
+        {
+            "title": f"Complete {clean_q} Handbook - FreeCodeCamp",
+            "url": f"https://www.freecodecamp.org/news/search/?query={encoded_q}",
+            "domain": "freecodecamp.org",
+            "doc_type": "Developer Handbook",
+            "snippet": f"In-depth guide covering core mechanics, practical code examples, common pitfalls, and real-world system use cases for {clean_q}.",
+            "is_pdf": is_pdf
+        },
+        {
+            "title": f"{clean_q} - Technical Architecture & Deep-Dives on Dev.to",
+            "url": f"https://dev.to/search?q={encoded_q}",
+            "domain": "dev.to",
+            "doc_type": "Technical Architecture",
+            "snippet": f"Engineering writeups, production war stories, architectural trade-offs, and best practices for {clean_q} from engineers worldwide.",
+            "is_pdf": is_pdf
+        },
+        {
+            "title": f"Top Placement Interview Problems on {clean_q} - LeetCode",
+            "url": f"https://leetcode.com/problemset/all/?search={encoded_q}",
+            "domain": "leetcode.com",
+            "doc_type": "Interview Prep Portal",
+            "snippet": f"Practice real company technical interview questions, coding patterns, edge cases, and optimal solutions on {clean_q}.",
+            "is_pdf": is_pdf
+        },
+        {
+            "title": f"Awesome {clean_q} Repositories & Cheat Sheets - GitHub",
             "url": f"https://github.com/search?q={encoded_q}+cheat+sheet",
             "domain": "github.com",
-            "doc_type": "Code & Repos",
-            "snippet": f"Curated open-source repositories, cheat sheets, code templates, and interview prep guides for {clean_q}.",
+            "doc_type": "Code & Repository",
+            "snippet": f"Curated open-source projects, revision cheat sheets, code templates, and interview prep guides for {clean_q}.",
             "is_pdf": is_pdf
         }
     ]
 
 
-class GoogleSearchEngine:
+class WebSearchEngine:
     @staticmethod
     def search(
         query: str, 
-        file_format: str = "pdf", 
+        file_format: str = "all", 
         filter_category: str = "All", 
         top_k: int = 8
     ) -> List[Dict[str, Any]]:
@@ -635,12 +674,12 @@ class GoogleSearchEngine:
 
 def search_web_rag(
     query: str, 
-    file_format: str = "pdf",
+    file_format: str = "all",
     category_filter: str = "All", 
     top_k: int = 8
 ) -> Dict[str, Any]:
     """
-    Executes Google-authentic search with PDF-only retrieval support.
+    Executes live technical web search across global developer portals, documentation, and academic resources.
     """
     start_time = time.time()
     clean_q = (query or "").strip()
@@ -648,7 +687,7 @@ def search_web_rag(
         clean_q = "Operating Systems Deadlock"
 
     # Search live internet documents
-    results = GoogleSearchEngine.search(
+    results = WebSearchEngine.search(
         query=clean_q,
         file_format=file_format,
         filter_category=category_filter,
@@ -656,36 +695,36 @@ def search_web_rag(
     )
 
     top_doc = results[0] if results else None
-    kg_domain = top_doc.get("domain", "Academic Document Index") if top_doc else "Academic Document Index"
+    kg_domain = top_doc.get("domain", "Technical Resource Index") if top_doc else "Technical Resource Index"
     kg_url = top_doc.get("url", "") if top_doc else ""
     doc_count_est = max(len(results) * 18400, 12000)
 
     is_pdf_mode = file_format.lower() == "pdf"
 
-    # Construct Academic Knowledge Overview
+    # Construct Technical Knowledge Overview
     knowledge_graph = {
         "title": clean_q,
         "subtitle": f"{'Academic PDF Document Index' if is_pdf_mode else 'Technical Web Index'} • Sourced from {kg_domain}",
-        "summary": top_doc.get("description", f"Verified academic and placement preparation material for {clean_q}.") if top_doc else f"Core technical specifications and placement review notes on {clean_q}.",
+        "summary": top_doc.get("description", f"Verified technical documentation, architecture blueprints, and placement preparation material for {clean_q}.") if top_doc else f"Core technical specifications, algorithms, and placement review notes on {clean_q}.",
         "key_facts": [
-            {"label": "Search Mode", "value": "PDF Documents Only" if is_pdf_mode else "All Web Formats"},
-            {"label": "Top Authority Domain", "value": kg_domain},
-            {"label": "Target Level", "value": "Campus Placement & SDE Technical Round"},
+            {"label": "Search Mode", "value": "PDF Documents Only" if is_pdf_mode else "All Web Platforms"},
+            {"label": "Primary Source", "value": kg_domain},
+            {"label": "Target Prep", "value": "Campus Placement & Technical Round"},
             {"label": "Content Safety", "value": "Strict Academic Filter Active"}
         ],
         "official_url": kg_url,
         "official_site": kg_domain
     }
 
-    # Construct Google People Also Ask
+    # Construct People Also Ask
     people_also_ask = [
         {
             "question": f"What are the core technical invariants of {clean_q}?",
             "answer": f"{clean_q} governs deterministic state execution, memory safety boundaries, and time-space trade-offs frequently asked in SDE campus recruitment rounds."
         },
         {
-            "question": f"Where can I find verified lecture slides and PDF cheat sheets for {clean_q}?",
-            "answer": f"You can directly retrieve indexed university PDFs from MIT, Stanford, IITs, and top tech cheat sheets directly using WebPrep's PDF Mode."
+            "question": f"Where can I find verified tutorials and documentation for {clean_q}?",
+            "answer": f"Developer portals including GeeksforGeeks, MDN Web Docs, FreeCodeCamp, W3Schools, and official documentation repositories provide practical tutorials, code implementations, and architecture diagrams for {clean_q}."
         },
         {
             "question": f"What are the most common interview traps for {clean_q}?",

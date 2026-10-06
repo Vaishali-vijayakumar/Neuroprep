@@ -341,72 +341,7 @@ def fetch_devto_documents(query: str, limit: int = 3) -> List[Dict[str, Any]]:
     return items
 
 
-def generate_keyword_matched_web_docs(clean_q: str, file_format: str, filter_category: str) -> List[Dict[str, Any]]:
-    """
-    Generates dynamic open-web URLs matching the exact topic across global developer platforms (no university bias).
-    """
-    slug = _slugify(clean_q)
-    encoded_q = urllib.parse.quote(clean_q)
-    is_pdf = file_format.lower() == "pdf"
 
-    return [
-        {
-            "title": f"Introduction to {clean_q} - GeeksforGeeks",
-            "url": f"https://www.geeksforgeeks.org/{slug}/",
-            "domain": "geeksforgeeks.org",
-            "doc_type": "Technical Guide",
-            "snippet": f"Comprehensive guide to {clean_q}: theoretical foundations, step-by-step algorithms, complexity trade-offs, and frequently asked placement interview questions.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"Learn {clean_q} - W3Schools Technical Tutorial",
-            "url": f"https://www.w3schools.com/search/search.asp?q={encoded_q}",
-            "domain": "w3schools.com",
-            "doc_type": "Tutorial & Guide",
-            "snippet": f"Beginner to advanced tutorial on {clean_q} with interactive examples, code snippets, syntax breakdown, and hands-on exercises.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"{clean_q} - MDN Web Docs & Technical Specifications",
-            "url": f"https://developer.mozilla.org/en-US/search?q={encoded_q}",
-            "domain": "developer.mozilla.org",
-            "doc_type": "Official Documentation",
-            "snippet": f"Standards-compliant technical documentation, architecture blueprints, API specifications, and browser/system implementation details for {clean_q}.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"Complete {clean_q} Handbook - FreeCodeCamp",
-            "url": f"https://www.freecodecamp.org/news/search/?query={encoded_q}",
-            "domain": "freecodecamp.org",
-            "doc_type": "Developer Handbook",
-            "snippet": f"In-depth guide covering core mechanics, practical code examples, common pitfalls, and real-world system use cases for {clean_q}.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"{clean_q} - Technical Architecture & Deep-Dives on Dev.to",
-            "url": f"https://dev.to/search?q={encoded_q}",
-            "domain": "dev.to",
-            "doc_type": "Technical Architecture",
-            "snippet": f"Engineering writeups, production war stories, architectural trade-offs, and best practices for {clean_q} from engineers worldwide.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"Top Placement Interview Problems on {clean_q} - LeetCode",
-            "url": f"https://leetcode.com/problemset/all/?search={encoded_q}",
-            "domain": "leetcode.com",
-            "doc_type": "Interview Prep Portal",
-            "snippet": f"Practice real company technical interview questions, coding patterns, edge cases, and optimal solutions on {clean_q}.",
-            "is_pdf": is_pdf
-        },
-        {
-            "title": f"Awesome {clean_q} Repositories & Cheat Sheets - GitHub",
-            "url": f"https://github.com/search?q={encoded_q}+cheat+sheet",
-            "domain": "github.com",
-            "doc_type": "Code & Repository",
-            "snippet": f"Curated open-source projects, revision cheat sheets, code templates, and interview prep guides for {clean_q}.",
-            "is_pdf": is_pdf
-        }
-    ]
 
 
 class WebSearchEngine:
@@ -492,64 +427,76 @@ class WebSearchEngine:
             except Exception as e:
                 logger.warning(f"Official Google API request failed: {e}")
 
-        # ── Step 3: Zero-Key Web Search via DDGS ('lite' backend for reliability) ──
+        # ── Step 3: Zero-Key Web Search via DDGS (Multi-backend for high reliability) ──
         if len(results) < top_k and DDGS is not None:
-            try:
-                with DDGS() as ddgs:
-                    # 'lite' backend is faster and does not suffer from html connection resets
-                    raw_items = list(ddgs.text(augmented_query, backend="lite", max_results=top_k + 4))
-                    for item in raw_items:
-                        href = item.get("href") or item.get("url") or ""
-                        title = (item.get("title") or "").strip()
-                        body = (item.get("body") or item.get("snippet") or "").strip()
+            ddg_queries = [augmented_query]
+            if len(results) < 4:
+                ddg_queries.append(f"{clean_q} tutorial guide documentation")
 
-                        if not href or not title:
-                            continue
+            for q_str in ddg_queries:
+                if len(results) >= top_k:
+                    break
+                for b in ["lite", "html", "api"]:
+                    try:
+                        with DDGS() as ddgs:
+                            raw_items = list(ddgs.text(q_str, backend=b, max_results=top_k + 6))
+                            if not raw_items:
+                                continue
+                            for item in raw_items:
+                                href = item.get("href") or item.get("url") or ""
+                                title = (item.get("title") or "").strip()
+                                body = (item.get("body") or item.get("snippet") or "").strip()
 
-                        # Strict safety filter
-                        if not is_safe_and_educational(title, href, body):
-                            continue
+                                if not href or not title:
+                                    continue
 
-                        domain = _clean_domain(href)
-                        url_lower = href.lower()
-                        text_combined = f"{title} {body}".lower()
-                        is_pdf_url = url_lower.endswith(".pdf") or ".pdf" in url_lower or "viewpdf" in url_lower
-                        is_pdf_text = any(k in text_combined for k in ["[pdf]", "(pdf)", "pdf document", "pdf slides", "lecture slides", "lecture notes"])
-                        is_pdf = is_pdf_url or is_pdf_text
+                                # Strict safety filter
+                                if not is_safe_and_educational(title, href, body):
+                                    continue
 
-                        if file_format.lower() == "pdf":
-                            is_pdf = True
+                                domain = _clean_domain(href)
+                                url_lower = href.lower()
+                                text_combined = f"{title} {body}".lower()
+                                is_pdf_url = url_lower.endswith(".pdf") or ".pdf" in url_lower or "viewpdf" in url_lower
+                                is_pdf_text = any(k in text_combined for k in ["[pdf]", "(pdf)", "pdf document", "pdf slides", "lecture slides", "lecture notes"])
+                                is_pdf = is_pdf_url or is_pdf_text
 
-                        doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else "Web Document"
-                        clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
-                        is_academic = is_trusted_academic(href)
-                        quality_score = 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2)
+                                if file_format.lower() == "pdf":
+                                    is_pdf = True
 
-                        add_result({
-                            "id": f"ddg-{len(results) + 1}",
-                            "title": clean_title or title,
-                            "url": href,
-                            "domain": domain,
-                            "breadcrumb": _clean_breadcrumb(href),
-                            "website": domain.capitalize(),
-                            "reason": f"Verified Academic Source • {doc_type}" if is_academic else f"Web Index • {doc_type}",
-                            "learning_level": "University Verified" if is_academic else "Placement Ready",
-                            "doc_type": doc_type,
-                            "file_type": "PDF" if is_pdf else "HTML",
-                            "is_pdf": is_pdf,
-                            "filter_tag": filter_category,
-                            "quality_score": quality_score,
-                            "verified": True,
-                            "is_academic": is_academic,
-                            "description": body or f"Indexed academic resource covering {clean_q}.",
-                            "preview_content": body[:220] if body else ""
-                        })
-            except Exception as e:
-                logger.warning(f"DDGS engine exception: {e}")
+                                doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else _classify_web_doc_type(title, href, body)
+                                clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
+                                is_academic = is_trusted_academic(href)
+                                quality_score = 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2)
+
+                                add_result({
+                                    "id": f"ddg-{len(results) + 1}",
+                                    "title": clean_title or title,
+                                    "url": href,
+                                    "domain": domain,
+                                    "breadcrumb": _clean_breadcrumb(href),
+                                    "website": domain.capitalize(),
+                                    "reason": f"Verified Technical Web Portal • {doc_type}",
+                                    "learning_level": "University Verified" if is_academic else "Placement Ready",
+                                    "doc_type": doc_type,
+                                    "file_type": "PDF" if is_pdf else "Website",
+                                    "is_pdf": is_pdf,
+                                    "filter_tag": filter_category,
+                                    "quality_score": quality_score,
+                                    "verified": True,
+                                    "is_academic": is_academic,
+                                    "description": body or f"Live web documentation covering {clean_q}.",
+                                    "preview_content": body[:220] if body else ""
+                                })
+                            if len(results) >= top_k:
+                                break
+                    except Exception as e:
+                        logger.warning(f"DDGS engine {b} exception: {e}")
+                        continue
 
         # ── Step 4: Live Open-Web HackerNews Algolia Search (Global Tech Articles & Blogs) ──
         if len(results) < top_k:
-            hn_docs = fetch_hn_open_web_documents(clean_q, limit=4)
+            hn_docs = fetch_hn_open_web_documents(clean_q, limit=6)
             for doc in hn_docs:
                 add_result({
                     "id": f"web-{len(results) + 1}",
@@ -573,7 +520,7 @@ class WebSearchEngine:
 
         # ── Step 5: Live Developer Community (Dev.to) ──
         if len(results) < top_k:
-            devto_docs = fetch_devto_documents(clean_q, limit=3)
+            devto_docs = fetch_devto_documents(clean_q, limit=4)
             for doc in devto_docs:
                 add_result({
                     "id": f"devto-{len(results) + 1}",
@@ -641,30 +588,6 @@ class WebSearchEngine:
                     "is_academic": False,
                     "description": doc["snippet"],
                     "preview_content": doc["snippet"]
-                })
-
-        # ── Step 8: Dynamic Keyword-Matched Web Vault (Global Technical Platforms) ──
-        if len(results) < 4:
-            dynamic_docs = generate_keyword_matched_web_docs(clean_q, file_format, filter_category)
-            for fb in dynamic_docs:
-                add_result({
-                    "id": f"dynamic-fb-{len(results) + 1}",
-                    "title": fb["title"],
-                    "url": fb["url"],
-                    "domain": fb["domain"],
-                    "breadcrumb": f"{fb['domain']} › {clean_q.lower().replace(' ', '-')}",
-                    "website": fb["domain"].capitalize(),
-                    "reason": f"Open Web Knowledge • {fb['doc_type']}",
-                    "learning_level": "Industry Standard",
-                    "doc_type": fb["doc_type"],
-                    "file_type": "PDF" if fb["is_pdf"] else "HTML",
-                    "is_pdf": fb["is_pdf"],
-                    "filter_tag": filter_category,
-                    "quality_score": 4.85,
-                    "verified": True,
-                    "is_academic": False,
-                    "description": fb["snippet"],
-                    "preview_content": fb["snippet"]
                 })
 
         # Natural relevance sorting (No artificial university boost)

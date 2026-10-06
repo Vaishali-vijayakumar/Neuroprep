@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../services/aiEngine';
-import { getGamificationData } from '../services/gamificationService';
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
@@ -31,24 +30,16 @@ export default function Dashboard({
 
   const aptiScore = aptitudeState?.score || 0;
   const hasTakenAnyTest = (codingState.score > 0 || interviewState.lastScore > 0 || aptiScore > 0 || moodState.stress > 0);
-  const prevReport = dbService.getReportHistory(profile?.email || 'guest')?.previousReport;
+  const [prevReport, setPrevReport] = useState(null);
 
-  // Live gamification data derived strictly from real activity & multi-module cognitive state
-  const gamification = getGamificationData(profile?.email || 'guest', {
-    name: profile?.name || 'You',
-    college: profile?.college || 'Engineering Student',
-    solvedCount: codingState.solvedCount || 0,
-    codingScore: codingState.score || 0,
-    interviewCount: interviewState.totalCompleted || 0,
-    lastInterviewScore: interviewState.lastScore || 0,
-    aptitudeTestsCount: aptitudeState.totalTests || aptitudeState.testsTaken || (aptiScore > 0 ? 1 : 0),
-    journalCount: journalEntries.length || 0,
-    stress: moodState.stress || 0,
-    moodState,
-    codingState,
-    interviewState,
-    aptitudeState
-  });
+  // Load previous report asynchronously
+  useEffect(() => {
+    let cancelled = false;
+    dbService.getReportHistory(profile?.email || 'guest')
+      .then(({ previousReport }) => { if (!cancelled) setPrevReport(previousReport); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [profile?.email]);
 
   const readinessScore = hasTakenAnyTest ? calculatePlacementReadiness({
     codingScore: codingState.score || 0,

@@ -34,17 +34,40 @@ export default function Gamification({
     return () => window.removeEventListener('neuroprep-gamification-update', handleGamificationUpdate);
   }, []);
 
-  // Fetch live gamification data strictly from real activity
-  const data = getGamificationData(userEmail, {
-    name: profile?.name || 'You',
-    college: profile?.college || 'Engineering Student',
-    solvedCount: codingState?.solvedCount || 0,
-    codingScore: codingState?.score || 0,
-    interviewCount: interviewState?.totalCompleted || 0,
-    lastInterviewScore: interviewState?.lastScore || 0,
-    aptitudeTestsCount: aptitudeState?.totalTests || aptitudeState?.testsTaken || (aptitudeState?.score > 0 ? 1 : 0),
-    journalCount: journalEntries?.length || 0
-  });
+  const [rawData, setRawData] = useState(null);
+
+  // Fetch live gamification data (async — Supabase primary)
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const result = await getGamificationData(userEmail, {
+        name: profile?.name || 'You',
+        college: profile?.college || 'Engineering Student',
+        solvedCount: codingState?.solvedCount || 0,
+        codingScore: codingState?.score || 0,
+        interviewCount: interviewState?.totalCompleted || 0,
+        lastInterviewScore: interviewState?.lastScore || 0,
+        aptitudeTestsCount: aptitudeState?.totalTests || aptitudeState?.testsTaken || (aptitudeState?.score > 0 ? 1 : 0),
+        journalCount: journalEntries?.length || 0
+      });
+      if (!cancelled) setRawData(result);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [userEmail, refreshTick, codingState?.solvedCount, interviewState?.totalCompleted, journalEntries?.length, aptitudeState?.score]);
+
+  // Safe defaults while loading — keep variable named `data` so all downstream JSX is unchanged
+  const EMPTY_DATA = { xp: 0, level: 1, levelName: 'Newcomer', xpToNext: 100, xpPercent: 0,
+    currentStreak: 0, longestStreak: 0, activeStreak: 0, bestStreak: 0,
+    currentWeekDays: [], heatmap: [], dailyQuestProgress: {}, quests: [], dailyQuests: [],
+    completedQuestIds: [], unlockedBadges: [], lockedBadges: [], activityCalendar: [],
+    solvedCount: 0, interviewCount: 0, totalXp: 0, xpProgress: 0, isTripleCrownClaimable: false,
+    currentTier: { name: 'Newcomer', badge: '🌱' }, nextTier: null, leaderboard: [],
+    dailyChallenge: { title: 'Loading...', difficulty: '', category: '', xpReward: 50 }
+  };
+  // eslint-disable-next-line no-shadow
+  const data = rawData || EMPTY_DATA;
+
 
   const handleClaimQuest = (questId, xpAmount, title) => {
     claimQuestReward(userEmail, questId, xpAmount);

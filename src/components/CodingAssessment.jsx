@@ -4,24 +4,34 @@ import { DSA_CATEGORIES } from '../data/dsaPatternsData';
 import { recordActivity } from '../services/gamificationService';
 import { getProblemData } from '../data/problemData';
 import SolvePage from './SolvePage';
+import { dbService, supabase } from '../services/db';
 
 // Universal Compiler & DSA Assessment Suite (Live v6)
 export default function CodingAssessment({ codingState, setCodingState, setActiveTab }) {
- // Load saved solved questions from localStorage per user
- const userEmail = localStorage.getItem('neuroprep_user_session') 
- ? JSON.parse(localStorage.getItem('neuroprep_user_session')).email 
- : 'guest';
- 
- const LOCAL_STORAGE_KEY = `neuroprep_dsa_solved_${userEmail.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
+ const [userEmail, setUserEmail] = useState('guest');
+ const [solvedQuestions, setSolvedQuestions] = useState({});
 
- const [solvedQuestions, setSolvedQuestions] = useState(() => {
- try {
- const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
- return raw ? JSON.parse(raw) : {};
- } catch (e) {
- return {};
- }
- });
+ // Load user email and solved questions from Supabase on mount
+ useEffect(() => {
+   const init = async () => {
+     try {
+       const { data: { session } } = await supabase.auth.getSession();
+       const email = session?.user?.email || (() => {
+         try { const raw = localStorage.getItem('neuroprep_user_session'); return raw ? JSON.parse(raw).email : 'guest'; } catch(_){return 'guest';}
+       })();
+       setUserEmail(email);
+       const solved = await dbService.getDsaSolved(email);
+       setSolvedQuestions(solved || {});
+       const solvedCount = Object.keys(solved || {}).filter(k => solved[k]).length;
+       const percentage = Math.min(100, Math.round((solvedCount / 396) * 100));
+       if (codingState.score !== percentage || codingState.solvedCount !== solvedCount) {
+         setCodingState({ score: percentage, solvedCount, lastUpdated: new Date().toLocaleDateString() });
+       }
+     } catch(e) { console.warn('CodingAssessment init failed:', e); }
+   };
+   init();
+ }, []);
+
 
  // UI States
  const [searchQuery, setSearchQuery] = useState('');
@@ -45,21 +55,14 @@ export default function CodingAssessment({ codingState, setCodingState, setActiv
  const [compilerResult, setCompilerResult] = useState(null);
  const [isCompiling, setIsCompiling] = useState(false);
 
- // Persist solved questions and update the global dashboard stats
+ // Persist solved questions to Supabase and update dashboard stats
  useEffect(() => {
- localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(solvedQuestions));
- 
- // Count total solved
+ if (!userEmail || userEmail === 'guest') return; // skip initial empty state
+ dbService.saveDsaSolved(solvedQuestions, userEmail).catch(() => {});
  const solvedCount = Object.keys(solvedQuestions).filter(key => solvedQuestions[key]).length;
- 
  const percentage = Math.min(100, Math.round((solvedCount / 396) * 100));
-
  if (codingState.score !== percentage || codingState.solvedCount !== solvedCount) {
- setCodingState({
- score: percentage,
- solvedCount: solvedCount,
- lastUpdated: new Date().toLocaleDateString()
- });
+ setCodingState({ score: percentage, solvedCount, lastUpdated: new Date().toLocaleDateString() });
  }
  }, [solvedQuestions]);
 

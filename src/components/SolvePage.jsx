@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { executeCodeOnline } from '../services/compilerService';
 import { getProblemData } from '../data/problemData';
 import { recordActivity } from '../services/gamificationService';
+import { dbService } from '../services/db';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -293,19 +294,16 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  isPublic: true,
  }));
 
- const userEmail = localStorage.getItem('neuroprep_user_session')
- ? JSON.parse(localStorage.getItem('neuroprep_user_session')).email
- : 'guest';
+ const userEmail = (() => {
+ try { const raw = localStorage.getItem('neuroprep_user_session'); return raw ? JSON.parse(raw).email : 'guest'; } catch(_) { return 'guest'; }
+ })();
  const LOCAL_STORAGE_KEY = `neuroprep_dsa_solved_${userEmail.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
 
  const [isCompleted, setIsCompleted] = useState(() => {
  if (initialSolved) return true;
  try {
  const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
- if (raw) {
- const saved = JSON.parse(raw);
- return !!saved[question.title];
- }
+ if (raw) { const saved = JSON.parse(raw); return !!saved[question.title]; }
  } catch (_) {}
  return false;
  });
@@ -431,11 +429,11 @@ export default function SolvePage({ question, pattern, onBack, onComplete, isSol
  setIsCompleted(true);
  setSubmitSuccess(true);
  try {
- const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
- const saved = raw ? JSON.parse(raw) : {};
- saved[question.title] = true;
- localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(saved));
- recordActivity(userEmail, 'dsa');
+   const existing = await dbService.getDsaSolved(userEmail);
+   const updatedSolved = { ...(existing || {}), [question.title]: true };
+   await dbService.saveDsaSolved(updatedSolved, userEmail);
+   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedSolved));
+   recordActivity(userEmail, 'dsa');
  } catch (_) {}
 
  if (onComplete) {

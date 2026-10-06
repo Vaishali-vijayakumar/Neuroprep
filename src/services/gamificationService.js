@@ -1,6 +1,7 @@
 // gamificationService.js - Centralized Gamification, XP, Streaks & Daily Quests Service
 
 import { DSA_CATEGORIES } from '../data/dsaPatternsData';
+import { dbService } from './db';
 
 const STORAGE_KEY_PREFIX = 'neuroprep_gamification_';
 
@@ -344,52 +345,37 @@ function calculateBestStreak(activityHistory) {
 /**
  * Load complete Gamification state (Strictly Real Values)
  */
-export function getGamificationData(userEmail = 'guest', externalStats = {}) {
-  const key = getStorageKey(userEmail);
+export async function getGamificationData(userEmail = 'guest', externalStats = {}) {
   const todayStr = getLocalDateString();
-  let saved = null;
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) saved = JSON.parse(raw);
-  } catch (e) {
-    console.error('Error loading gamification data', e);
-  }
+  // Load from Supabase (falls back to localStorage for guest)
+  const saved = await dbService.getGamificationState(userEmail);
 
-  // Count solved coding problems from localStorage strictly
+  // Count solved coding problems from Supabase (with localStorage fallback)
   let solvedCount = externalStats.solvedCount || 0;
   try {
-    const cleanEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const dsaSolvedRaw = localStorage.getItem(`neuroprep_dsa_solved_${cleanEmail}`);
-    if (dsaSolvedRaw) {
-      const solvedObj = JSON.parse(dsaSolvedRaw);
-      if (typeof solvedObj === 'object' && solvedObj !== null) {
-        if (Array.isArray(solvedObj)) {
-          solvedCount = solvedObj.length;
-        } else {
-          solvedCount = Object.keys(solvedObj).filter(k => solvedObj[k]).length;
-        }
+    const solvedMap = await dbService.getDsaSolved(userEmail);
+    if (solvedMap && typeof solvedMap === 'object') {
+      if (Array.isArray(solvedMap)) {
+        solvedCount = solvedMap.length;
+      } else {
+        solvedCount = Object.keys(solvedMap).filter(k => solvedMap[k]).length;
       }
     }
   } catch (e) {}
 
-  // Count journal entries from localStorage strictly
+  // Count journal entries from Supabase (with localStorage fallback)
   let journalCount = externalStats.journalCount || 0;
   try {
-    const cleanEmail = (userEmail || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const journalRaw = localStorage.getItem(`neuroprep_thought_journal_${cleanEmail}`);
-    if (journalRaw) {
-      const entries = JSON.parse(journalRaw);
-      if (Array.isArray(entries)) journalCount = entries.length;
-    }
+    const journals = await dbService.getJournalsForUser(userEmail);
+    if (Array.isArray(journals)) journalCount = journals.length;
   } catch (e) {}
 
   const interviewCount = externalStats.interviewCount || externalStats.totalCompleted || 0;
   const lastInterviewScore = externalStats.lastInterviewScore || externalStats.lastScore || 0;
   const aptitudeTestsCount = externalStats.aptitudeTestsCount || 0;
 
-  // Real activity history
   let activityHistory = saved?.activityHistory || {};
-  
+
   // If user has historical activity but no activityHistory recorded yet, register baseline for today
   if (Object.keys(activityHistory).length === 0 && (solvedCount > 0 || interviewCount > 0 || journalCount > 0 || aptitudeTestsCount > 0)) {
     activityHistory[todayStr] = (solvedCount + interviewCount + journalCount + aptitudeTestsCount);
@@ -619,14 +605,10 @@ export function getGamificationData(userEmail = 'guest', externalStats = {}) {
 /**
  * Record an activity strictly and update streak + XP
  */
-export function recordActivity(userEmail = 'guest', activityType = 'dsa', details = {}) {
-  const key = getStorageKey(userEmail);
+export async function recordActivity(userEmail = 'guest', activityType = 'dsa', details = {}) {
   const todayStr = getLocalDateString();
-  let saved = {};
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) saved = JSON.parse(raw);
-  } catch (e) {}
+  // Load from Supabase
+  const saved = await dbService.getGamificationState(userEmail);
 
   saved.activityHistory = saved.activityHistory || {};
   saved.activityHistory[todayStr] = (saved.activityHistory[todayStr] || 0) + 1;
@@ -640,7 +622,7 @@ export function recordActivity(userEmail = 'guest', activityType = 'dsa', detail
   }
 
   try {
-    localStorage.setItem(key, JSON.stringify(saved));
+    await dbService.saveGamificationState(saved, userEmail);
   } catch (e) {}
 
   // Dispatch reactive custom event so UI components refresh immediately
@@ -650,20 +632,15 @@ export function recordActivity(userEmail = 'guest', activityType = 'dsa', detail
     }));
   }
 
-  return getGamificationData(userEmail);
+  return await getGamificationData(userEmail);
 }
 
 /**
  * Claim quest reward XP
  */
-export function claimQuestReward(userEmail = 'guest', questId, xpAmount) {
-  const key = getStorageKey(userEmail);
+export async function claimQuestReward(userEmail = 'guest', questId, xpAmount) {
   const todayStr = getLocalDateString();
-  let saved = {};
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) saved = JSON.parse(raw);
-  } catch (e) {}
+  const saved = await dbService.getGamificationState(userEmail);
 
   saved.claimedQuests = saved.claimedQuests || {};
   const claimKey = `${todayStr}_${questId}`;
@@ -673,7 +650,7 @@ export function claimQuestReward(userEmail = 'guest', questId, xpAmount) {
   saved.bonusXp = (saved.bonusXp || 0) + xpAmount;
 
   try {
-    localStorage.setItem(key, JSON.stringify(saved));
+    await dbService.saveGamificationState(saved, userEmail);
   } catch (e) {}
 
   // Dispatch reactive custom event
@@ -683,5 +660,5 @@ export function claimQuestReward(userEmail = 'guest', questId, xpAmount) {
     }));
   }
 
-  return getGamificationData(userEmail);
+  return await getGamificationData(userEmail);
 }

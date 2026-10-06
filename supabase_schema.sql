@@ -1,4 +1,4 @@
--- ==============================================================================
+﻿-- ==============================================================================
 -- NEUROPREP SUPABASE SCHEMA
 -- Run these scripts in the Supabase SQL Editor to create the necessary tables
 -- ==============================================================================
@@ -19,14 +19,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.test_scores (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_email TEXT NOT NULL,
-    type TEXT NOT NULL, -- 'coding', 'aptitude', 'interview', 'mood', 'speech'
+    type TEXT NOT NULL,
     score NUMERIC DEFAULT 0,
     metadata JSONB,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_email, type) -- Allows upserting latest scores per type
+    UNIQUE(user_email, type)
 );
 
--- 3. Readiness Scores Table (Stores the global dashboard readiness score)
+-- 3. Readiness Scores Table
 CREATE TABLE IF NOT EXISTS public.readiness_scores (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_email TEXT UNIQUE NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.readiness_scores (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Interview Sessions Table (Stores completed AI mock interview data)
+-- 4. Interview Sessions Table
 CREATE TABLE IF NOT EXISTS public.interview_sessions (
     id TEXT PRIMARY KEY,
     user_email TEXT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.interview_sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. Report Snapshots Table (Stores comprehensive performance reports)
+-- 5. Report Snapshots Table
 CREATE TABLE IF NOT EXISTS public.report_snapshots (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_email TEXT NOT NULL,
@@ -61,11 +61,7 @@ CREATE TABLE IF NOT EXISTS public.report_snapshots (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==============================================================================
--- DIARY WRITING & WELLNESS TABLES
--- ==============================================================================
-
--- 6. Thought Journals (Diary entries)
+-- 6. Thought Journals
 CREATE TABLE IF NOT EXISTS public.thought_journals (
     id TEXT PRIMARY KEY,
     user_email TEXT NOT NULL,
@@ -104,3 +100,108 @@ CREATE TABLE IF NOT EXISTS public.weekly_reflections (
     date TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 10. DSA Solved Questions (per user)
+CREATE TABLE IF NOT EXISTS public.dsa_solved (
+    user_email TEXT PRIMARY KEY,
+    solved_map JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 11. Gamification State (XP, streaks, daily progress, claimed quests)
+CREATE TABLE IF NOT EXISTS public.gamification_state (
+    user_email TEXT PRIMARY KEY,
+    activity_history JSONB NOT NULL DEFAULT '{}',
+    daily_progress   JSONB NOT NULL DEFAULT '{}',
+    claimed_quests   JSONB NOT NULL DEFAULT '{}',
+    bonus_xp         INTEGER NOT NULL DEFAULT 0,
+    updated_at       TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 12. Company Mastery Tracker
+CREATE TABLE IF NOT EXISTS public.company_mastery (
+    user_email TEXT NOT NULL,
+    topic_id   TEXT NOT NULL,
+    level      INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_email, topic_id)
+);
+
+-- 13. Company Topic Notes
+CREATE TABLE IF NOT EXISTS public.company_notes (
+    user_email TEXT NOT NULL,
+    topic_id   TEXT NOT NULL,
+    note       TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_email, topic_id)
+);
+
+-- 14. Company Interview Experiences (Community)
+CREATE TABLE IF NOT EXISTS public.company_experiences (
+    id         TEXT PRIMARY KEY,
+    company_id TEXT NOT NULL,
+    user_email TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    published_date TEXT,
+    data JSONB
+);
+
+-- 15. Placement Roadmap Progress
+CREATE TABLE IF NOT EXISTS public.roadmap_progress (
+    user_email    TEXT PRIMARY KEY,
+    completed_ids JSONB NOT NULL DEFAULT '["m1","m2","m5"]',
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 16. Puzzles & Sheets Completed
+CREATE TABLE IF NOT EXISTS public.sheets_completed (
+    user_email    TEXT PRIMARY KEY,
+    completed_ids JSONB NOT NULL DEFAULT '[]',
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 17. Daily Challenge Arena solved map
+CREATE TABLE IF NOT EXISTS public.daily_challenges_solved (
+    user_email TEXT PRIMARY KEY,
+    solved_map JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- ROW LEVEL SECURITY
+-- ==============================================================================
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.test_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.readiness_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.interview_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.report_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.thought_journals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hope_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.positive_memories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_reflections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dsa_solved ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gamification_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_mastery ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_experiences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roadmap_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sheets_completed ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_challenges_solved ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all for authenticated" ON public.profiles FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.test_scores FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.readiness_scores FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.interview_sessions FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.report_snapshots FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.thought_journals FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.hope_notes FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.positive_memories FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.weekly_reflections FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.dsa_solved FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.gamification_state FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.company_mastery FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.company_notes FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.company_experiences FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.roadmap_progress FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.sheets_completed FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON public.daily_challenges_solved FOR ALL USING (true);

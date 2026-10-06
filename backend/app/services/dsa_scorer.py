@@ -20,10 +20,10 @@ Key principle: O(n²) is NOT automatically penalised.
 import os
 import re
 from typing import Dict, Any, Optional
-import google.generativeai as genai
+from google import genai as genai_sdk
 from app.services.code_service import analyze_complexity
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 _MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 
@@ -353,8 +353,8 @@ Rules:
     }
 
     try:
-        model = genai.GenerativeModel(model_name=_MODEL)
-        response = model.generate_content(prompt)
+        client = genai_sdk.Client(api_key=_GEMINI_API_KEY)
+        response = client.models.generate_content(model=_MODEL, contents=prompt)
         text = response.text.strip()
 
         # Extract JSON block

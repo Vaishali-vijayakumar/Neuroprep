@@ -131,6 +131,16 @@ class SessionStartResponse(BaseModel):
     ats_insights: AtsInsights
 
 
+@app.get("/")
+def root():
+    return {
+        "service": "Neuroprep AI Platform",
+        "status": "running",
+        "version": "2.0.0",
+        "health": "/api/health"
+    }
+
+
 @app.get("/api/health")
 def health_check():
     return {

@@ -1,4 +1,7 @@
-import fitz  # PyMuPDF library (packaged as PyMuPDF, imported as fitz)
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 def extract_pdf_text(file_bytes: bytes):
     """

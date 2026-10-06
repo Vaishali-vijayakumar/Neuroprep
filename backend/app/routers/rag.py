@@ -86,6 +86,15 @@ async def search_video_rag(request: VideoRagRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Video RAG failed: {str(e)}")
 
+@router.get("/search-video", response_model=VideoRagResponse)
+async def search_video_rag_get(query: str = "", top_k: int = 6):
+    if not query or not query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    try:
+        return search_youtube_video_rag(query, top_k=top_k)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Video RAG failed: {str(e)}")
+
 @router.post("/search-pdf", response_model=PdfRagResponse)
 async def search_pdf_rag_post(request: PdfRagRequest):
     if not request.query or not request.query.strip():

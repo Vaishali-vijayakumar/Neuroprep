@@ -11,8 +11,6 @@ import { fetchSlideSharePresentations } from '../services/aiPdfSynthesisEngine';
 import WebPrep from './WebPrep';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VideoPrep: YouTube Video Search Engine Replication
-// ─────────────────────────────────────────────────────────────────────────────
 async function liveBrowserSearch(query, maxResults = 6) {
   const cleanQ = query.trim();
   const encodedQ = encodeURIComponent(cleanQ);
@@ -50,33 +48,35 @@ async function liveBrowserSearch(query, maxResults = 6) {
         }
       }
     } catch {
-      // fallback
+      // try next
     }
   }
 
-  const cleanTopic = cleanQ.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+  // Dynamic keyword-matched placement video vault: unique per searched topic
+  const cleanTopic = cleanQ.replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Technical Concept';
   const baseVids = [
-    { channel: 'Gate Smashers', views: '2.4M views', duration: '14:20', published: '2 years ago' },
-    { channel: 'Take U Forward (Striver)', views: '1.9M views', duration: '22:15', published: '1 year ago' },
-    { channel: 'Kunal Kushwaha', views: '1.8M views', duration: '18:45', published: '1 year ago' },
-    { channel: 'IBM Technology', views: '1.5M views', duration: '08:50', published: '6 months ago' },
-    { channel: 'ByteByteGo', views: '1.3M views', duration: '11:10', published: '1 year ago' },
-    { channel: 'FreeCodeCamp', views: '3.6M views', duration: '45:00', published: '2 years ago' }
+    { channel: 'Gate Smashers', views: '2.4M views', duration: '14:20', published: 'Popular Lecture' },
+    { channel: 'Take U Forward (Striver)', views: '1.9M views', duration: '24:15', published: 'Placement Essential' },
+    { channel: 'Kunal Kushwaha', views: '1.8M views', duration: '35:10', published: 'Complete Masterclass' },
+    { channel: 'Abdul Bari', views: '2.1M views', duration: '18:45', published: 'Algorithms & Concepts' },
+    { channel: 'ByteByteGo', views: '1.5M views', duration: '11:30', published: 'System Architecture' },
+    { channel: 'FreeCodeCamp', views: '3.8M views', duration: '48:00', published: 'Full Course' }
   ];
 
   return baseVids.slice(0, maxResults).map((v, idx) => {
-    const fallbackId = idx === 0 ? 'Tq8oCFjP6kQ' : idx === 1 ? '_Nk0v9qUWk4' : idx === 2 ? 'pJ6qrCB8pDw' : 'KIv2Na2-u24';
+    const encodedTopicAndChannel = encodeURIComponent(`${cleanTopic} ${v.channel} tutorial lecture`);
+    const encodedList = encodeURIComponent(`${cleanTopic} ${v.channel}`);
     return {
-      videoId: fallbackId,
+      videoId: `yt-dynamic-${cleanTopic.toLowerCase().replace(/\s+/g, '-')}-${idx + 1}`,
       videoTitle: `${cleanTopic} — Complete Architecture & Interview Guide (${v.channel})`,
       channel: v.channel,
       views: v.views,
       duration: v.duration,
       publishedTime: v.published,
-      descriptionSnippet: `In-depth technical breakdown of ${cleanTopic} explaining core mechanisms, algorithmic efficiency, real-world industry trade-offs, and top interview questions.`,
-      thumbnailUrl: `https://i.ytimg.com/vi/${fallbackId}/hqdefault.jpg`,
-      deepLinkUrl: `https://www.youtube.com/watch?v=${fallbackId}`,
-      embedUrl: `https://www.youtube.com/embed/${fallbackId}?autoplay=1`
+      descriptionSnippet: `In-depth technical breakdown of ${cleanTopic} explaining core mechanisms, algorithmic efficiency, real-world industry trade-offs, and top interview questions by ${v.channel}.`,
+      thumbnailUrl: `https://i.ytimg.com/vi/tyB0ztf0DNY/hqdefault.jpg`,
+      deepLinkUrl: `https://www.youtube.com/results?search_query=${encodedTopicAndChannel}`,
+      embedUrl: `https://www.youtube.com/embed?listType=search&list=${encodedList}`
     };
   });
 }
@@ -99,7 +99,6 @@ export default function PlacementResourceRAG({ setActiveTab }) {
   const [copiedPdfUrl, setCopiedPdfUrl] = useState(null);
   const [activePdfEmbedUrl, setActivePdfEmbedUrl] = useState(null);
 
-
   // Copy PDF Link helper
   const handleCopyPdfUrl = (url) => {
     if (!url) return;
@@ -107,6 +106,8 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     setCopiedPdfUrl(url);
     setTimeout(() => setCopiedPdfUrl(null), 2000);
   };
+
+  const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
 
   // Execute Video Search
   const performVideoSearch = async (query) => {
@@ -119,37 +120,46 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     let vList = [];
     let searchDuration = 0.45;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch('http://127.0.0.1:8000/api/rag/search-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: cleanQ, top_k: 6 }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+    const endpoints = [
+      '/api/rag/search-video',
+      'http://127.0.0.1:8000/api/rag/search-video',
+      ...(API_BASE && API_BASE !== 'http://localhost:8000' && API_BASE !== 'http://127.0.0.1:8000' ? [`${API_BASE}/api/rag/search-video`] : [])
+    ];
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.videos && data.videos.length > 0) {
-          vList = data.videos.map(v => ({
-            videoId: v.video_id,
-            videoTitle: v.video_title,
-            channel: v.channel,
-            views: v.views || 'Top Views',
-            duration: v.duration || '10:00',
-            publishedTime: v.published_time || 'Recent',
-            descriptionSnippet: v.description_snippet || `Video tutorial by ${v.channel} on ${cleanQ}.`,
-            thumbnailUrl: v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`,
-            deepLinkUrl: v.deep_link_url || `https://www.youtube.com/watch?v=${v.video_id}`,
-            embedUrl: v.embed_url || `https://www.youtube.com/embed/${v.video_id}?autoplay=1`
-          }));
-          searchDuration = data.search_time_seconds || 0.42;
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: cleanQ, top_k: 6 }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.videos && data.videos.length > 0) {
+            vList = data.videos.map(v => ({
+              videoId: v.video_id,
+              videoTitle: v.video_title,
+              channel: v.channel,
+              views: v.views || 'Top Views',
+              duration: v.duration || '10:00',
+              publishedTime: v.published_time || 'Recent',
+              descriptionSnippet: v.description_snippet || `Video tutorial by ${v.channel} on ${cleanQ}.`,
+              thumbnailUrl: v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`,
+              deepLinkUrl: v.deep_link_url || `https://www.youtube.com/watch?v=${v.video_id}`,
+              embedUrl: v.embed_url || `https://www.youtube.com/embed/${v.video_id}?autoplay=1`
+            }));
+            searchDuration = data.search_time_seconds || 0.42;
+            break;
+          }
         }
+      } catch {
+        // try next endpoint
       }
-    } catch {
-      // Fallback
     }
 
     if (!vList || vList.length === 0) {

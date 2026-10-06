@@ -52,6 +52,8 @@ class PdfRagResponse(BaseModel):
     search_time_seconds: Optional[float] = 0.35
     total_estimated_results: Optional[str] = ""
     documents: Optional[List[Dict[str, Any]]] = []
+    book_recommendation: Optional[Dict[str, Any]] = None
+    free_online_books: Optional[List[Dict[str, Any]]] = []
 
 class WebRagRequest(BaseModel):
     query: str = Field(..., description="Technical topic or natural language question for Web search")
@@ -101,6 +103,15 @@ async def search_pdf_rag_post(request: PdfRagRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
         return search_pdf_rag(request.query, top_k=request.top_k or 6)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF RAG failed: {str(e)}")
+
+@router.get("/search-pdf", response_model=PdfRagResponse)
+async def search_pdf_rag_get(query: str = "", top_k: int = 6):
+    if not query or not query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    try:
+        return search_pdf_rag(query, top_k=top_k)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF RAG failed: {str(e)}")
 

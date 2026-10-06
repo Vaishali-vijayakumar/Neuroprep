@@ -30,7 +30,7 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
 
   const [activeViewerDoc, setActiveViewerDoc] = useState(null);
 
-  const pdfFilters = ['All PDFs', 'University Notes (.edu)', 'Cheat Sheets', 'Placement Papers', 'Research Papers'];
+  const pdfFilters = ['All PDFs', 'Cheat Sheets', 'Developer Guides', 'Placement Papers', 'Research Papers'];
   const webFilters = ['All Web', 'Documentation', 'Tutorials', 'Interview Q&A', 'Code & Repos'];
   const currentFilters = searchMode === 'pdf' ? pdfFilters : webFilters;
 
@@ -58,99 +58,72 @@ const getOfflineFallback = (q, mode) => {
   const clean = (q || 'Placement Notes').trim();
   const encoded = encodeURIComponent(clean);
   const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'notes';
-  const wikiSlug = encodeURIComponent(clean.replace(/\s+/g, '_'));
 
   return {
     query: clean,
     searchTime: '0.12',
-    totalEstimated: `Curated Academic & Placement Sheets for "${clean}"`,
+    totalEstimated: `Global Web Documents & Articles for "${clean}"`,
     fileFormat: mode,
     knowledgeGraph: {
       title: clean.toUpperCase(),
-      subtitle: 'Placement Topic & Interview Subject',
-      description: `Comprehensive revision notes, common interview patterns, algorithm complexities, and cheat sheets for ${clean}.`,
-      category: 'Technical Placement Preparation',
+      subtitle: 'Technical Subject & Interview Topic',
+      description: `Comprehensive technical documentation, architecture blueprints, interview patterns, and code implementations for ${clean}.`,
+      category: 'Software Engineering & Placements',
       key_facts: [
-        { label: 'Domain', value: 'Technical Placement & DSA' },
-        { label: 'Recommended Prep', value: 'Core concepts + 10 practice problems' },
-        { label: 'Frequently Tested By', value: 'Google, Amazon, Microsoft, TCS, Infosys' },
+        { label: 'Domain', value: 'Technical Preparation & Engineering' },
+        { label: 'Recommended Prep', value: 'Core architecture + Hands-on code' },
+        { label: 'Industry Adoption', value: 'Widespread across tech startups & enterprises' },
       ],
-      source_name: 'NeuroPrep Placement Vault',
+      source_name: 'World-Wide Web Developer Index',
     },
     peopleAlsoAsk: [
-      { question: `What are the core fundamentals of ${clean} asked in interviews?`, answer: `Focus on baseline definitions, time/space complexity, common trade-offs, and practical implementations commonly probed during technical rounds.` },
-      { question: `Which companies frequently ask questions on ${clean}?`, answer: `Both product-based companies (Google, Microsoft, Amazon) and service-based companies (TCS Digital, Cognizant, Accenture) test this in coding and technical rounds.` },
-      { question: `Where can I find free PDF cheat sheets and notes for ${clean}?`, answer: `Curated university lecture notes (MIT OCW, Stanford), GeeksforGeeks placement archives, and community sheets provide high-yield preparation PDFs.` }
+      { question: `What are the core fundamentals of ${clean}?`, answer: `Key concepts include fundamental architecture, trade-offs, standard implementations, and common production edge cases.` },
+      { question: `Where can I find complete documentation and guides for ${clean}?`, answer: `Developer platforms like Dev.to, FreeCodeCamp, GitHub repositories, and official specs provide practical guides and code examples.` },
+      { question: `What questions are frequently asked in technical interviews on ${clean}?`, answer: `Interviews typically test real-world trade-offs, complexity analysis, architecture diagrams, and scenario-based debugging.` }
     ],
     organicResults: [
       {
-        title: `${clean} Complete Placement Notes & Formula Sheet (PDF)`,
-        url: `https://web.stanford.edu/search?q=${encoded}`,
-        snippet: `Comprehensive study notes and quick-revision cheat sheet for ${clean}. Covers core fundamentals, complexity tables, implementation patterns, and common interview pitfalls.`,
-        domain: 'stanford.edu',
-        is_pdf: true,
-        file_format: 'PDF',
-        file_size_label: '2.4 MB',
-        page_count_label: '36 pages',
-        category: 'Lecture Notes',
-        author: 'Stanford Engineering Archives',
+        title: `${clean} — Architecture Guides & Practical Implementation`,
+        url: `https://dev.to/search?q=${encoded}`,
+        snippet: `In-depth technical writeups, architecture breakdowns, and production code for ${clean} from developers across the global engineering community.`,
+        domain: 'dev.to',
+        is_pdf: false,
+        file_format: 'Web',
+        file_size_label: null,
+        page_count_label: null,
+        category: 'Architecture Guide',
+        author: 'Global Developer Community',
         date: '2025 Edition'
       },
       {
-        title: `${clean} Solved Interview Questions & Problem Sheet (PDF)`,
-        url: `https://ocw.mit.edu/search/?q=${encoded}`,
-        snippet: `Curated collection of campus placement problems on ${clean} with step-by-step solutions, optimal Big-O analysis, and pseudo-code implementations.`,
-        domain: 'ocw.mit.edu',
-        is_pdf: true,
-        file_format: 'PDF',
-        file_size_label: '3.1 MB',
-        page_count_label: '48 pages',
-        category: 'Placement Notes',
-        author: 'MIT OpenCourseWare',
-        date: '2024'
+        title: `Complete Guide to ${clean} — Concepts & Best Practices`,
+        url: `https://www.freecodecamp.org/news/search/?query=${encoded}`,
+        snippet: `Comprehensive handbook explaining ${clean} concepts, step-by-step code tutorials, and design principles.`,
+        domain: 'freecodecamp.org',
+        is_pdf: false,
+        file_format: 'Web',
+        file_size_label: null,
+        page_count_label: null,
+        category: 'Tutorial',
+        author: 'FreeCodeCamp Technical Library',
+        date: '2025'
       },
       {
-        title: `Top 30 ${clean} Technical Interview Concepts & Implementation`,
+        title: `Top 30 ${clean} Technical Interview Concepts & Solutions`,
         url: `https://www.geeksforgeeks.org/${slug}/`,
-        snippet: `Detailed tutorial and formula reference for ${clean}. Frequently asked by top tech employers and service-based placement drives.`,
+        snippet: `Detailed concept explanations, algorithm trade-offs, and frequently tested placement interview problems on ${clean}.`,
         domain: 'geeksforgeeks.org',
         is_pdf: mode === 'pdf',
         file_format: mode === 'pdf' ? 'PDF' : 'Web',
         file_size_label: mode === 'pdf' ? '1.2 MB' : null,
         page_count_label: mode === 'pdf' ? '18 pages' : null,
         category: 'Cheat Sheet',
-        author: 'GeeksforGeeks Technical Library',
+        author: 'Technical Placement Library',
         date: 'Updated 2025'
       },
       {
-        title: `${clean} Research Overview & Advanced Architecture (PDF)`,
-        url: `https://arxiv.org/search/?query=${encoded}&searchtype=all&source=header`,
-        snippet: `In-depth theoretical and architectural breakdown of ${clean} with mathematical proofs, performance benchmarks, and industry applications.`,
-        domain: 'arxiv.org',
-        is_pdf: true,
-        file_format: 'PDF',
-        file_size_label: '1.9 MB',
-        page_count_label: '22 pages',
-        category: 'Research Paper',
-        author: 'ArXiv Open Archive',
-        date: '2024'
-      },
-      {
-        title: `${clean} Comprehensive Curriculum & Reference Guide (PDF)`,
-        url: `https://en.wikipedia.org/api/rest_v1/page/pdf/${wikiSlug}`,
-        snippet: `Complete encyclopedic overview, historical evolution, and architectural foundations of ${clean}.`,
-        domain: 'wikipedia.org',
-        is_pdf: true,
-        file_format: 'PDF',
-        file_size_label: '1.5 MB',
-        page_count_label: '16 pages',
-        category: 'Academic Reference',
-        author: 'Open Academic Archive',
-        date: '2025'
-      },
-      {
-        title: `Curated ${clean} Interview Sheet & Code Implementations`,
-        url: `https://github.com/search?q=${encoded}+cheat+sheet+interview`,
+        title: `Curated ${clean} Open Source Repositories & Cheat Sheets`,
+        url: `https://github.com/search?q=${encoded}+cheat+sheet`,
         snippet: `Open-source repositories, cheat sheets, code templates, and interview questions for ${clean}.`,
         domain: 'github.com',
         is_pdf: mode === 'pdf',
@@ -158,16 +131,16 @@ const getOfflineFallback = (q, mode) => {
         file_size_label: mode === 'pdf' ? '1.1 MB' : null,
         page_count_label: mode === 'pdf' ? '12 pages' : null,
         category: 'Code & Repos',
-        author: 'GitHub Placement Community',
+        author: 'GitHub Developer Community',
         date: '2025'
       }
     ],
     relatedSearches: [
       `${clean} interview questions`,
-      `${clean} cheat sheet pdf`,
-      `${clean} campus placement notes`,
-      `${clean} time and space complexity`,
-      `${clean} practice problems leetcode`
+      `${clean} architecture guide`,
+      `${clean} cheat sheet`,
+      `${clean} production best practices`,
+      `${clean} code examples github`
     ]
   };
 };

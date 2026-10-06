@@ -256,48 +256,115 @@ def fetch_wikipedia_documents(query: str, limit: int = 2) -> List[Dict[str, Any]
     return items
 
 
-def generate_keyword_matched_academic_docs(clean_q: str, file_format: str, filter_category: str) -> List[Dict[str, Any]]:
+def fetch_hn_open_web_documents(query: str, limit: int = 4) -> List[Dict[str, Any]]:
     """
-    Generates exact keyword-matched, non-repeating dynamic URLs for the specific searched topic.
-    Every single URL is unique to the query (e.g. GeeksforGeeks topic slug, MIT search, ArXiv query, GitHub query).
+    Fetches real technical articles, engineering writeups, and documentation from across the open web via HackerNews Algolia index.
+    """
+    items = []
+    try:
+        encoded_q = urllib.parse.quote(query)
+        url = f"https://hn.algolia.com/api/v1/search?query={encoded_q}&hitsPerPage={limit * 2}"
+        with httpx.Client(timeout=4.0) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                hits = resp.json().get("hits", [])
+                for h in hits:
+                    href = h.get("url") or ""
+                    title = (h.get("title") or h.get("story_title") or "").strip()
+                    if not href or not title:
+                        continue
+                    if not is_safe_and_educational(title, href, ""):
+                        continue
+                    domain = _clean_domain(href)
+                    is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
+                    items.append({
+                        "title": title,
+                        "url": href,
+                        "domain": domain,
+                        "doc_type": "Technical Article & Documentation",
+                        "snippet": f"Engineering writeup and open-web documentation covering {query} from {domain}.",
+                        "is_pdf": is_pdf
+                    })
+                    if len(items) >= limit:
+                        break
+    except Exception as e:
+        logger.warning(f"HN Algolia live query error: {e}")
+    return items
+
+
+def fetch_devto_documents(query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    """
+    Fetches real developer community tutorials and implementation guides from Dev.to.
+    """
+    items = []
+    try:
+        encoded_q = urllib.parse.quote(query)
+        url = f"https://dev.to/api/articles?q={encoded_q}&per_page={limit}"
+        with httpx.Client(timeout=4.0) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                articles = resp.json()
+                if isinstance(articles, list):
+                    for a in articles:
+                        href = a.get("url") or ""
+                        title = (a.get("title") or "").strip()
+                        desc = (a.get("description") or "").strip()
+                        if not href or not title:
+                            continue
+                        if not is_safe_and_educational(title, href, desc):
+                            continue
+                        items.append({
+                            "title": title,
+                            "url": href,
+                            "domain": "dev.to",
+                            "doc_type": "Developer Guide & Tutorial",
+                            "snippet": desc or f"Practical developer guide on {query} from the global engineering community.",
+                            "is_pdf": False
+                        })
+    except Exception as e:
+        logger.warning(f"Dev.to live query error: {e}")
+    return items
+
+
+def generate_keyword_matched_web_docs(clean_q: str, file_format: str, filter_category: str) -> List[Dict[str, Any]]:
+    """
+    Generates dynamic open-web URLs matching the exact topic across global developer platforms (no university bias).
     """
     slug = _slugify(clean_q)
     encoded_q = urllib.parse.quote(clean_q)
-    wiki_slug = clean_q.replace(" ", "_")
-
     is_pdf = file_format.lower() == "pdf"
 
     return [
         {
-            "title": f"{clean_q} Technical Interview Sheet & Practice Problems",
-            "url": f"https://www.geeksforgeeks.org/{slug}/",
-            "domain": "geeksforgeeks.org",
-            "doc_type": "Quick Revision Cheat Sheet",
-            "snippet": f"Comprehensive study notes, code implementations, edge cases, and campus placement interview questions for {clean_q}.",
+            "title": f"{clean_q} - Technical Architecture, Deep-Dives & Practical Guides",
+            "url": f"https://dev.to/search?q={encoded_q}",
+            "domain": "dev.to",
+            "doc_type": "Technical Architecture",
+            "snippet": f"Engineering writeups, architecture breakdowns, and production implementation guides for {clean_q} from developers worldwide.",
             "is_pdf": is_pdf
         },
         {
-            "title": f"{clean_q} Lecture Series & Notes — MIT OpenCourseWare (PDF)",
-            "url": f"https://ocw.mit.edu/search/?q={encoded_q}",
-            "domain": "ocw.mit.edu",
-            "doc_type": "Placement & Exam Sheet",
-            "snippet": f"Verified open lecture materials, syllabus notes, and algorithmic complexity problem sets covering {clean_q} from MIT.",
-            "is_pdf": True
+            "title": f"Complete {clean_q} Handbook & Developer Guide",
+            "url": f"https://www.freecodecamp.org/news/search/?query={encoded_q}",
+            "domain": "freecodecamp.org",
+            "doc_type": "Developer Handbook",
+            "snippet": f"Comprehensive handbook, code examples, syntax cheat sheets, and fundamental trade-offs for {clean_q}.",
+            "is_pdf": is_pdf
         },
         {
-            "title": f"{clean_q} Stanford Computer Science Archive Notes (PDF)",
-            "url": f"https://web.stanford.edu/search?q={encoded_q}",
-            "domain": "stanford.edu",
-            "doc_type": "University Lecture Slides",
-            "snippet": f"Course handouts, problem sets, and theoretical proofs on {clean_q} from Stanford University Engineering archives.",
-            "is_pdf": True
+            "title": f"{clean_q} Interview Concepts, Edge Cases & Solutions",
+            "url": f"https://www.geeksforgeeks.org/{slug}/",
+            "domain": "geeksforgeeks.org",
+            "doc_type": "Technical Guide",
+            "snippet": f"Detailed concept explanations, algorithmic complexity tables, and real-world placement problems on {clean_q}.",
+            "is_pdf": is_pdf
         },
         {
-            "title": f"Awesome {clean_q} Placement Cheat Sheet & Code Implementations",
-            "url": f"https://github.com/search?q={encoded_q}+cheat+sheet+interview",
+            "title": f"Awesome {clean_q} Open Source Projects & Cheat Sheets",
+            "url": f"https://github.com/search?q={encoded_q}+cheat+sheet",
             "domain": "github.com",
             "doc_type": "Code & Repos",
-            "snippet": f"Open-source curated code repositories, cheat sheets, and algorithm summaries for {clean_q}.",
+            "snippet": f"Curated open-source repositories, cheat sheets, code templates, and interview prep guides for {clean_q}.",
             "is_pdf": is_pdf
         }
     ]
@@ -315,29 +382,11 @@ class GoogleSearchEngine:
         if not clean_q:
             clean_q = "Operating Systems Deadlock"
 
-        # ── Step 1: Build clean educational search query (NO 'download' trigger words) ──
+        # ── Step 1: Open World-Wide Internet Search Query (No University Domain Restriction) ──
         if file_format.lower() == "pdf":
-            if filter_category == "University Notes (.edu)":
-                augmented_query = f"{clean_q} lecture notes pdf site:.edu"
-            elif filter_category == "Cheat Sheets":
-                augmented_query = f"{clean_q} quick reference cheat sheet pdf"
-            elif filter_category == "Placement Papers":
-                augmented_query = f"{clean_q} placement interview questions answers pdf"
-            elif filter_category == "Research Papers":
-                augmented_query = f"{clean_q} research paper arxiv ieee pdf"
-            else:
-                augmented_query = f"{clean_q} lecture notes pdf"
+            augmented_query = f"{clean_q} filetype:pdf"
         else:
-            if filter_category == "Documentation":
-                augmented_query = f"{clean_q} official documentation tutorial"
-            elif filter_category == "Tutorials":
-                augmented_query = f"{clean_q} technical tutorial explained"
-            elif filter_category == "Interview Q&A":
-                augmented_query = f"{clean_q} technical interview questions answers"
-            elif filter_category == "Code & Repos":
-                augmented_query = f"{clean_q} github code implementation"
-            else:
-                augmented_query = f"{clean_q} tutorial explained"
+            augmented_query = clean_q
 
         results = []
         seen_urls = set()
@@ -459,9 +508,57 @@ class GoogleSearchEngine:
             except Exception as e:
                 logger.warning(f"DDGS engine exception: {e}")
 
-        # ── Step 4: arXiv Official Academic Search (Real PDFs with unique arXiv links) ──
+        # ── Step 4: Live Open-Web HackerNews Algolia Search (Global Tech Articles & Blogs) ──
+        if len(results) < top_k:
+            hn_docs = fetch_hn_open_web_documents(clean_q, limit=4)
+            for doc in hn_docs:
+                add_result({
+                    "id": f"web-{len(results) + 1}",
+                    "title": doc["title"],
+                    "url": doc["url"],
+                    "domain": doc["domain"],
+                    "breadcrumb": f"{doc['domain']} › {clean_q.lower().replace(' ', '-')}",
+                    "website": doc["domain"].capitalize(),
+                    "reason": "Open Web Technical Article",
+                    "learning_level": "Industry Standard",
+                    "doc_type": doc["doc_type"],
+                    "file_type": "PDF" if doc["is_pdf"] else "Web",
+                    "is_pdf": doc["is_pdf"],
+                    "filter_tag": filter_category,
+                    "quality_score": 4.94,
+                    "verified": True,
+                    "is_academic": False,
+                    "description": doc["snippet"],
+                    "preview_content": doc["snippet"]
+                })
+
+        # ── Step 5: Live Developer Community (Dev.to) ──
+        if len(results) < top_k:
+            devto_docs = fetch_devto_documents(clean_q, limit=3)
+            for doc in devto_docs:
+                add_result({
+                    "id": f"devto-{len(results) + 1}",
+                    "title": doc["title"],
+                    "url": doc["url"],
+                    "domain": doc["domain"],
+                    "breadcrumb": f"dev.to › {clean_q.lower().replace(' ', '-')}",
+                    "website": "Dev.to Engineering",
+                    "reason": "Developer Community Guide",
+                    "learning_level": "Practical Engineering",
+                    "doc_type": doc["doc_type"],
+                    "file_type": "Web",
+                    "is_pdf": False,
+                    "filter_tag": filter_category,
+                    "quality_score": 4.91,
+                    "verified": True,
+                    "is_academic": False,
+                    "description": doc["snippet"],
+                    "preview_content": doc["snippet"]
+                })
+
+        # ── Step 6: arXiv Official Academic Search (If PDF or Research requested) ──
         if len(results) < top_k and (file_format.lower() == "pdf" or filter_category == "Research Papers"):
-            arxiv_docs = fetch_arxiv_documents(clean_q, limit=3)
+            arxiv_docs = fetch_arxiv_documents(clean_q, limit=2)
             for doc in arxiv_docs:
                 add_result({
                     "id": f"arxiv-{len(results) + 1}",
@@ -470,20 +567,20 @@ class GoogleSearchEngine:
                     "domain": doc["domain"],
                     "breadcrumb": f"arxiv.org › pdf › {clean_q.lower().replace(' ', '-')}",
                     "website": "ArXiv Academic Archive",
-                    "reason": "Peer-Reviewed Academic Paper • PDF",
-                    "learning_level": "University Verified",
+                    "reason": "Peer-Reviewed Paper • PDF",
+                    "learning_level": "Research Level",
                     "doc_type": "Academic Research Paper",
                     "file_type": "PDF",
                     "is_pdf": True,
                     "filter_tag": filter_category,
-                    "quality_score": 4.98,
+                    "quality_score": 4.90,
                     "verified": True,
-                    "is_academic": True,
+                    "is_academic": False,
                     "description": doc["snippet"],
                     "preview_content": doc["snippet"]
                 })
 
-        # ── Step 5: Wikipedia Official OpenSearch & Downloadable PDF Engine ──
+        # ── Step 7: Wikipedia Open Reference ──
         if len(results) < top_k:
             wiki_docs = fetch_wikipedia_documents(clean_q, limit=2)
             for doc in wiki_docs:
@@ -492,24 +589,24 @@ class GoogleSearchEngine:
                     "title": doc["title"],
                     "url": doc["url"],
                     "domain": doc["domain"],
-                    "breadcrumb": f"wikipedia.org › pdf › {clean_q.lower().replace(' ', '_')}",
+                    "breadcrumb": f"wikipedia.org › {clean_q.lower().replace(' ', '_')}",
                     "website": "Wikipedia Open Reference",
-                    "reason": "Complete Verified Curriculum • PDF",
+                    "reason": "Open Reference Document",
                     "learning_level": "Placement Ready",
-                    "doc_type": "Academic Reference Document",
-                    "file_type": "PDF",
-                    "is_pdf": True,
+                    "doc_type": "Reference Document",
+                    "file_type": "PDF" if file_format.lower() == "pdf" else "Web",
+                    "is_pdf": file_format.lower() == "pdf",
                     "filter_tag": filter_category,
-                    "quality_score": 4.93,
+                    "quality_score": 4.88,
                     "verified": True,
-                    "is_academic": True,
+                    "is_academic": False,
                     "description": doc["snippet"],
                     "preview_content": doc["snippet"]
                 })
 
-        # ── Step 6: Dynamic Keyword-Matched Placement Vault (Topic-Specific URLs) ──
+        # ── Step 8: Dynamic Keyword-Matched Web Vault (Global Technical Platforms) ──
         if len(results) < 4:
-            dynamic_docs = generate_keyword_matched_academic_docs(clean_q, file_format, filter_category)
+            dynamic_docs = generate_keyword_matched_web_docs(clean_q, file_format, filter_category)
             for fb in dynamic_docs:
                 add_result({
                     "id": f"dynamic-fb-{len(results) + 1}",
@@ -518,21 +615,21 @@ class GoogleSearchEngine:
                     "domain": fb["domain"],
                     "breadcrumb": f"{fb['domain']} › {clean_q.lower().replace(' ', '-')}",
                     "website": fb["domain"].capitalize(),
-                    "reason": f"Verified Placement Vault • {fb['doc_type']}",
-                    "learning_level": "University Verified",
+                    "reason": f"Open Web Knowledge • {fb['doc_type']}",
+                    "learning_level": "Industry Standard",
                     "doc_type": fb["doc_type"],
                     "file_type": "PDF" if fb["is_pdf"] else "HTML",
                     "is_pdf": fb["is_pdf"],
                     "filter_tag": filter_category,
-                    "quality_score": 4.97,
+                    "quality_score": 4.85,
                     "verified": True,
-                    "is_academic": True,
+                    "is_academic": False,
                     "description": fb["snippet"],
                     "preview_content": fb["snippet"]
                 })
 
-        # Sort so trusted academic institutions & verified portals appear first
-        results.sort(key=lambda r: (1 if r.get("is_academic") else 0, r.get("quality_score", 0)), reverse=True)
+        # Natural relevance sorting (No artificial university boost)
+        results.sort(key=lambda r: r.get("quality_score", 0), reverse=True)
         return results[:top_k]
 
 

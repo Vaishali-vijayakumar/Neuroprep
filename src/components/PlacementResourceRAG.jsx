@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Play, RefreshCw,
   Eye, Flame, CheckCircle2, ExternalLink, Video,
-  X, Globe, Star, Presentation
+  X, Globe, Star, Presentation,
+  BookOpen, FileText, Sparkles, Download
 } from 'lucide-react';
-import { fetchSlideSharePresentations } from '../services/aiPdfSynthesisEngine';
+import { fetchSlideSharePresentations, findAiRecommendedBook } from '../services/aiPdfSynthesisEngine';
 
 
 
@@ -96,6 +97,9 @@ export default function PlacementResourceRAG({ setActiveTab }) {
   const [isPdfSearching, setIsPdfSearching] = useState(false);
   const [pdfSearchResult, setPdfSearchResult] = useState(null);
   const [slideShareDecks, setSlideShareDecks] = useState([]);
+  const [recommendedBook, setRecommendedBook] = useState(null);
+  const [libraryBooks, setLibraryBooks] = useState([]);
+  const [docList, setDocList] = useState([]);
   const [copiedPdfUrl, setCopiedPdfUrl] = useState(null);
   const [activePdfEmbedUrl, setActivePdfEmbedUrl] = useState(null);
 
@@ -177,24 +181,81 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     setIsVideoSearching(false);
   };
 
-  // Execute SlideShare PPT Search
+  // Execute PDF, PPT & Book Search
   const performPdfSearch = async (query) => {
     if (!query?.trim()) return;
     const cleanQ = query.trim();
     setIsPdfSearching(true);
     const startTime = Date.now();
 
-    // 1. Retrieve Single Best-Rated SlideShare PPT / PDF Deck
-    const ssDecks = fetchSlideSharePresentations(cleanQ, 1);
-    setSlideShareDecks(ssDecks);
+    let bookRec = null;
+    let libBooks = [];
+    let docs = [];
+
+    const endpoints = [
+      '/api/rag/search-pdf',
+      'http://127.0.0.1:8000/api/rag/search-pdf',
+      ...(API_BASE && API_BASE !== 'http://localhost:8000' && API_BASE !== 'http://127.0.0.1:8000' ? [`${API_BASE}/api/rag/search-pdf`] : [])
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: cleanQ, top_k: 6 }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.book_recommendation) bookRec = data.book_recommendation;
+          if (data.free_online_books && data.free_online_books.length > 0) libBooks = data.free_online_books;
+          if (data.documents && data.documents.length > 0) docs = data.documents;
+          break;
+        }
+      } catch {
+        // try next endpoint
+      }
+    }
+
+    if (!bookRec) {
+      bookRec = findAiRecommendedBook(cleanQ);
+    }
+    if (!docs || docs.length === 0) {
+      docs = fetchSlideSharePresentations(cleanQ, 4).map(d => ({
+        pdf_id: d.title,
+        pdf_title: d.title,
+        category: d.category,
+        doc_format: d.format,
+        domain: d.domain,
+        author: d.author,
+        pages: d.downloads,
+        rating: d.rating,
+        downloads: d.downloads,
+        description_snippet: d.desc,
+        view_url: d.url,
+        download_url: d.url,
+        is_ppt: d.format?.includes('PPT'),
+        is_pdf: d.format?.includes('PDF')
+      }));
+    }
+
+    setRecommendedBook(bookRec);
+    setLibraryBooks(libBooks);
+    setDocList(docs);
+    setSlideShareDecks(docs);
 
     const searchDuration = ((Date.now() - startTime) / 1000).toFixed(2);
 
     setPdfSearchResult({
       query: cleanQ,
       searchTime: searchDuration,
-      totalEstimated: 'Best Rated SlideShare Presentation',
-      documents: []
+      totalEstimated: `Curated Documents & AI Recommended Book for "${cleanQ}"`,
+      documents: docs
     });
 
     setIsPdfSearching(false);
@@ -604,87 +665,281 @@ export default function PlacementResourceRAG({ setActiveTab }) {
         )}
 
 
-        {/* ── SlideShare PPT & PDF Presentations Section (Rating-Based Ranking) ── */}
-        {!isPdfSearching && slideShareDecks.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {slideShareDecks.map((deck, idx) => (
-                <div
-                  key={`ss-${idx}`}
-                  className="saas-card-spec"
+        {/* ── 1. AI-RECOMMENDED FREE ONLINE TEXTBOOK HERO CARD ── */}
+        {!isPdfSearching && recommendedBook && (
+          <div 
+            className="saas-card-spec"
+            style={{
+              padding: '26px 28px',
+              borderRadius: '16px',
+              border: '2px solid var(--btn-sage)',
+              backgroundColor: '#FBFDF9',
+              boxShadow: '0 8px 24px rgba(82, 98, 87, 0.12)',
+              marginBottom: '26px',
+              position: 'relative'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="pill-tag" style={{ backgroundColor: 'var(--btn-sage)', color: 'var(--btn-text)', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={13} /> AI Recommended Free Textbook
+                </span>
+                <span className="pill-tag" style={{ backgroundColor: '#E0E7FF', color: '#3730A3', fontSize: '0.72rem', fontWeight: 700 }}>
+                  {recommendedBook.format || 'Free Online Textbook'}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                100% Free & Legal Open Access
+              </div>
+            </div>
+
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.45rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+              {recommendedBook.book_title}
+            </h2>
+
+            <div style={{ fontSize: '0.86rem', color: 'var(--secondary-heading)', fontWeight: 600, marginBottom: '12px' }}>
+              Author: <span style={{ color: 'var(--main-heading)' }}>{recommendedBook.author}</span> • <span>{recommendedBook.edition_or_year}</span>
+            </div>
+
+            {recommendedBook.why_recommended && (
+              <div style={{
+                backgroundColor: '#F3F6F1',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                fontSize: '0.86rem',
+                color: 'var(--body-text)',
+                lineHeight: 1.55,
+                marginBottom: '14px',
+                borderLeft: '3px solid var(--btn-sage)'
+              }}>
+                <strong style={{ color: 'var(--main-heading)' }}>Why this book: </strong>
+                {recommendedBook.why_recommended}
+              </div>
+            )}
+
+            {recommendedBook.topics_covered && recommendedBook.topics_covered.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>Key Chapters:</span>
+                {recommendedBook.topics_covered.map((t, tidx) => (
+                  <span key={tidx} className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.72rem', fontWeight: 600 }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <a
+                href={recommendedBook.free_source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary-spec"
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--btn-sage)',
+                  color: 'var(--btn-text)',
+                  textDecoration: 'none'
+                }}
+              >
+                <BookOpen size={16} /> Read Online Free
+              </a>
+
+              {recommendedBook.pdf_download_url && (
+                <a
+                  href={recommendedBook.pdf_download_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline-spec"
                   style={{
-                    padding: '20px 22px',
-                    borderRadius: '12px',
-                    border: idx === 0 ? '1.5px solid var(--btn-sage)' : '1px solid var(--border-color)',
-                    boxShadow: idx === 0 ? '0 6px 20px rgba(82, 98, 87, 0.08)' : 'var(--shadow-3d-btn)'
+                    padding: '10px 18px',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderRadius: '10px',
+                    border: '1.5px solid var(--btn-sage)',
+                    color: 'var(--btn-sage)',
+                    textDecoration: 'none',
+                    backgroundColor: '#FFFFFF'
                   }}
                 >
-                  {/* SlideShare Header & Rating Pill */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span className="pill-tag" style={{ backgroundColor: '#E0E7FF', color: '#3730A3', fontSize: '0.72rem', fontWeight: 800 }}>
-                        {deck.category}
-                      </span>
-                      <span className="pill-tag" style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Star size={12} fill="#CA8A04" color="#CA8A04" /> {deck.rating}
-                      </span>
-                      <span className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.72rem', fontWeight: 700 }}>
-                        {deck.format}
-                      </span>
+                  <Download size={15} /> Download Book PDF
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 2. MULTI-FORMAT DOCUMENTS & PRESENTATION SLIDES (PPT / PDF / DOC) ── */}
+        {!isPdfSearching && (docList.length > 0 || slideShareDecks.length > 0) && (
+          <div style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Presentation size={20} color="var(--btn-sage)" />
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+                Multi-Format Placement Documents & Slide Decks (PPT / PDF / DOC)
+              </h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {(docList.length > 0 ? docList : slideShareDecks).map((doc, idx) => {
+                const format = doc.doc_format || doc.format || 'PDF';
+                const isPpt = format.includes('PPT');
+                const isPdf = format.includes('PDF');
+                const badgeColor = isPpt 
+                  ? { bg: '#FFF7ED', text: '#EA580C' }
+                  : isPdf 
+                    ? { bg: '#FFE4E6', text: '#BE123C' }
+                    : { bg: '#EEF2FF', text: '#4338CA' };
+
+                return (
+                  <div
+                    key={`doc-${idx}`}
+                    className="saas-card-spec"
+                    style={{
+                      padding: '20px 22px',
+                      borderRadius: '12px',
+                      border: idx === 0 ? '1.5px solid var(--btn-sage)' : '1px solid var(--border-color)',
+                      boxShadow: idx === 0 ? '0 6px 20px rgba(82, 98, 87, 0.08)' : 'var(--shadow-3d-btn)'
+                    }}
+                  >
+                    {/* Header & Badges */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="pill-tag" style={{ backgroundColor: badgeColor.bg, color: badgeColor.text, fontSize: '0.74rem', fontWeight: 800 }}>
+                          {format}
+                        </span>
+                        <span className="pill-tag" style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Star size={12} fill="#CA8A04" color="#CA8A04" /> {doc.rating || 4.9}
+                        </span>
+                        {doc.category && (
+                          <span className="pill-tag" style={{ backgroundColor: '#EAECE8', color: 'var(--btn-sage)', fontSize: '0.72rem', fontWeight: 700 }}>
+                            {doc.category}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        {doc.domain || 'slideshare.net'}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                      slideshare.net
+
+                    {/* Title */}
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
+                      <a
+                        href={doc.view_url || doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'var(--main-heading)', textDecoration: 'none' }}
+                        onMouseOver={(e) => e.target.style.color = 'var(--btn-sage)'}
+                        onMouseOut={(e) => e.target.style.color = 'var(--main-heading)'}
+                      >
+                        {doc.pdf_title || doc.title}
+                      </a>
+                    </h4>
+
+                    {/* Description */}
+                    <p style={{ fontSize: '0.86rem', color: 'var(--body-text)', margin: '0 0 12px 0', lineHeight: 1.55 }}>
+                      {doc.description_snippet || doc.desc}
+                    </p>
+
+                    {/* Footer Metrics & Actions */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        Author: <strong>{doc.author}</strong> • <span>{doc.pages || doc.downloads}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <a
+                          href={doc.view_url || doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-primary-spec"
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--btn-sage)',
+                            color: 'var(--btn-text)',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          <ExternalLink size={13} /> {isPpt ? 'View Presentation Slides' : isPdf ? 'Open PDF Notes' : 'Open Document'}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── 3. FREE DIGITAL LIBRARY BOOKS (OPENLIBRARY & ARCHIVE.ORG) ── */}
+        {!isPdfSearching && libraryBooks && libraryBooks.length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <BookOpen size={20} color="var(--btn-sage)" />
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--main-heading)', fontFamily: 'var(--font-heading)' }}>
+                Free Digital Library & Archive Books
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {libraryBooks.map((b, bIdx) => (
+                <div
+                  key={`lib-${bIdx}`}
+                  className="saas-card-spec"
+                  style={{
+                    padding: '18px 20px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <div>
+                    <span className="pill-tag" style={{ backgroundColor: '#E0E7FF', color: '#3730A3', fontSize: '0.7rem', fontWeight: 700, marginBottom: '8px', display: 'inline-block' }}>
+                      OpenLibrary / Archive
+                    </span>
+                    <h5 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 800, color: 'var(--main-heading)' }}>
+                      {b.title}
+                    </h5>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--body-text)', marginBottom: '12px' }}>
+                      By {b.author} {b.first_publish_year ? `(${b.first_publish_year})` : ''}
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h2 style={{ margin: '0 0 6px 0', fontSize: '1.12rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <a
-                      href={deck.url}
+                      href={b.borrow_url || b.read_online_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: 'var(--main-heading)', textDecoration: 'none' }}
-                      onMouseOver={(e) => e.target.style.color = 'var(--btn-sage)'}
-                      onMouseOut={(e) => e.target.style.color = 'var(--main-heading)'}
+                      className="btn-primary-spec"
+                      style={{
+                        padding: '7px 12px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--btn-sage)',
+                        color: 'var(--btn-text)',
+                        textDecoration: 'none'
+                      }}
                     >
-                      {deck.title}
+                      <ExternalLink size={12} /> Read Full Text
                     </a>
-                  </h2>
-
-                  {/* Description */}
-                  <p style={{ fontSize: '0.86rem', color: 'var(--body-text)', margin: '0 0 12px 0', lineHeight: 1.55 }}>
-                    {deck.desc}
-                  </p>
-
-                  {/* Footer Metrics & Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                      Author: <strong>{deck.author}</strong> • <span>{deck.downloads}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-
-                      <a
-                        href={deck.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-primary-spec"
-                        style={{
-                          padding: '8px 16px',
-                          fontSize: '0.82rem',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          borderRadius: '8px',
-                          backgroundColor: 'var(--btn-sage)',
-                          color: 'var(--btn-text)',
-                          textDecoration: 'none'
-                        }}
-                      >
-                        <ExternalLink size={13} /> {deck.format?.includes('PDF') ? 'Open SlideShare PDFs' : 'Open Placement Notes'}
-                      </a>
-                    </div>
                   </div>
                 </div>
               ))}

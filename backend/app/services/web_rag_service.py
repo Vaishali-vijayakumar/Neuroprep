@@ -344,23 +344,110 @@ def fetch_devto_documents(query: str, limit: int = 3) -> List[Dict[str, Any]]:
 
 
 
+
+# Public SearXNG instances — free metasearch that aggregates Google + Bing + DuckDuckGo
+SEARXNG_INSTANCES = [
+    "https://searx.be",
+    "https://search.mdosch.de",
+    "https://searx.tiekoetter.com",
+    "https://searx.prvcy.eu",
+    "https://search.bus-hit.me",
+    "https://searx.sev.monster",
+]
+
+
+def fetch_searxng_results(query: str, limit: int = 15) -> List[Dict[str, Any]]:
+    """
+    Fetches real worldwide web search results from public SearXNG instances.
+    SearXNG is a free, open-source metasearch engine that aggregates results
+    from Google, Bing, DuckDuckGo, and 70+ other engines — returning ANY website
+    on the internet, not limited to specific platforms.
+    """
+    items = []
+    encoded_q = urllib.parse.quote(query)
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json",
+    }
+
+    for base_url in SEARXNG_INSTANCES:
+        try:
+            url = (
+                f"{base_url}/search"
+                f"?q={encoded_q}"
+                f"&format=json"
+                f"&language=en-US"
+                f"&safesearch=1"
+                f"&categories=general"
+                f"&engines=google,bing,duckduckgo,brave,mojeek"
+            )
+            with httpx.Client(timeout=6.0, headers=headers, follow_redirects=True) as client:
+                resp = client.get(url)
+                if resp.status_code != 200:
+                    continue
+
+                data = resp.json()
+                raw_results = data.get("results", [])
+                if not raw_results:
+                    continue
+
+                for r in raw_results:
+                    href = (r.get("url") or "").strip()
+                    title = (r.get("title") or "").strip()
+                    snippet = (r.get("content") or "").strip()
+
+                    if not href or not title:
+                        continue
+                    if not href.startswith("http"):
+                        continue
+                    if not is_safe_and_educational(title, href, snippet):
+                        continue
+
+                    domain = _clean_domain(href)
+                    is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
+                    doc_type = _classify_pdf_doc_type(title, href, snippet) if is_pdf else _classify_web_doc_type(title, href, snippet)
+                    is_academic = is_trusted_academic(href)
+
+                    items.append({
+                        "title": re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip() or title,
+                        "url": href,
+                        "domain": domain,
+                        "breadcrumb": _clean_breadcrumb(href),
+                        "doc_type": doc_type,
+                        "snippet": snippet or f"Web result for {query} from {domain}.",
+                        "is_pdf": is_pdf,
+                        "is_academic": is_academic,
+                        "engine": r.get("engine", "web"),
+                        "score": r.get("score", 0),
+                    })
+
+                    if len(items) >= limit:
+                        break
+
+                if items:
+                    logger.info(f"SearXNG({base_url}): {len(items)} results for '{query}'")
+                    return items  # Got results — stop trying other instances
+
+        except Exception as e:
+            logger.warning(f"SearXNG instance {base_url} failed: {e}")
+            continue
+
+    return items
+
+
 class WebSearchEngine:
     @staticmethod
     def search(
-        query: str, 
-        file_format: str = "all", 
-        filter_category: str = "All", 
-        top_k: int = 8
+        query: str,
+        file_format: str = "all",
+        filter_category: str = "All",
+        top_k: int = 12
     ) -> List[Dict[str, Any]]:
         clean_q = (query or "").strip()
         if not clean_q:
             clean_q = "Operating Systems Deadlock"
 
-        # ── Step 1: Open World-Wide Internet Search Query (No University Domain Restriction) ──
-        if file_format.lower() == "pdf":
-            augmented_query = f"{clean_q} filetype:pdf"
-        else:
-            augmented_query = clean_q
+        augmented_query = f"{clean_q} filetype:pdf" if file_format.lower() == "pdf" else clean_q
 
         results = []
         seen_urls = set()
@@ -372,7 +459,7 @@ class WebSearchEngine:
             seen_urls.add(u.lower())
             results.append(r_dict)
 
-        # ── Step 2: Try Official Google API if configured ──
+        # ── Step 1: Official Google Custom Search API (if configured) ──────────
         if GOOGLE_API_KEY and GOOGLE_SEARCH_CX:
             try:
                 g_url = "https://www.googleapis.com/customsearch/v1"
@@ -386,127 +473,122 @@ class WebSearchEngine:
                 if file_format.lower() == "pdf":
                     params["fileType"] = "pdf"
 
-                headers = {"User-Agent": USER_AGENT}
-                with httpx.Client(timeout=3.5, headers=headers) as client:
+                with httpx.Client(timeout=4.0, headers={"User-Agent": USER_AGENT}) as client:
                     resp = client.get(g_url, params=params)
                     if resp.status_code == 200:
-                        data = resp.json()
-                        items = data.get("items", [])
-                        for item in items:
+                        for item in resp.json().get("items", []):
                             href = item.get("link", "")
                             title = item.get("title", "")
                             snippet = item.get("snippet", "")
-
                             if not is_safe_and_educational(title, href, snippet):
                                 continue
-
                             domain = _clean_domain(href)
-                            is_pdf = href.lower().endswith(".pdf") or item.get("fileFormat") == "PDF/Adobe Acrobat" or file_format.lower() == "pdf"
-                            doc_type = _classify_pdf_doc_type(title, href, snippet) if is_pdf else "Web Document"
+                            is_pdf = href.lower().endswith(".pdf") or file_format.lower() == "pdf"
+                            doc_type = _classify_pdf_doc_type(title, href, snippet) if is_pdf else _classify_web_doc_type(title, href, snippet)
                             is_academic = is_trusted_academic(href)
-
                             add_result({
-                                "id": f"gapi-{len(results) + 1}",
-                                "title": title.replace(" [PDF]", "").replace("PDF ", "").strip(),
+                                "id": f"gapi-{len(results)+1}",
+                                "title": title.replace(" [PDF]", "").strip(),
                                 "url": href,
                                 "domain": domain,
                                 "breadcrumb": _clean_breadcrumb(href),
                                 "website": domain.capitalize(),
-                                "reason": f"Verified Academic • {doc_type}" if is_academic else f"Google Index • {doc_type}",
-                                "learning_level": "University Verified" if is_academic else "Placement Ready",
                                 "doc_type": doc_type,
-                                "file_type": "PDF" if is_pdf else "HTML",
+                                "file_type": "PDF" if is_pdf else "Website",
                                 "is_pdf": is_pdf,
                                 "filter_tag": filter_category,
-                                "quality_score": 4.98 if is_academic else 4.88,
+                                "quality_score": 4.99 if is_academic else 4.92,
                                 "verified": True,
                                 "is_academic": is_academic,
-                                "description": snippet or f"Indexed academic document on {clean_q}.",
-                                "preview_content": snippet
+                                "description": snippet,
+                                "preview_content": snippet,
                             })
             except Exception as e:
-                logger.warning(f"Official Google API request failed: {e}")
+                logger.warning(f"Google API failed: {e}")
 
-        # ── Step 3: Zero-Key Web Search via DDGS (Multi-backend for high reliability) ──
+        # ── Step 2: SearXNG Metasearch (Google + Bing + DDG aggregated) ──────
+        if len(results) < top_k:
+            try:
+                searxng_docs = fetch_searxng_results(augmented_query, limit=top_k + 4)
+                for doc in searxng_docs:
+                    is_academic = doc.get("is_academic", False)
+                    add_result({
+                        "id": f"searx-{len(results)+1}",
+                        "title": doc["title"],
+                        "url": doc["url"],
+                        "domain": doc["domain"],
+                        "breadcrumb": doc.get("breadcrumb", doc["domain"]),
+                        "website": doc["domain"].split(".")[0].capitalize(),
+                        "doc_type": doc.get("doc_type", "Web Result"),
+                        "file_type": "PDF" if doc.get("is_pdf") else "Website",
+                        "is_pdf": doc.get("is_pdf", False),
+                        "filter_tag": filter_category,
+                        "quality_score": 4.97 if is_academic else 4.89,
+                        "verified": True,
+                        "is_academic": is_academic,
+                        "description": doc.get("snippet", ""),
+                        "preview_content": doc.get("snippet", "")[:220],
+                    })
+            except Exception as e:
+                logger.warning(f"SearXNG step failed: {e}")
+
+        # ── Step 3: DuckDuckGo Search (DDGS) — fallback if SearXNG unavailable ─
         if len(results) < top_k and DDGS is not None:
-            ddg_queries = [augmented_query]
-            if len(results) < 4:
-                ddg_queries.append(f"{clean_q} tutorial guide documentation")
-
-            for q_str in ddg_queries:
+            for b in ["lite", "html", "api"]:
                 if len(results) >= top_k:
                     break
-                for b in ["lite", "html", "api"]:
-                    try:
-                        with DDGS() as ddgs:
-                            raw_items = list(ddgs.text(q_str, backend=b, max_results=top_k + 6))
-                            if not raw_items:
+                try:
+                    with DDGS() as ddgs:
+                        raw_items = list(ddgs.text(augmented_query, backend=b, max_results=top_k + 6))
+                        for item in raw_items:
+                            href = item.get("href") or item.get("url") or ""
+                            title = (item.get("title") or "").strip()
+                            body = (item.get("body") or item.get("snippet") or "").strip()
+                            if not href or not title:
                                 continue
-                            for item in raw_items:
-                                href = item.get("href") or item.get("url") or ""
-                                title = (item.get("title") or "").strip()
-                                body = (item.get("body") or item.get("snippet") or "").strip()
+                            if not is_safe_and_educational(title, href, body):
+                                continue
+                            domain = _clean_domain(href)
+                            is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
+                            if file_format.lower() == "pdf":
+                                is_pdf = True
+                            doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else _classify_web_doc_type(title, href, body)
+                            clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
+                            is_academic = is_trusted_academic(href)
+                            add_result({
+                                "id": f"ddg-{len(results)+1}",
+                                "title": clean_title or title,
+                                "url": href,
+                                "domain": domain,
+                                "breadcrumb": _clean_breadcrumb(href),
+                                "website": domain.capitalize(),
+                                "doc_type": doc_type,
+                                "file_type": "PDF" if is_pdf else "Website",
+                                "is_pdf": is_pdf,
+                                "filter_tag": filter_category,
+                                "quality_score": 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2),
+                                "verified": True,
+                                "is_academic": is_academic,
+                                "description": body or f"Web result for {clean_q}.",
+                                "preview_content": body[:220] if body else "",
+                            })
+                        if len(results) >= top_k:
+                            break
+                except Exception as e:
+                    logger.warning(f"DDGS backend {b} failed: {e}")
+                    continue
 
-                                if not href or not title:
-                                    continue
-
-                                # Strict safety filter
-                                if not is_safe_and_educational(title, href, body):
-                                    continue
-
-                                domain = _clean_domain(href)
-                                url_lower = href.lower()
-                                text_combined = f"{title} {body}".lower()
-                                is_pdf_url = url_lower.endswith(".pdf") or ".pdf" in url_lower or "viewpdf" in url_lower
-                                is_pdf_text = any(k in text_combined for k in ["[pdf]", "(pdf)", "pdf document", "pdf slides", "lecture slides", "lecture notes"])
-                                is_pdf = is_pdf_url or is_pdf_text
-
-                                if file_format.lower() == "pdf":
-                                    is_pdf = True
-
-                                doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else _classify_web_doc_type(title, href, body)
-                                clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
-                                is_academic = is_trusted_academic(href)
-                                quality_score = 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2)
-
-                                add_result({
-                                    "id": f"ddg-{len(results) + 1}",
-                                    "title": clean_title or title,
-                                    "url": href,
-                                    "domain": domain,
-                                    "breadcrumb": _clean_breadcrumb(href),
-                                    "website": domain.capitalize(),
-                                    "reason": f"Verified Technical Web Portal • {doc_type}",
-                                    "learning_level": "University Verified" if is_academic else "Placement Ready",
-                                    "doc_type": doc_type,
-                                    "file_type": "PDF" if is_pdf else "Website",
-                                    "is_pdf": is_pdf,
-                                    "filter_tag": filter_category,
-                                    "quality_score": quality_score,
-                                    "verified": True,
-                                    "is_academic": is_academic,
-                                    "description": body or f"Live web documentation covering {clean_q}.",
-                                    "preview_content": body[:220] if body else ""
-                                })
-                            if len(results) >= top_k:
-                                break
-                    except Exception as e:
-                        logger.warning(f"DDGS engine {b} exception: {e}")
-                        continue
-
-        # ── Step 4: Live Open-Web HackerNews Algolia Search (Global Tech Articles & Blogs) ──
+        # ── Step 4: HackerNews Algolia (engineering articles across the web) ──
         if len(results) < top_k:
             hn_docs = fetch_hn_open_web_documents(clean_q, limit=6)
             for doc in hn_docs:
                 add_result({
-                    "id": f"web-{len(results) + 1}",
+                    "id": f"web-{len(results)+1}",
                     "title": doc["title"],
                     "url": doc["url"],
                     "domain": doc["domain"],
-                    "breadcrumb": f"{doc['domain']} › {clean_q.lower().replace(' ', '-')}",
+                    "breadcrumb": _clean_breadcrumb(doc["url"]),
                     "website": doc["domain"].capitalize(),
-                    "reason": "Open Web Technical Article",
-                    "learning_level": "Industry Standard",
                     "doc_type": doc["doc_type"],
                     "file_type": "PDF" if doc["is_pdf"] else "Web",
                     "is_pdf": doc["is_pdf"],
@@ -515,22 +597,20 @@ class WebSearchEngine:
                     "verified": True,
                     "is_academic": False,
                     "description": doc["snippet"],
-                    "preview_content": doc["snippet"]
+                    "preview_content": doc["snippet"],
                 })
 
-        # ── Step 5: Live Developer Community (Dev.to) ──
+        # ── Step 5: Dev.to ────────────────────────────────────────────────────
         if len(results) < top_k:
             devto_docs = fetch_devto_documents(clean_q, limit=4)
             for doc in devto_docs:
                 add_result({
-                    "id": f"devto-{len(results) + 1}",
+                    "id": f"devto-{len(results)+1}",
                     "title": doc["title"],
                     "url": doc["url"],
                     "domain": doc["domain"],
                     "breadcrumb": f"dev.to › {clean_q.lower().replace(' ', '-')}",
-                    "website": "Dev.to Engineering",
-                    "reason": "Developer Community Guide",
-                    "learning_level": "Practical Engineering",
+                    "website": "Dev.to",
                     "doc_type": doc["doc_type"],
                     "file_type": "Web",
                     "is_pdf": False,
@@ -539,46 +619,40 @@ class WebSearchEngine:
                     "verified": True,
                     "is_academic": False,
                     "description": doc["snippet"],
-                    "preview_content": doc["snippet"]
+                    "preview_content": doc["snippet"],
                 })
 
-        # ── Step 6: arXiv Official Academic Search (If PDF or Research requested) ──
+        # ── Step 6: arXiv (PDF / Research mode only) ─────────────────────────
         if len(results) < top_k and (file_format.lower() == "pdf" or filter_category == "Research Papers"):
-            arxiv_docs = fetch_arxiv_documents(clean_q, limit=2)
-            for doc in arxiv_docs:
+            for doc in fetch_arxiv_documents(clean_q, limit=3):
                 add_result({
-                    "id": f"arxiv-{len(results) + 1}",
+                    "id": f"arxiv-{len(results)+1}",
                     "title": doc["title"],
                     "url": doc["url"],
                     "domain": doc["domain"],
-                    "breadcrumb": f"arxiv.org › pdf › {clean_q.lower().replace(' ', '-')}",
-                    "website": "ArXiv Academic Archive",
-                    "reason": "Peer-Reviewed Paper • PDF",
-                    "learning_level": "Research Level",
+                    "breadcrumb": f"arxiv.org › pdf",
+                    "website": "ArXiv",
                     "doc_type": "Academic Research Paper",
                     "file_type": "PDF",
                     "is_pdf": True,
                     "filter_tag": filter_category,
                     "quality_score": 4.90,
                     "verified": True,
-                    "is_academic": False,
+                    "is_academic": True,
                     "description": doc["snippet"],
-                    "preview_content": doc["snippet"]
+                    "preview_content": doc["snippet"],
                 })
 
-        # ── Step 7: Wikipedia Open Reference ──
+        # ── Step 7: Wikipedia ─────────────────────────────────────────────────
         if len(results) < top_k:
-            wiki_docs = fetch_wikipedia_documents(clean_q, limit=2)
-            for doc in wiki_docs:
+            for doc in fetch_wikipedia_documents(clean_q, limit=2):
                 add_result({
-                    "id": f"wiki-{len(results) + 1}",
+                    "id": f"wiki-{len(results)+1}",
                     "title": doc["title"],
                     "url": doc["url"],
                     "domain": doc["domain"],
                     "breadcrumb": f"wikipedia.org › {clean_q.lower().replace(' ', '_')}",
-                    "website": "Wikipedia Open Reference",
-                    "reason": "Open Reference Document",
-                    "learning_level": "Placement Ready",
+                    "website": "Wikipedia",
                     "doc_type": "Reference Document",
                     "file_type": "PDF" if file_format.lower() == "pdf" else "Web",
                     "is_pdf": file_format.lower() == "pdf",
@@ -587,12 +661,12 @@ class WebSearchEngine:
                     "verified": True,
                     "is_academic": False,
                     "description": doc["snippet"],
-                    "preview_content": doc["snippet"]
+                    "preview_content": doc["snippet"],
                 })
 
-        # Natural relevance sorting (No artificial university boost)
         results.sort(key=lambda r: r.get("quality_score", 0), reverse=True)
         return results[:top_k]
+
 
 
 def search_web_rag(

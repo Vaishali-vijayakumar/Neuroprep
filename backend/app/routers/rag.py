@@ -109,6 +109,25 @@ async def search_web_rag_post(request: WebRagRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Web search failed: {str(e)}")
 
+@router.get("/search-web", response_model=WebRagResponse)
+async def search_web_rag_get(
+    query: str = "",
+    file_format: str = "pdf",
+    category_filter: str = "All",
+    top_k: int = 8
+):
+    if not query or not query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    try:
+        return search_web_rag(
+            query=query,
+            file_format=file_format,
+            category_filter=category_filter,
+            top_k=top_k
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Web search failed: {str(e)}")
+
 @router.post("/fetch-document", response_model=FetchDocResponse)
 async def fetch_document_post(request: FetchDocRequest):
     if not request.url or not request.url.strip():

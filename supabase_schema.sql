@@ -1,4 +1,4 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- NEUROPREP SUPABASE SCHEMA
 -- Run these scripts in the Supabase SQL Editor to create the necessary tables
 -- ==============================================================================
@@ -205,3 +205,58 @@ CREATE POLICY "Allow all for authenticated" ON public.company_experiences FOR AL
 CREATE POLICY "Allow all for authenticated" ON public.roadmap_progress FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated" ON public.sheets_completed FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated" ON public.daily_challenges_solved FOR ALL USING (true);
+
+-- ==============================================================================
+-- AUTOMATIC PROFILE CREATION (TRIGGER & BACKFILL)
+-- ==============================================================================
+
+-- 1. Trigger Function: Automatically creates a row in public.profiles whenever
+--    a user signs up or is created in Supabase Auth (auth.users)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email, name, college, department, graduation_year)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+        COALESCE(NEW.raw_user_meta_data->>'college', ''),
+        COALESCE(NEW.raw_user_meta_data->>'department', ''),
+        COALESCE((NEW.raw_user_meta_data->>'graduation_year')::integer, 2026)
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        name = COALESCE(EXCLUDED.name, profiles.name),
+        college = COALESCE(EXCLUDED.college, profiles.college),
+        department = COALESCE(EXCLUDED.department, profiles.department),
+        graduation_year = COALESCE(EXCLUDED.graduation_year, profiles.graduation_year),
+        updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. Bind Trigger to auth.users table
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- 3. Backfill Query: Populate public.profiles for any users already registered in Supabase Auth
+--    (e.g., users who registered before this trigger was added)
+INSERT INTO public.profiles (id, email, name, college, department, graduation_year)
+SELECT 
+    id,
+    email,
+    COALESCE(raw_user_meta_data->>'name', split_part(email, '@', 1)),
+    COALESCE(raw_user_meta_data->>'college', ''),
+    COALESCE(raw_user_meta_data->>'department', ''),
+    COALESCE((raw_user_meta_data->>'graduation_year')::integer, 2026)
+FROM auth.users
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = COALESCE(EXCLUDED.name, profiles.name),
+    college = COALESCE(EXCLUDED.college, profiles.college),
+    department = COALESCE(EXCLUDED.department, profiles.department),
+    graduation_year = COALESCE(EXCLUDED.graduation_year, profiles.graduation_year),
+    updated_at = NOW();
+

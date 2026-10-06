@@ -134,19 +134,48 @@ export const dbService = {
       }
 
       // Retrieve stored profile from Supabase
-      const { data: profileData } = await supabase
+      let { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('email', normEmail)
         .maybeSingle();
 
-      const userProfile = profileData || {
+      // If user exists in Supabase Auth but has no row in public.profiles table,
+      // auto-create and persist the profile row in Supabase now!
+      if (!profileData && data.user?.id) {
+        const meta = data.user.user_metadata || {};
+        const newRecord = {
+          id: data.user.id,
+          email: normEmail,
+          name: meta.name || normEmail.split('@')[0],
+          college: meta.college || '',
+          department: meta.department || '',
+          graduation_year: Number(meta.graduation_year) || 2026,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data: inserted, error: insertErr } = await supabase
+          .from('profiles')
+          .upsert(newRecord, { onConflict: 'id' })
+          .select()
+          .maybeSingle();
+
+        if (insertErr) {
+          console.warn('Notice: Error auto-creating profile in Supabase profiles table:', insertErr.message);
+        }
+        profileData = inserted || newRecord;
+      }
+
+      const userProfile = {
+        ...(profileData || {}),
         id: data.user?.id,
         email: normEmail,
-        name: data.user?.user_metadata?.name || normEmail.split('@')[0],
-        college: data.user?.user_metadata?.college || '',
-        department: data.user?.user_metadata?.department || '',
-        graduationYear: data.user?.user_metadata?.graduation_year || 2026,
+        name: profileData?.name || data.user?.user_metadata?.name || normEmail.split('@')[0],
+        college: profileData?.college || data.user?.user_metadata?.college || '',
+        department: profileData?.department || data.user?.user_metadata?.department || '',
+        graduationYear: profileData?.graduation_year ?? profileData?.graduationYear ?? 2026,
+        graduation_year: profileData?.graduation_year ?? profileData?.graduationYear ?? 2026,
       };
 
       return { success: true, user: userProfile };
@@ -164,7 +193,12 @@ export const dbService = {
         .select('*')
         .eq('email', normEmail)
         .maybeSingle();
-      return data || null;
+      if (!data) return null;
+      return {
+        ...data,
+        graduationYear: data.graduation_year ?? data.graduationYear ?? 2026,
+        graduation_year: data.graduation_year ?? data.graduationYear ?? 2026,
+      };
     } catch (e) {
       return null;
     }
@@ -173,13 +207,39 @@ export const dbService = {
   async saveUserProfile(email, updatedProfile) {
     if (!email) return null;
     const normEmail = email.trim().toLowerCase();
-    const merged = { ...updatedProfile, email: normEmail, updated_at: new Date().toISOString() };
+
+    // Determine user ID if available
+    let userId = updatedProfile?.id;
+    if (!userId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email?.toLowerCase() === normEmail) {
+          userId = user.id;
+        }
+      } catch (_) {}
+    }
+
+    const cleanRecord = {
+      ...(userId ? { id: userId } : {}),
+      email: normEmail,
+      name: updatedProfile.name || normEmail.split('@')[0],
+      college: updatedProfile.college || '',
+      department: updatedProfile.department || '',
+      graduation_year: Number(updatedProfile.graduation_year ?? updatedProfile.graduationYear) || 2026,
+      updated_at: new Date().toISOString()
+    };
+
     try {
-      await supabase.from('profiles').upsert(merged, { onConflict: 'email' });
+      await supabase.from('profiles').upsert(cleanRecord, { onConflict: 'email' });
     } catch (e) {
       console.warn('Supabase profile sync notice:', e);
     }
-    return merged;
+    return {
+      ...updatedProfile,
+      ...cleanRecord,
+      graduationYear: cleanRecord.graduation_year,
+      graduation_year: cleanRecord.graduation_year
+    };
   },
 
   clearAllUsers() {

@@ -40,19 +40,37 @@ export default function App() {
         const { data: { session: sbSession } } = await supabase.auth.getSession();
         if (!mounted) return;
         if (sbSession?.user) {
-          // Valid Supabase session — restore profile from localStorage if it matches
-          const stored = localStorage.getItem(SESSION_STORAGE_KEY);
-          const parsed = stored ? JSON.parse(stored) : null;
-          const matchesEmail = parsed?.email?.toLowerCase() === sbSession.user.email?.toLowerCase();
-          const userProfile = matchesEmail ? parsed : {
-            email: sbSession.user.email,
-            name: sbSession.user.user_metadata?.name || sbSession.user.email.split('@')[0],
-            college: sbSession.user.user_metadata?.college || '',
-            department: sbSession.user.user_metadata?.department || '',
-            graduationYear: sbSession.user.user_metadata?.graduation_year || '',
+          const userEmail = sbSession.user.email?.toLowerCase();
+
+          // Fetch profile directly from Supabase profiles table
+          let profileData = await dbService.getUserProfile(userEmail);
+
+          // If auth user exists in Supabase Auth but has no row in profiles table, create it now!
+          if (!profileData) {
+            const fallbackProfile = {
+              id: sbSession.user.id,
+              email: userEmail,
+              name: sbSession.user.user_metadata?.name || userEmail.split('@')[0],
+              college: sbSession.user.user_metadata?.college || '',
+              department: sbSession.user.user_metadata?.department || '',
+              graduationYear: Number(sbSession.user.user_metadata?.graduation_year) || 2026,
+              graduation_year: Number(sbSession.user.user_metadata?.graduation_year) || 2026,
+            };
+            profileData = await dbService.saveUserProfile(userEmail, fallbackProfile);
+          }
+
+          const userProfile = {
+            id: sbSession.user.id,
+            email: userEmail,
+            name: profileData?.name || sbSession.user.user_metadata?.name || userEmail.split('@')[0],
+            college: profileData?.college || sbSession.user.user_metadata?.college || '',
+            department: profileData?.department || sbSession.user.user_metadata?.department || '',
+            graduationYear: profileData?.graduationYear ?? profileData?.graduation_year ?? 2026,
+            graduation_year: profileData?.graduation_year ?? profileData?.graduationYear ?? 2026,
           };
+
           setSession(userProfile);
-          setProfile(userProfile);
+          setProfile(prev => ({ ...prev, ...userProfile }));
           setIsAuthenticated(true);
           setIsLanding(false);
           localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(userProfile));

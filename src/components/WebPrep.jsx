@@ -246,7 +246,16 @@ const getOfflineFallback = (q, mode) => {
         throw new Error(lastError || 'Server connection failed');
       }
 
-      const results = data.organic_results || [];
+      const NSFW_REGEX = /\b(porn|xxx|sex|nude|nudity|erotic|escort|dating|adult|cam|onlyfans|nsfw|hentai|milf|blowjob|fuck|boobs|tits|vagina|penis|dildo|casino|betting|gambling|warez|torrent)\b/i;
+      const BLOCKED_DOMAINS = ['pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube', 'youporn', 'chaturbate', 'livejasmin', 'stripchat', 'onlyfans'];
+
+      const rawResults = data.organic_results || [];
+      const results = rawResults.filter(item => {
+        const text = `${item.title || ''} ${item.url || ''} ${item.description || ''} ${item.snippet || ''}`.toLowerCase();
+        if (NSFW_REGEX.test(text)) return false;
+        if (BLOCKED_DOMAINS.some(d => (item.url || '').toLowerCase().includes(d))) return false;
+        return true;
+      });
 
       setSearchResult({
         query: cleanQ,

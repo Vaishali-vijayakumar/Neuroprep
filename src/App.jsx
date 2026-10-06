@@ -332,7 +332,8 @@ export default function App() {
   }, []);
 
   const handleOpenAuth = (mode = 'login') => {
-    setAuthMode(mode);
+    const norm = (mode === 'signup' || mode === 'register') ? 'register' : (mode === 'forgot' ? 'forgot' : 'login');
+    setAuthMode(norm);
     setAuthModalOpen(true);
   };
 

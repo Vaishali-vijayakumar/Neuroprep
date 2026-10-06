@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react';
 import { dbService } from '../services/db';
 
+const normalizeMode = (m) => {
+  if (!m) return 'login';
+  const lower = String(m).toLowerCase();
+  if (lower === 'login' || lower === 'signin' || lower === 'sign_in') return 'login';
+  if (lower === 'register' || lower === 'signup' || lower === 'sign_up') return 'register';
+  if (lower === 'forgot' || lower === 'reset') return 'forgot';
+  if (lower === 'confirm_email') return 'confirm_email';
+  return 'register';
+};
+
 export default function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }) {
-  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot' | 'confirm_email'
+  const [mode, setMode] = useState(() => normalizeMode(initialMode)); // 'login' | 'register' | 'forgot' | 'confirm_email'
+
+  useEffect(() => {
+    setMode(normalizeMode(initialMode));
+  }, [initialMode]);
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');

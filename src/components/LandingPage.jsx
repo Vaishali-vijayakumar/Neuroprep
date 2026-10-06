@@ -148,7 +148,7 @@ export default function LandingPage({ onOpenAuth }) {
           <button onClick={() => onOpenAuth('login')} className="btn-secondary-spec" style={{
             padding: '9px 22px', fontSize: '0.86rem', fontWeight: 700, borderRadius: '10px'
           }}>Sign In</button>
-          <button onClick={() => onOpenAuth('signup')} className="btn-primary-spec" style={{
+          <button onClick={() => onOpenAuth('register')} className="btn-primary-spec" style={{
             padding: '9px 24px', fontSize: '0.86rem', fontWeight: 700, borderRadius: '10px'
           }}>Get Started Free</button>
         </div>
@@ -182,7 +182,7 @@ export default function LandingPage({ onOpenAuth }) {
         </p>
 
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 44 }}>
-          <button onClick={() => onOpenAuth('signup')} className="btn-primary-spec" style={{
+          <button onClick={() => onOpenAuth('register')} className="btn-primary-spec" style={{
             padding: '16px 38px', borderRadius: 12,
             fontSize: '0.98rem', fontWeight: 800
           }}>
@@ -499,7 +499,7 @@ export default function LandingPage({ onOpenAuth }) {
           <p style={{ color: 'var(--body-text)', marginBottom: 34, fontSize: '1.02rem', maxWidth: 540, margin: '0 auto 34px', lineHeight: 1.6 }}>
             Join thousands of engineering students mastering technical rounds, coding assessments, and aptitude concepts with AI guidance.
           </p>
-          <button onClick={() => onOpenAuth('signup')} className="btn-primary-spec" style={{
+          <button onClick={() => onOpenAuth('register')} className="btn-primary-spec" style={{
             padding: '16px 42px', borderRadius: 12,
             fontWeight: 800, fontSize: '1rem'
           }}>

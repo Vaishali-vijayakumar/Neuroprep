@@ -3,7 +3,8 @@ import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../se
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
-import { Check, TrendingUp, TrendingDown, Plane, CheckCircle2, Circle, Flame, Sparkles, ArrowRight, Target, Clock, ShieldCheck } from 'lucide-react';
+import { Check, TrendingUp, TrendingDown, Plane, CheckCircle2, Circle, Flame, Sparkles, ArrowRight, Target, Clock, ShieldCheck, Plus, Trash2, X } from 'lucide-react';
+import { getGamificationData, recordActivity } from '../services/gamificationService';
 
 export default function Dashboard({ 
   profile = {}, 
@@ -51,95 +52,193 @@ export default function Dashboard({
 
   const adaptiveSettings = getAdaptiveInterviewSettings(moodState.stress, moodState.confidence);
 
-  // Daily Flight Plan state with per-day localStorage persistence
-  const todayDateKey = new Date().toISOString().split('T')[0];
-  const flightStorageKey = `neuroprep_flight_plan_${(profile?.email || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${todayDateKey}`;
-
-  const [flightMissions, setFlightMissions] = useState(() => {
-    try {
-      const saved = localStorage.getItem(flightStorageKey);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
+  // 24-Hour Countdown Timer to midnight for maintaining daily streak
+  const [timeLeftToday, setTimeLeftToday] = useState(() => {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const diff = Math.max(0, midnight.getTime() - now.getTime());
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     return {
-      dsa: Boolean(codingState?.score > 0 || codingState?.solvedCount > 0),
-      mock: Boolean(interviewState?.lastScore > 0 || interviewState?.totalCompleted > 0),
-      apti: Boolean(aptitudeState?.score > 0 || aptitudeState?.totalTests > 0),
-      resilience: Boolean(moodState?.stress > 0 || (journalEntries && journalEntries.length > 0))
+      hours: String(hours).padStart(2, '0'),
+      minutes: String(minutes).padStart(2, '0'),
+      seconds: String(seconds).padStart(2, '0')
     };
   });
 
-  const toggleMission = (key) => {
-    setFlightMissions(prev => {
-      const next = { ...prev, [key]: !prev[key] };
-      try { localStorage.setItem(flightStorageKey, JSON.stringify(next)); } catch (_) {}
-      return next;
-    });
-  };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const diff = Math.max(0, midnight.getTime() - now.getTime());
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeftToday({
+        hours: String(hours).padStart(2, '0'),
+        minutes: String(minutes).padStart(2, '0'),
+        seconds: String(seconds).padStart(2, '0')
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const completedCount = Object.values(flightMissions).filter(Boolean).length;
-  const flightPercentage = Math.round((completedCount / 4) * 100);
+  // Gamification & Active Streak calculation
+  const gamificationData = getGamificationData(profile?.email || 'guest', {
+    solvedCount: codingState?.solvedCount || 0,
+    lastInterviewScore: interviewState?.lastScore || 0,
+    interviewCount: interviewState?.totalCompleted || 0,
+    journalCount: journalEntries?.length || 0,
+    aptitudeTestsCount: aptitudeState?.totalTests || 0,
+    name: profile?.name,
+    college: profile?.college
+  });
+  const currentStreak = Math.max(gamificationData?.activeStreak || 0, 1);
 
-  const flightMissionList = [
+  // Daily Customizable Goals with per-day localStorage persistence
+  const userSafeKey = (profile?.email || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const todayDateKey = new Date().toISOString().split('T')[0];
+  const goalsStorageKey = `neuroprep_daily_goals_${userSafeKey}_${todayDateKey}`;
+
+  const defaultStarterGoals = [
     {
-      key: 'dsa',
-      tag: 'Problem Solving',
+      id: 'goal_coding',
+      tag: 'Coding Practice',
       tagBg: 'rgba(82, 98, 87, 0.1)',
       tagColor: 'var(--btn-sage)',
-      xp: '+50 XP',
-      title: 'Solve 1 Medium Pattern Question',
-      description: 'Strengthen algorithmic intuition on Sliding Window, Two Pointers, or Binary Search.',
-      actionText: 'Launch Solver',
-      targetTab: 'coding'
+      points: '+50 Points',
+      title: 'Practice 1 Coding Problem',
+      description: 'Work through one comfortable problem today to keep your problem-solving rhythm sharp and active.',
+      actionText: 'Practice Coding',
+      targetTab: 'coding',
+      isCustom: false,
+      isDone: Boolean(codingState?.score > 0 || codingState?.solvedCount > 0)
     },
     {
-      key: 'mock',
-      tag: 'Mock Interview',
+      id: 'goal_speaking',
+      tag: 'Speaking Practice',
       tagBg: 'rgba(82, 98, 87, 0.1)',
       tagColor: 'var(--btn-sage)',
-      xp: '+40 XP',
-      title: 'Practice 90-Sec Elevator Intro & Defense',
-      description: 'Refine technical speech pacing, project articulation, and executive poise.',
-      actionText: 'Enter Mock Room',
-      targetTab: 'mock'
+      points: '+40 Points',
+      title: 'Practice 2-Minute Self Introduction',
+      description: 'Talk through your background and projects out loud with calm, relaxed confidence.',
+      actionText: 'Practice Speaking',
+      targetTab: 'mock',
+      isCustom: false,
+      isDone: Boolean(interviewState?.lastScore > 0 || interviewState?.totalCompleted > 0)
     },
     {
-      key: 'apti',
-      tag: 'Aptitude Speed',
+      id: 'goal_puzzles',
+      tag: 'Puzzles & Logic',
       tagBg: 'rgba(154, 104, 84, 0.1)',
       tagColor: 'var(--accent-terracotta)',
-      xp: '+30 XP',
-      title: 'Complete 5-Question Quant & Logic Sprint',
-      description: 'Boost numerical reasoning speed and accuracy for corporate screening tests.',
-      actionText: 'Start Drill',
-      targetTab: 'aptitude'
+      points: '+30 Points',
+      title: 'Solve 5 Quick Logic Puzzles',
+      description: 'A brief, fun warm-up to sharpen your everyday logical and mathematical intuition.',
+      actionText: 'Try Puzzles',
+      targetTab: 'aptitude',
+      isCustom: false,
+      isDone: Boolean(aptitudeState?.score > 0 || aptitudeState?.totalTests > 0)
     },
     {
-      key: 'resilience',
-      tag: 'Mindset & Calm',
+      id: 'goal_diary',
+      tag: 'Peace of Mind',
       tagBg: 'rgba(82, 98, 87, 0.1)',
       tagColor: 'var(--btn-sage)',
-      xp: '+25 XP',
-      title: 'Pre-Placement Grounding & Thought Log',
-      description: 'Release performance anxiety, log daily takeaways, or do 2-min box breathing.',
-      actionText: 'Open Journal',
-      targetTab: 'journal'
+      points: '+25 Points',
+      title: 'Write in Today’s Placement Diary',
+      description: 'Take two quiet minutes to release tension, write down your feelings, or celebrate a small win.',
+      actionText: 'Open Diary',
+      targetTab: 'journal',
+      isCustom: false,
+      isDone: Boolean(moodState?.stress > 0 || (journalEntries && journalEntries.length > 0))
     }
   ];
 
-  let flightStatusTitle = 'Preparing for Takeoff';
-  let flightStatusDesc = 'Complete your first sprint to initiate daily placement momentum.';
-  if (completedCount === 1) {
-    flightStatusTitle = 'Ascending • Gaining Altitude';
-    flightStatusDesc = 'Great start! 1 mission cleared. Keep the momentum building today.';
-  } else if (completedCount === 2) {
-    flightStatusTitle = 'Cruising Altitude • Steady Pace';
-    flightStatusDesc = 'Halfway through today’s flight plan! Placement consistency is compounding.';
-  } else if (completedCount === 3) {
-    flightStatusTitle = 'Optimal Flight Level • High Velocity';
-    flightStatusDesc = 'Almost clear! Just 1 more micro-mission to complete today.';
-  } else if (completedCount === 4) {
-    flightStatusTitle = 'Mission Accomplished • Drive Ready';
-    flightStatusDesc = 'All 4 flight missions completed! Outstanding placement consistency today.';
+  const [dailyGoals, setDailyGoals] = useState(() => {
+    try {
+      const saved = localStorage.getItem(goalsStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return defaultStarterGoals;
+  });
+
+  const saveDailyGoals = (newGoals) => {
+    setDailyGoals(newGoals);
+    try {
+      localStorage.setItem(goalsStorageKey, JSON.stringify(newGoals));
+    } catch (_) {}
+  };
+
+  const toggleGoal = (id) => {
+    const updated = dailyGoals.map(g => {
+      if (g.id === id) {
+        const nextDone = !g.isDone;
+        if (nextDone) {
+          try {
+            recordActivity(profile?.email || 'guest', 'daily_goal', 25);
+          } catch (_) {}
+        }
+        return { ...g, isDone: nextDone };
+      }
+      return g;
+    });
+    saveDailyGoals(updated);
+  };
+
+  const deleteGoal = (id) => {
+    const updated = dailyGoals.filter(g => g.id !== id);
+    saveDailyGoals(updated);
+  };
+
+  // State for adding custom goals
+  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalTag, setNewGoalTag] = useState('Study & Notes');
+  const [newGoalDesc, setNewGoalDesc] = useState('');
+
+  const handleAddCustomGoal = (e) => {
+    if (e) e.preventDefault();
+    if (!newGoalTitle.trim()) return;
+
+    const newGoal = {
+      id: `custom_${Date.now()}`,
+      tag: newGoalTag || 'Personal Goal',
+      tagBg: 'rgba(82, 98, 87, 0.1)',
+      tagColor: 'var(--btn-sage)',
+      points: '+30 Points',
+      title: newGoalTitle.trim(),
+      description: newGoalDesc.trim() || 'Custom goal added for today’s practice routine.',
+      actionText: 'Complete',
+      isCustom: true,
+      isDone: false
+    };
+
+    saveDailyGoals([...dailyGoals, newGoal]);
+    setNewGoalTitle('');
+    setNewGoalDesc('');
+    setShowAddGoalModal(false);
+  };
+
+  const totalGoalsCount = dailyGoals.length;
+  const completedGoalsCount = dailyGoals.filter(g => g.isDone).length;
+  const progressPercent = totalGoalsCount > 0 ? Math.round((completedGoalsCount / totalGoalsCount) * 100) : 0;
+
+  let progressStatusTitle = 'Ready to Begin Today';
+  let progressStatusDesc = 'Pick any goal to kickstart today’s practice and keep your streak safe.';
+  if (completedGoalsCount > 0 && completedGoalsCount < Math.ceil(totalGoalsCount / 2)) {
+    progressStatusTitle = 'Great Start!';
+    progressStatusDesc = 'You took the first step today. Keep this steady momentum going!';
+  } else if (completedGoalsCount >= Math.ceil(totalGoalsCount / 2) && completedGoalsCount < totalGoalsCount) {
+    progressStatusTitle = 'Halfway There!';
+    progressStatusDesc = 'You are doing wonderfully today. Just a few more goals to finish!';
+  } else if (completedGoalsCount === totalGoalsCount && totalGoalsCount > 0) {
+    progressStatusTitle = 'All Goals Finished Today!';
+    progressStatusDesc = 'Amazing dedication! Your daily streak is safe and protected for tomorrow.';
   }
 
   return (
@@ -179,28 +278,33 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* 2. DAILY FLIGHT PLAN (Replaced Placement Score Board) */}
+      {/* 2. TODAY'S DAILY GOALS & STREAK TRACKER */}
       <section style={{ marginBottom: '36px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
             <h2 className="section-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
-              Daily Flight Plan
+              Today's Daily Goals
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0 }}>
-              Your guided daily micro-missions. Complete quick sprints to build steady, compound placement momentum.
+              Your friendly daily checklist. Complete your tasks within 24 hours to keep your study streak alive.
             </p>
           </div>
 
-          {/* Flight Momentum & Streak Badges */}
+          {/* Streak & 24-Hour Reset Countdown Badges */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--accent-terracotta)' }}>
               <Flame style={{ width: '13px', height: '13px', color: 'var(--accent-terracotta)' }} />
-              Daily Momentum Active
+              {currentStreak} Day Streak Active
             </span>
 
             <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--btn-sage)' }}>
+              <Clock style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
+              {timeLeftToday.hours}h {timeLeftToday.minutes}m {timeLeftToday.seconds}s Left Today
+            </span>
+
+            <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--secondary-heading)' }}>
               <CheckCircle2 style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
-              {completedCount} of 4 Missions Cleared
+              {completedGoalsCount} of {totalGoalsCount} Goals Finished
             </span>
           </div>
         </div>
@@ -208,165 +312,405 @@ export default function Dashboard({
         {/* 2-Column Responsive Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.45fr) minmax(0, 1fr)', gap: '24px' }}>
           
-          {/* LEFT: 4 Actionable Mission Cards */}
+          {/* LEFT: Customizable Goal List & Add Task Form */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {flightMissionList.map((m) => {
-              const isDone = flightMissions[m.key];
-              return (
-                <div 
-                  key={m.key} 
-                  className="saas-card-spec"
+            
+            {/* Top Bar with Add Goal Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Your Tasks for Today
+              </span>
+              <button
+                onClick={() => setShowAddGoalModal(!showAddGoalModal)}
+                className="btn-primary-spec"
+                style={{
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {showAddGoalModal ? <X style={{ width: '13px', height: '13px' }} /> : <Plus style={{ width: '13px', height: '13px' }} />}
+                <span>{showAddGoalModal ? 'Cancel' : 'Add a Personal Goal'}</span>
+              </button>
+            </div>
+
+            {/* Inline Add Goal Form */}
+            {showAddGoalModal && (
+              <form 
+                onSubmit={handleAddCustomGoal}
+                className="saas-card-spec"
+                style={{
+                  padding: '20px',
+                  backgroundColor: 'rgba(235, 245, 238, 0.3)',
+                  border: '1.5px dashed var(--btn-sage)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--main-heading)' }}>
+                    Add a New Goal for Today
+                  </h4>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Resets in 24 hours
+                  </span>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="What would you like to achieve today? (e.g., Revise notes, solve 2 questions)"
+                  value={newGoalTitle}
+                  onChange={(e) => setNewGoalTitle(e.target.value)}
                   style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '16px',
-                    transition: 'all 0.2s ease',
-                    backgroundColor: isDone ? 'rgba(235, 245, 238, 0.45)' : 'var(--bg-card-solid)',
-                    border: isDone ? '1px solid rgba(82, 98, 87, 0.3)' : '1px solid var(--border-color)'
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'var(--bg-main)',
+                    color: 'var(--main-heading)',
+                    outline: 'none'
                   }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                  autoFocus
+                />
+
+                {/* Quick Category Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Category:</span>
+                  {['Study & Notes', 'Coding', 'Speaking', 'Resume', 'Self-Care'].map((cat) => (
                     <button
-                      onClick={() => toggleMission(m.key)}
-                      title={isDone ? 'Mark as incomplete' : 'Mark as completed'}
+                      key={cat}
+                      type="button"
+                      onClick={() => setNewGoalTag(cat)}
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer',
-                        marginTop: '2px',
-                        color: isDone ? 'var(--btn-sage)' : 'var(--border-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        border: newGoalTag === cat ? '1px solid var(--btn-sage)' : '1px solid var(--border-color)',
+                        backgroundColor: newGoalTag === cat ? 'var(--btn-sage)' : 'transparent',
+                        color: newGoalTag === cat ? '#ffffff' : 'var(--body-text)',
+                        cursor: 'pointer'
                       }}
                     >
-                      {isDone ? (
-                        <CheckCircle2 style={{ width: '22px', height: '22px', color: 'var(--btn-sage)' }} />
-                      ) : (
-                        <Circle style={{ width: '22px', height: '22px' }} />
-                      )}
+                      {cat}
                     </button>
+                  ))}
+                </div>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          backgroundColor: m.tagBg,
-                          color: m.tagColor
-                        }}>
-                          {m.tag}
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {m.xp}
-                        </span>
-                      </div>
+                <input
+                  type="text"
+                  placeholder="Optional note or reminder (e.g., Spend 15 minutes before evening)"
+                  value={newGoalDesc}
+                  onChange={(e) => setNewGoalDesc(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '12px',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'var(--bg-main)',
+                    color: 'var(--main-heading)',
+                    outline: 'none'
+                  }}
+                />
 
-                      <h4 style={{
-                        fontSize: '15px',
-                        fontWeight: 700,
-                        color: isDone ? 'var(--text-muted)' : 'var(--main-heading)',
-                        textDecoration: isDone ? 'line-through' : 'none',
-                        margin: '0 0 2px 0',
-                        lineHeight: 1.3
-                      }}>
-                        {m.title}
-                      </h4>
-
-                      <p style={{
-                        fontSize: '12.5px',
-                        color: 'var(--body-text)',
-                        margin: 0,
-                        lineHeight: 1.4,
-                        opacity: isDone ? 0.75 : 1
-                      }}>
-                        {m.description}
-                      </p>
-                    </div>
-                  </div>
-
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
                   <button
-                    onClick={() => setActiveTab(m.targetTab)}
-                    className="btn-primary-spec"
+                    type="button"
+                    onClick={() => setShowAddGoalModal(false)}
                     style={{
                       padding: '7px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--body-text)',
                       fontSize: '12px',
-                      flexShrink: 0,
-                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary-spec"
+                    style={{
+                      padding: '7px 18px',
+                      fontSize: '12px',
                       borderRadius: '8px'
                     }}
                   >
-                    <span>{m.actionText}</span>
-                    <ArrowRight style={{ width: '13px', height: '13px' }} />
+                    Save Goal
                   </button>
                 </div>
-              );
-            })}
+              </form>
+            )}
+
+            {/* List of Goals */}
+            {dailyGoals.length === 0 ? (
+              <div className="saas-card-spec" style={{ padding: '32px', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '0 0 12px 0' }}>
+                  No goals set for today yet.
+                </p>
+                <button
+                  onClick={() => setShowAddGoalModal(true)}
+                  className="btn-primary-spec"
+                  style={{ fontSize: '12px', padding: '8px 16px', margin: '0 auto' }}
+                >
+                  <Plus style={{ width: '13px', height: '13px', marginRight: '4px' }} />
+                  Add Your First Goal
+                </button>
+              </div>
+            ) : (
+              dailyGoals.map((g) => {
+                const isDone = Boolean(g.isDone);
+                return (
+                  <div 
+                    key={g.id} 
+                    className="saas-card-spec"
+                    style={{
+                      padding: '16px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '16px',
+                      transition: 'all 0.2s ease',
+                      backgroundColor: isDone ? 'rgba(235, 245, 238, 0.45)' : 'var(--bg-card-solid)',
+                      border: isDone ? '1px solid rgba(82, 98, 87, 0.3)' : '1px solid var(--border-color)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                      <button
+                        onClick={() => toggleGoal(g.id)}
+                        title={isDone ? 'Mark as incomplete' : 'Mark as completed'}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          marginTop: '2px',
+                          color: isDone ? 'var(--btn-sage)' : 'var(--border-color)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        {isDone ? (
+                          <CheckCircle2 style={{ width: '22px', height: '22px', color: 'var(--btn-sage)' }} />
+                        ) : (
+                          <Circle style={{ width: '22px', height: '22px' }} />
+                        )}
+                      </button>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            letterSpacing: '0.02em',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: g.tagBg || 'rgba(82, 98, 87, 0.1)',
+                            color: g.tagColor || 'var(--btn-sage)'
+                          }}>
+                            {g.tag}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {g.points || '+30 Points'}
+                          </span>
+                        </div>
+
+                        <h4 style={{
+                          fontSize: '15px',
+                          fontWeight: 700,
+                          color: isDone ? 'var(--text-muted)' : 'var(--main-heading)',
+                          textDecoration: isDone ? 'line-through' : 'none',
+                          margin: '0 0 2px 0',
+                          lineHeight: 1.3
+                        }}>
+                          {g.title}
+                        </h4>
+
+                        <p style={{
+                          fontSize: '12.5px',
+                          color: 'var(--body-text)',
+                          margin: 0,
+                          lineHeight: 1.4,
+                          opacity: isDone ? 0.75 : 1
+                        }}>
+                          {g.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {g.targetTab ? (
+                        <button
+                          onClick={() => setActiveTab(g.targetTab)}
+                          className="btn-primary-spec"
+                          style={{
+                            padding: '7px 14px',
+                            fontSize: '12px',
+                            gap: '4px',
+                            borderRadius: '8px'
+                          }}
+                        >
+                          <span>{g.actionText}</span>
+                          <ArrowRight style={{ width: '13px', height: '13px' }} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => toggleGoal(g.id)}
+                          className="btn-primary-spec"
+                          style={{
+                            padding: '7px 14px',
+                            fontSize: '12px',
+                            gap: '4px',
+                            borderRadius: '8px',
+                            backgroundColor: isDone ? 'rgba(82, 98, 87, 0.2)' : undefined,
+                            color: isDone ? 'var(--btn-sage)' : undefined
+                          }}
+                        >
+                          <span>{isDone ? 'Completed' : 'Complete'}</span>
+                          <Check style={{ width: '13px', height: '13px' }} />
+                        </button>
+                      )}
+
+                      {/* Delete button for custom tasks or any goal */}
+                      {g.isCustom && (
+                        <button
+                          onClick={() => deleteGoal(g.id)}
+                          title="Remove Goal"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '6px',
+                            cursor: 'pointer',
+                            color: 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-terracotta)'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                        >
+                          <Trash2 style={{ width: '15px', height: '15px' }} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
-          {/* RIGHT: Flight Telemetry & Readiness Trajectory */}
+          {/* RIGHT: Daily Progress, 24-Hour Timer, Dream Goal & Tip */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
-            {/* 1. Daily Flight Status & Altitude Gauge */}
+            {/* 1. Daily Progress & Milestone Tracker */}
             <div className="saas-card-spec" style={{ padding: '22px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <span className="pill-tag" style={{ margin: 0 }}>Flight Telemetry</span>
+                <span className="pill-tag" style={{ margin: 0 }}>Daily Progress</span>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                  {flightPercentage}% Altitude
+                  {progressPercent}% Complete
                 </span>
               </div>
 
               <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '6px' }}>
-                {flightStatusTitle}
+                {progressStatusTitle}
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-                {flightStatusDesc}
+                {progressStatusDesc}
               </p>
 
-              {/* Altitude Multi-Step Indicator */}
+              {/* Progress 4-Step Indicator */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                {[1, 2, 3, 4].map((step) => (
-                  <div
-                    key={step}
-                    style={{
-                      flex: 1,
-                      height: '7px',
-                      borderRadius: '4px',
-                      backgroundColor: completedCount >= step ? 'var(--btn-sage)' : 'rgba(216, 210, 206, 0.45)',
-                      transition: 'background-color 0.3s ease'
-                    }}
-                  />
-                ))}
+                {[1, 2, 3, 4].map((step) => {
+                  const targetThreshold = step * 25;
+                  const isReached = progressPercent >= targetThreshold || (step === 1 && completedGoalsCount > 0);
+                  return (
+                    <div
+                      key={step}
+                      style={{
+                        flex: 1,
+                        height: '7px',
+                        borderRadius: '4px',
+                        backgroundColor: isReached ? 'var(--btn-sage)' : 'rgba(216, 210, 206, 0.45)',
+                        transition: 'background-color 0.3s ease'
+                      }}
+                    />
+                  );
+                })}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                <span>Runway</span>
-                <span>Ascending</span>
-                <span>Cruising</span>
-                <span>Drive Ready</span>
+                <span>Start</span>
+                <span>In Progress</span>
+                <span>Almost There</span>
+                <span>Streak Safe</span>
               </div>
             </div>
 
-            {/* 2. Target Destination Card */}
+            {/* 2. 24-Hour Streak Window Card */}
+            <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Clock style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
+                <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                  24-Hour Goal Timer
+                </span>
+              </div>
+
+              <div style={{ 
+                fontSize: '26px', 
+                fontWeight: 800, 
+                color: 'var(--main-heading)', 
+                letterSpacing: '0.5px',
+                fontFamily: 'monospace',
+                marginBottom: '6px'
+              }}>
+                {timeLeftToday.hours}h : {timeLeftToday.minutes}m : {timeLeftToday.seconds}s
+              </div>
+
+              <p style={{ fontSize: '12.5px', color: 'var(--body-text)', margin: '0 0 14px 0', lineHeight: 1.45 }}>
+                Your daily goals refresh at midnight. Complete all your tasks before the countdown ends to keep your study streak alive.
+              </p>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(154, 104, 84, 0.08)'
+              }}>
+                <Flame style={{ width: '16px', height: '16px', color: 'var(--accent-terracotta)', flexShrink: 0 }} />
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--accent-terracotta)' }}>
+                  {currentStreak} Day Practice Streak Active
+                </span>
+              </div>
+            </div>
+
+            {/* 3. My Dream Goal Card */}
             <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <Target style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
                 <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-                  Target Destination
+                  My Target Career
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
                 <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)', margin: 0 }}>
-                  {profile?.targetCompany || 'Top Tech Recruiters'}
+                  {profile?.targetCompany || 'Top Tech Companies'}
                 </h4>
                 <span style={{ fontSize: '12px', color: 'var(--btn-sage)', fontWeight: 700 }}>
                   {profile?.graduationYear || profile?.graduation_year || 2026} Campus Drive
@@ -392,21 +736,21 @@ export default function Dashboard({
                   cursor: 'pointer'
                 }}
               >
-                <span>Review Company Interview Patterns</span>
+                <span>Explore Company Prep</span>
                 <ArrowRight style={{ width: '13px', height: '13px' }} />
               </button>
             </div>
 
-            {/* 3. Daily Mentor Flight Pro-Tip */}
+            {/* 4. Daily Friendly Advice Card */}
             <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <ShieldCheck style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Coach Flight Pro-Tip
+                  Friendly Daily Tip
                 </span>
               </div>
               <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: 0, lineHeight: 1.5 }}>
-                "Explaining your thought process out loud before typing code yields higher interview marks than writing code in silence. Interviewers prioritize your reasoning path over pure syntax speed."
+                "Explaining your thoughts out loud with a calm smile leaves a wonderful impression. Interviewers love understanding how you think, not just how fast you type!"
               </p>
             </div>
 

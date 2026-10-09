@@ -52,35 +52,10 @@ export default function Dashboard({
 
   const adaptiveSettings = getAdaptiveInterviewSettings(moodState.stress, moodState.confidence);
 
-  // 24-Hour Countdown Timer to midnight for maintaining daily streak
-  const [timeLeftToday, setTimeLeftToday] = useState(() => {
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const diff = Math.max(0, midnight.getTime() - now.getTime());
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    return {
-      hours: String(hours).padStart(2, '0'),
-      minutes: String(minutes).padStart(2, '0'),
-      seconds: String(seconds).padStart(2, '0')
-    };
-  });
-
+  // Real-time ticker for per-task 24-hour countdowns
+  const [currentTime, setCurrentTime] = useState(Date.now());
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      const diff = Math.max(0, midnight.getTime() - now.getTime());
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeftToday({
-        hours: String(hours).padStart(2, '0'),
-        minutes: String(minutes).padStart(2, '0'),
-        seconds: String(seconds).padStart(2, '0')
-      });
-    }, 1000);
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -96,75 +71,19 @@ export default function Dashboard({
   });
   const currentStreak = Math.max(gamificationData?.activeStreak || 0, 1);
 
-  // Daily Customizable Goals with per-day localStorage persistence
+  // User Customizable Goals storage (no fixed/default tasks)
   const userSafeKey = (profile?.email || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-  const todayDateKey = new Date().toISOString().split('T')[0];
-  const goalsStorageKey = `neuroprep_daily_goals_${userSafeKey}_${todayDateKey}`;
-
-  const defaultStarterGoals = [
-    {
-      id: 'goal_coding',
-      tag: 'Coding Practice',
-      tagBg: 'rgba(82, 98, 87, 0.1)',
-      tagColor: 'var(--btn-sage)',
-      points: '+50 Points',
-      title: 'Practice 1 Coding Problem',
-      description: 'Work through one comfortable problem today to keep your problem-solving rhythm sharp and active.',
-      actionText: 'Practice Coding',
-      targetTab: 'coding',
-      isCustom: false,
-      isDone: Boolean(codingState?.score > 0 || codingState?.solvedCount > 0)
-    },
-    {
-      id: 'goal_speaking',
-      tag: 'Speaking Practice',
-      tagBg: 'rgba(82, 98, 87, 0.1)',
-      tagColor: 'var(--btn-sage)',
-      points: '+40 Points',
-      title: 'Practice 2-Minute Self Introduction',
-      description: 'Talk through your background and projects out loud with calm, relaxed confidence.',
-      actionText: 'Practice Speaking',
-      targetTab: 'mock',
-      isCustom: false,
-      isDone: Boolean(interviewState?.lastScore > 0 || interviewState?.totalCompleted > 0)
-    },
-    {
-      id: 'goal_puzzles',
-      tag: 'Puzzles & Logic',
-      tagBg: 'rgba(154, 104, 84, 0.1)',
-      tagColor: 'var(--accent-terracotta)',
-      points: '+30 Points',
-      title: 'Solve 5 Quick Logic Puzzles',
-      description: 'A brief, fun warm-up to sharpen your everyday logical and mathematical intuition.',
-      actionText: 'Try Puzzles',
-      targetTab: 'aptitude',
-      isCustom: false,
-      isDone: Boolean(aptitudeState?.score > 0 || aptitudeState?.totalTests > 0)
-    },
-    {
-      id: 'goal_diary',
-      tag: 'Peace of Mind',
-      tagBg: 'rgba(82, 98, 87, 0.1)',
-      tagColor: 'var(--btn-sage)',
-      points: '+25 Points',
-      title: 'Write in Today’s Placement Diary',
-      description: 'Take two quiet minutes to release tension, write down your feelings, or celebrate a small win.',
-      actionText: 'Open Diary',
-      targetTab: 'journal',
-      isCustom: false,
-      isDone: Boolean(moodState?.stress > 0 || (journalEntries && journalEntries.length > 0))
-    }
-  ];
+  const goalsStorageKey = `neuroprep_user_tasks_${userSafeKey}`;
 
   const [dailyGoals, setDailyGoals] = useState(() => {
     try {
       const saved = localStorage.getItem(goalsStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (_) {}
-    return defaultStarterGoals;
+    return [];
   });
 
   const saveDailyGoals = (newGoals) => {
@@ -174,7 +93,47 @@ export default function Dashboard({
     } catch (_) {}
   };
 
+  // Helper to compute remaining 24-hour time for each task from its creation timestamp
+  const getTaskTimeRemaining = (createdAt, isDone, completedAt) => {
+    const created = createdAt || Date.now();
+    const deadline = created + (24 * 60 * 60 * 1000);
+
+    if (isDone) {
+      const wasInTime = completedAt ? (completedAt <= deadline) : true;
+      return {
+        status: 'completed',
+        text: wasInTime ? 'Completed within 24h' : 'Completed after 24h',
+        badgeColor: 'var(--btn-sage)',
+        badgeBg: 'rgba(82, 98, 87, 0.1)'
+      };
+    }
+
+    const diff = deadline - currentTime;
+    if (diff <= 0) {
+      return {
+        status: 'expired',
+        text: 'Expired (24h exceeded)',
+        badgeColor: 'var(--accent-terracotta)',
+        badgeBg: 'rgba(154, 104, 84, 0.1)'
+      };
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return {
+      status: 'active',
+      hours,
+      minutes,
+      seconds,
+      text: `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s left`,
+      badgeColor: hours < 4 ? 'var(--accent-terracotta)' : 'var(--btn-sage)',
+      badgeBg: hours < 4 ? 'rgba(154, 104, 84, 0.1)' : 'rgba(82, 98, 87, 0.1)'
+    };
+  };
+
   const toggleGoal = (id) => {
+    const now = Date.now();
     const updated = dailyGoals.map(g => {
       if (g.id === id) {
         const nextDone = !g.isDone;
@@ -183,7 +142,11 @@ export default function Dashboard({
             recordActivity(profile?.email || 'guest', 'daily_goal', 25);
           } catch (_) {}
         }
-        return { ...g, isDone: nextDone };
+        return { 
+          ...g, 
+          isDone: nextDone, 
+          completedAt: nextDone ? now : null 
+        };
       }
       return g;
     });
@@ -205,20 +168,22 @@ export default function Dashboard({
     if (e) e.preventDefault();
     if (!newGoalTitle.trim()) return;
 
+    const now = Date.now();
     const newGoal = {
-      id: `custom_${Date.now()}`,
+      id: `task_${now}_${Math.random().toString(36).substr(2, 5)}`,
       tag: newGoalTag || 'Personal Goal',
       tagBg: 'rgba(82, 98, 87, 0.1)',
       tagColor: 'var(--btn-sage)',
-      points: '+30 Points',
+      points: '+25 Points',
       title: newGoalTitle.trim(),
-      description: newGoalDesc.trim() || 'Custom goal added for today’s practice routine.',
-      actionText: 'Complete',
-      isCustom: true,
-      isDone: false
+      description: newGoalDesc.trim() || '',
+      createdAt: now,
+      expiresAt: now + (24 * 60 * 60 * 1000),
+      isDone: false,
+      completedAt: null
     };
 
-    saveDailyGoals([...dailyGoals, newGoal]);
+    saveDailyGoals([newGoal, ...dailyGoals]);
     setNewGoalTitle('');
     setNewGoalDesc('');
     setShowAddGoalModal(false);
@@ -226,19 +191,23 @@ export default function Dashboard({
 
   const totalGoalsCount = dailyGoals.length;
   const completedGoalsCount = dailyGoals.filter(g => g.isDone).length;
+  const activeGoalsCount = dailyGoals.filter(g => !g.isDone && (currentTime < (g.createdAt + 24 * 60 * 60 * 1000))).length;
+  const expiredGoalsCount = dailyGoals.filter(g => !g.isDone && (currentTime >= (g.createdAt + 24 * 60 * 60 * 1000))).length;
   const progressPercent = totalGoalsCount > 0 ? Math.round((completedGoalsCount / totalGoalsCount) * 100) : 0;
 
-  let progressStatusTitle = 'Ready to Begin Today';
-  let progressStatusDesc = 'Pick any goal to kickstart today’s practice and keep your streak safe.';
-  if (completedGoalsCount > 0 && completedGoalsCount < Math.ceil(totalGoalsCount / 2)) {
-    progressStatusTitle = 'Great Start!';
-    progressStatusDesc = 'You took the first step today. Keep this steady momentum going!';
-  } else if (completedGoalsCount >= Math.ceil(totalGoalsCount / 2) && completedGoalsCount < totalGoalsCount) {
-    progressStatusTitle = 'Halfway There!';
-    progressStatusDesc = 'You are doing wonderfully today. Just a few more goals to finish!';
-  } else if (completedGoalsCount === totalGoalsCount && totalGoalsCount > 0) {
-    progressStatusTitle = 'All Goals Finished Today!';
-    progressStatusDesc = 'Amazing dedication! Your daily streak is safe and protected for tomorrow.';
+  let progressStatusTitle = 'Ready When You Are';
+  let progressStatusDesc = 'Add your first task above. You get exactly 24 hours to complete it!';
+  if (totalGoalsCount > 0) {
+    if (completedGoalsCount === totalGoalsCount) {
+      progressStatusTitle = 'All Tasks Completed!';
+      progressStatusDesc = 'Great job! You finished your tasks and kept your study streak safe.';
+    } else if (expiredGoalsCount > 0 && activeGoalsCount === 0) {
+      progressStatusTitle = 'Tasks Expired';
+      progressStatusDesc = 'Some tasks passed their 24-hour limit. Add a new goal to restart your momentum.';
+    } else {
+      progressStatusTitle = 'Practice in Progress';
+      progressStatusDesc = 'Complete your tasks before their 24-hour countdowns expire to protect your streak.';
+    }
   }
 
   return (
@@ -278,19 +247,19 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* 2. TODAY'S DAILY GOALS & STREAK TRACKER */}
+      {/* 2. USER'S DAILY GOALS & 24-HOUR STREAK TRACKER */}
       <section style={{ marginBottom: '36px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
             <h2 className="section-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
-              Today's Daily Goals
+              Your Tasks for Today
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0 }}>
-              Your friendly daily checklist. Complete your tasks within 24 hours to keep your study streak alive.
+              Add your personal goals. Each task gives you 24 hours from creation to complete it and maintain your streak.
             </p>
           </div>
 
-          {/* Streak & 24-Hour Reset Countdown Badges */}
+          {/* Streak & Active Count Badges */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--accent-terracotta)' }}>
               <Flame style={{ width: '13px', height: '13px', color: 'var(--accent-terracotta)' }} />
@@ -299,12 +268,12 @@ export default function Dashboard({
 
             <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--btn-sage)' }}>
               <Clock style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
-              {timeLeftToday.hours}h {timeLeftToday.minutes}m {timeLeftToday.seconds}s Left Today
+              {activeGoalsCount} Active (24h Window)
             </span>
 
             <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--secondary-heading)' }}>
               <CheckCircle2 style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
-              {completedGoalsCount} of {totalGoalsCount} Goals Finished
+              {completedGoalsCount} of {totalGoalsCount} Completed
             </span>
           </div>
         </div>
@@ -312,13 +281,13 @@ export default function Dashboard({
         {/* 2-Column Responsive Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.45fr) minmax(0, 1fr)', gap: '24px' }}>
           
-          {/* LEFT: Customizable Goal List & Add Task Form */}
+          {/* LEFT: User's Tasks & Add Goal Form */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             
             {/* Top Bar with Add Goal Button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Your Tasks for Today
+                Your Custom Tasks
               </span>
               <button
                 onClick={() => setShowAddGoalModal(!showAddGoalModal)}
@@ -353,16 +322,16 @@ export default function Dashboard({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--main-heading)' }}>
-                    Add a New Goal for Today
+                    Add a New Task
                   </h4>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Resets in 24 hours
+                  <span style={{ fontSize: '11px', color: 'var(--btn-sage)', fontWeight: 600 }}>
+                    24-Hour Timer Starts Now
                   </span>
                 </div>
 
                 <input
                   type="text"
-                  placeholder="What would you like to achieve today? (e.g., Revise notes, solve 2 questions)"
+                  placeholder="What would you like to achieve? (e.g., Solve 2 practice questions, review resume)"
                   value={newGoalTitle}
                   onChange={(e) => setNewGoalTitle(e.target.value)}
                   style={{
@@ -382,7 +351,7 @@ export default function Dashboard({
                 {/* Quick Category Selector */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Category:</span>
-                  {['Study & Notes', 'Coding', 'Speaking', 'Resume', 'Self-Care'].map((cat) => (
+                  {['Study & Notes', 'Coding', 'Interview', 'Puzzles', 'Self-Care', 'Other'].map((cat) => (
                     <button
                       key={cat}
                       type="button"
@@ -405,7 +374,7 @@ export default function Dashboard({
 
                 <input
                   type="text"
-                  placeholder="Optional note or reminder (e.g., Spend 15 minutes before evening)"
+                  placeholder="Optional details or reminder notes..."
                   value={newGoalDesc}
                   onChange={(e) => setNewGoalDesc(e.target.value)}
                   style={{
@@ -446,30 +415,35 @@ export default function Dashboard({
                       borderRadius: '8px'
                     }}
                   >
-                    Save Goal
+                    Add Task (Start 24h Timer)
                   </button>
                 </div>
               </form>
             )}
 
-            {/* List of Goals */}
+            {/* List of User Goals */}
             {dailyGoals.length === 0 ? (
-              <div className="saas-card-spec" style={{ padding: '32px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '0 0 12px 0' }}>
-                  No goals set for today yet.
+              <div className="saas-card-spec" style={{ padding: '36px 24px', textAlign: 'center' }}>
+                <Clock style={{ width: '28px', height: '28px', color: 'var(--btn-sage)', margin: '0 auto 10px auto' }} />
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '15px', fontWeight: 700, color: 'var(--main-heading)' }}>
+                  No tasks added yet
+                </h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: '0 0 16px 0', maxWidth: '380px', marginInline: 'auto', lineHeight: 1.45 }}>
+                  Click "Add a Personal Goal" to set a task. You will get an exact 24-hour countdown from the moment you add it to complete it and build your streak!
                 </p>
                 <button
                   onClick={() => setShowAddGoalModal(true)}
                   className="btn-primary-spec"
-                  style={{ fontSize: '12px', padding: '8px 16px', margin: '0 auto' }}
+                  style={{ fontSize: '12px', padding: '8px 18px', margin: '0 auto' }}
                 >
                   <Plus style={{ width: '13px', height: '13px', marginRight: '4px' }} />
-                  Add Your First Goal
+                  Add Your First Task
                 </button>
               </div>
             ) : (
               dailyGoals.map((g) => {
                 const isDone = Boolean(g.isDone);
+                const timeInfo = getTaskTimeRemaining(g.createdAt, isDone, g.completedAt);
                 return (
                   <div 
                     key={g.id} 
@@ -482,7 +456,7 @@ export default function Dashboard({
                       gap: '16px',
                       transition: 'all 0.2s ease',
                       backgroundColor: isDone ? 'rgba(235, 245, 238, 0.45)' : 'var(--bg-card-solid)',
-                      border: isDone ? '1px solid rgba(82, 98, 87, 0.3)' : '1px solid var(--border-color)'
+                      border: isDone ? '1px solid rgba(82, 98, 87, 0.3)' : (timeInfo.status === 'expired' ? '1px solid rgba(154, 104, 84, 0.4)' : '1px solid var(--border-color)')
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
@@ -510,7 +484,7 @@ export default function Dashboard({
                       </button>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                           <span style={{
                             fontSize: '11px',
                             fontWeight: 700,
@@ -522,8 +496,21 @@ export default function Dashboard({
                           }}>
                             {g.tag}
                           </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {g.points || '+30 Points'}
+
+                          {/* 24-Hour Timer Badge for this task */}
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: timeInfo.badgeBg,
+                            color: timeInfo.badgeColor,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <Clock style={{ width: '11px', height: '11px' }} />
+                            {timeInfo.text}
                           </span>
                         </div>
 
@@ -538,74 +525,58 @@ export default function Dashboard({
                           {g.title}
                         </h4>
 
-                        <p style={{
-                          fontSize: '12.5px',
-                          color: 'var(--body-text)',
-                          margin: 0,
-                          lineHeight: 1.4,
-                          opacity: isDone ? 0.75 : 1
-                        }}>
-                          {g.description}
-                        </p>
+                        {g.description && (
+                          <p style={{
+                            fontSize: '12.5px',
+                            color: 'var(--body-text)',
+                            margin: 0,
+                            lineHeight: 1.4,
+                            opacity: isDone ? 0.75 : 1
+                          }}>
+                            {g.description}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      {g.targetTab ? (
-                        <button
-                          onClick={() => setActiveTab(g.targetTab)}
-                          className="btn-primary-spec"
-                          style={{
-                            padding: '7px 14px',
-                            fontSize: '12px',
-                            gap: '4px',
-                            borderRadius: '8px'
-                          }}
-                        >
-                          <span>{g.actionText}</span>
-                          <ArrowRight style={{ width: '13px', height: '13px' }} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => toggleGoal(g.id)}
-                          className="btn-primary-spec"
-                          style={{
-                            padding: '7px 14px',
-                            fontSize: '12px',
-                            gap: '4px',
-                            borderRadius: '8px',
-                            backgroundColor: isDone ? 'rgba(82, 98, 87, 0.2)' : undefined,
-                            color: isDone ? 'var(--btn-sage)' : undefined
-                          }}
-                        >
-                          <span>{isDone ? 'Completed' : 'Complete'}</span>
-                          <Check style={{ width: '13px', height: '13px' }} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => toggleGoal(g.id)}
+                        className="btn-primary-spec"
+                        style={{
+                          padding: '7px 14px',
+                          fontSize: '12px',
+                          gap: '4px',
+                          borderRadius: '8px',
+                          backgroundColor: isDone ? 'rgba(82, 98, 87, 0.2)' : undefined,
+                          color: isDone ? 'var(--btn-sage)' : undefined
+                        }}
+                      >
+                        <span>{isDone ? 'Completed' : 'Mark Done'}</span>
+                        <Check style={{ width: '13px', height: '13px' }} />
+                      </button>
 
-                      {/* Delete button for custom tasks or any goal */}
-                      {g.isCustom && (
-                        <button
-                          onClick={() => deleteGoal(g.id)}
-                          title="Remove Goal"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: '6px',
-                            cursor: 'pointer',
-                            color: 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '6px',
-                            transition: 'color 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-terracotta)'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                        >
-                          <Trash2 style={{ width: '15px', height: '15px' }} />
-                        </button>
-                      )}
+                      {/* Delete button */}
+                      <button
+                        onClick={() => deleteGoal(g.id)}
+                        title="Remove Task"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          color: 'var(--text-muted)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '6px',
+                          transition: 'color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-terracotta)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                      >
+                        <Trash2 style={{ width: '15px', height: '15px' }} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -613,13 +584,13 @@ export default function Dashboard({
             )}
           </div>
 
-          {/* RIGHT: Daily Progress, 24-Hour Timer, Dream Goal & Tip */}
+          {/* RIGHT: Task Progress & 24-Hour Rule Card */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
-            {/* 1. Daily Progress & Milestone Tracker */}
+            {/* 1. Task Progress & Milestone Tracker */}
             <div className="saas-card-spec" style={{ padding: '22px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <span className="pill-tag" style={{ margin: 0 }}>Daily Progress</span>
+                <span className="pill-tag" style={{ margin: 0 }}>Task Progress</span>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--main-heading)' }}>
                   {progressPercent}% Complete
                 </span>
@@ -658,30 +629,35 @@ export default function Dashboard({
                 <span>Almost There</span>
                 <span>Streak Safe</span>
               </div>
+
+              {/* Summary Stats Chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)' }}>{totalGoalsCount}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Tasks</div>
+                </div>
+                <div style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--btn-sage)' }}>{completedGoalsCount}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Completed</div>
+                </div>
+                <div style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-terracotta)' }}>{activeGoalsCount}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>In 24h Window</div>
+                </div>
+              </div>
             </div>
 
-            {/* 2. 24-Hour Streak Window Card */}
+            {/* 2. 24-Hour Streak Rule Card */}
             <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <Clock style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
                 <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-                  24-Hour Goal Timer
+                  24-Hour Task Rule
                 </span>
               </div>
 
-              <div style={{ 
-                fontSize: '26px', 
-                fontWeight: 800, 
-                color: 'var(--main-heading)', 
-                letterSpacing: '0.5px',
-                fontFamily: 'monospace',
-                marginBottom: '6px'
-              }}>
-                {timeLeftToday.hours}h : {timeLeftToday.minutes}m : {timeLeftToday.seconds}s
-              </div>
-
-              <p style={{ fontSize: '12.5px', color: 'var(--body-text)', margin: '0 0 14px 0', lineHeight: 1.45 }}>
-                Your daily goals refresh at midnight. Complete all your tasks before the countdown ends to keep your study streak alive.
+              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
+                Each task starts an exact 24-hour countdown the moment you add it. Complete your tasks before their time runs out to protect and grow your daily practice streak.
               </p>
 
               <div style={{
@@ -697,61 +673,6 @@ export default function Dashboard({
                   {currentStreak} Day Practice Streak Active
                 </span>
               </div>
-            </div>
-
-            {/* 3. My Dream Goal Card */}
-            <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <Target style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
-                <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-                  My Target Career
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
-                <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)', margin: 0 }}>
-                  {profile?.targetCompany || 'Top Tech Companies'}
-                </h4>
-                <span style={{ fontSize: '12px', color: 'var(--btn-sage)', fontWeight: 700 }}>
-                  {profile?.graduationYear || profile?.graduation_year || 2026} Campus Drive
-                </span>
-              </div>
-
-              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: '0 0 12px 0' }}>
-                Aiming for: <strong style={{ color: 'var(--secondary-heading)' }}>{profile?.targetRole || 'Software Development Engineer'}</strong>
-              </p>
-
-              <button
-                onClick={() => setActiveTab('company')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: 'var(--btn-sage)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                <span>Explore Company Prep</span>
-                <ArrowRight style={{ width: '13px', height: '13px' }} />
-              </button>
-            </div>
-
-            {/* 4. Daily Friendly Advice Card */}
-            <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <ShieldCheck style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Friendly Daily Tip
-                </span>
-              </div>
-              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: 0, lineHeight: 1.5 }}>
-                "Explaining your thoughts out loud with a calm smile leaves a wonderful impression. Interviewers love understanding how you think, not just how fast you type!"
-              </p>
             </div>
 
           </div>

@@ -3,6 +3,7 @@ import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../se
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
+import PlacementMoodRecoveryRAG from './PlacementMoodRecoveryRAG';
 import { Check, TrendingUp, TrendingDown, Plane, CheckCircle2, Circle, Flame, Sparkles, ArrowRight, Target, Clock, ShieldCheck, Plus, Trash2, X } from 'lucide-react';
 import { getGamificationData, recordActivity } from '../services/gamificationService';
 
@@ -1070,6 +1071,11 @@ export default function Dashboard({
 
           </div>
         </div>
+      </section>
+
+      {/* 7. POST-INTERVIEW REALITY CHECK & REBOUND ENGINE (RAG) */}
+      <section style={{ marginBottom: '36px' }}>
+        <PlacementMoodRecoveryRAG />
       </section>
 
     </div>

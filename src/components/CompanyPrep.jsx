@@ -100,10 +100,13 @@ export default function CompanyPrep({ setActiveTab }) {
 
   // Load published community experiences on company select
   useEffect(() => {
+    let cancelled = false;
     if (selectedCompanyId) {
-      const expList = dbService.getPublishedCompanyExperiences(selectedCompanyId);
-      setPublishedExperiences(expList);
+      dbService.getPublishedCompanyExperiences(selectedCompanyId).then(expList => {
+        if (!cancelled && expList) setPublishedExperiences(expList);
+      });
     }
+    return () => { cancelled = true; };
   }, [selectedCompanyId]);
 
   // Mastery Status Handler
@@ -129,7 +132,7 @@ export default function CompanyPrep({ setActiveTab }) {
   };
 
   // Submit Publish Form
-  const handlePublishSubmit = (e) => {
+  const handlePublishSubmit = async (e) => {
     e.preventDefault();
     if (!formName.trim() || !formCollege.trim() || !selectedCompanyId) return;
 
@@ -172,7 +175,7 @@ export default function CompanyPrep({ setActiveTab }) {
       proTips: proTipsList.length > 0 ? proTipsList : ['Revise standard DSA patterns and practice mock interviews.']
     };
 
-    const saved = dbService.publishCompanyExperience(newExperience);
+    const saved = await dbService.publishCompanyExperience(newExperience);
     if (saved) {
       setPublishedExperiences(prev => [saved, ...prev]);
       setPublishToast(`Your interview experience for ${activeCompany?.name || 'the company'} was published!`);

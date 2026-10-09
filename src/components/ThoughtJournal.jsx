@@ -100,13 +100,13 @@ export default function ThoughtJournal({
   // ----------------------------------------------------
   // AUXILIARY HUB DATA
   // ----------------------------------------------------
-  const [hopeNotes, setHopeNotes] = useState(() => dbService.getHopeNotesForUser(userEmail));
+  const [hopeNotes, setHopeNotes] = useState(() => (dbService._defaultHopeNotes ? dbService._defaultHopeNotes() : []));
   const [drawnHopeNote, setDrawnHopeNote] = useState(null);
   const [isDrawingHope, setIsDrawingHope] = useState(false);
-  const [gardenStats, setGardenStats] = useState(() => dbService.getGardenStats(userEmail));
+  const [gardenStats, setGardenStats] = useState({ count: 0, stage: 'Level 1', stageName: 'Sprouting Seedling', nextMilestone: 2 });
 
   // Mario Botanical Garden State & Power-Ups
-  const [marioCoins, setMarioCoins] = useState(() => (gardenStats?.count || 1) * 100 + 50);
+  const [marioCoins, setMarioCoins] = useState(150);
   const [previewGardenStage, setPreviewGardenStage] = useState(null); // null (use real) or 0..4
   const [blockBounce, setBlockBounce] = useState(false);
   const [flyingCoin, setFlyingCoin] = useState(false);
@@ -156,8 +156,19 @@ export default function ThoughtJournal({
 
   // Reload auxiliary data when entries change
   useEffect(() => {
-    setGardenStats(dbService.getGardenStats(userEmail));
-    setHopeNotes(dbService.getHopeNotesForUser(userEmail));
+    let cancelled = false;
+    dbService.getGardenStats(userEmail).then(st => {
+      if (!cancelled && st) {
+        setGardenStats(st);
+        setMarioCoins((st.count || 1) * 100 + 50);
+      }
+    });
+    dbService.getHopeNotesForUser(userEmail).then(notes => {
+      if (!cancelled && notes) {
+        setHopeNotes(notes);
+      }
+    });
+    return () => { cancelled = true; };
   }, [journalEntries, userEmail]);
 
   // Breathing timer interval

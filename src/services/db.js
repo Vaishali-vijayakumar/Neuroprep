@@ -226,6 +226,8 @@ export const dbService = {
       college: updatedProfile.college || '',
       department: updatedProfile.department || '',
       graduation_year: Number(updatedProfile.graduation_year ?? updatedProfile.graduationYear) || 2026,
+      cgpa: updatedProfile.cgpa || '',
+      skills: updatedProfile.skills || [],
       updated_at: new Date().toISOString()
     };
 
@@ -317,7 +319,16 @@ export const dbService = {
  lsSet(lsKey, updated);
  if (isActive(userEmail)) {
    try {
-     await db.from('thought_journals').upsert({ ...entry, user_email: userEmail }, { onConflict: 'id' });
+     await db.from('thought_journals').upsert({
+       id: String(entry.id),
+       user_email: userEmail,
+       date: entry.date || new Date().toLocaleDateString(),
+       title: entry.title || '',
+       category: entry.category || 'General',
+       content: entry.content || '',
+       analysis: entry.analysis || null,
+       created_at: entry.createdAt || new Date().toISOString()
+     }, { onConflict: 'id' });
    } catch (e) { console.warn('Supabase saveJournal failed:', e.message); }
  }
  if (entry.analysis?.positiveMemoriesExtracted?.length > 0) {

@@ -3,7 +3,7 @@ import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../se
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
-import { Check, TrendingUp, TrendingDown } from 'lucide-react';
+import { Check, TrendingUp, TrendingDown, Plane, CheckCircle2, Circle, Flame, Sparkles, ArrowRight, Target, Clock, ShieldCheck } from 'lucide-react';
 
 export default function Dashboard({ 
   profile = {}, 
@@ -51,6 +51,97 @@ export default function Dashboard({
 
   const adaptiveSettings = getAdaptiveInterviewSettings(moodState.stress, moodState.confidence);
 
+  // Daily Flight Plan state with per-day localStorage persistence
+  const todayDateKey = new Date().toISOString().split('T')[0];
+  const flightStorageKey = `neuroprep_flight_plan_${(profile?.email || 'guest').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${todayDateKey}`;
+
+  const [flightMissions, setFlightMissions] = useState(() => {
+    try {
+      const saved = localStorage.getItem(flightStorageKey);
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return {
+      dsa: Boolean(codingState?.score > 0 || codingState?.solvedCount > 0),
+      mock: Boolean(interviewState?.lastScore > 0 || interviewState?.totalCompleted > 0),
+      apti: Boolean(aptitudeState?.score > 0 || aptitudeState?.totalTests > 0),
+      resilience: Boolean(moodState?.stress > 0 || (journalEntries && journalEntries.length > 0))
+    };
+  });
+
+  const toggleMission = (key) => {
+    setFlightMissions(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(flightStorageKey, JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+  };
+
+  const completedCount = Object.values(flightMissions).filter(Boolean).length;
+  const flightPercentage = Math.round((completedCount / 4) * 100);
+
+  const flightMissionList = [
+    {
+      key: 'dsa',
+      tag: 'Problem Solving',
+      tagBg: 'rgba(82, 98, 87, 0.1)',
+      tagColor: 'var(--btn-sage)',
+      xp: '+50 XP',
+      title: 'Solve 1 Medium Pattern Question',
+      description: 'Strengthen algorithmic intuition on Sliding Window, Two Pointers, or Binary Search.',
+      actionText: 'Launch Solver',
+      targetTab: 'coding'
+    },
+    {
+      key: 'mock',
+      tag: 'Mock Interview',
+      tagBg: 'rgba(82, 98, 87, 0.1)',
+      tagColor: 'var(--btn-sage)',
+      xp: '+40 XP',
+      title: 'Practice 90-Sec Elevator Intro & Defense',
+      description: 'Refine technical speech pacing, project articulation, and executive poise.',
+      actionText: 'Enter Mock Room',
+      targetTab: 'mock'
+    },
+    {
+      key: 'apti',
+      tag: 'Aptitude Speed',
+      tagBg: 'rgba(154, 104, 84, 0.1)',
+      tagColor: 'var(--accent-terracotta)',
+      xp: '+30 XP',
+      title: 'Complete 5-Question Quant & Logic Sprint',
+      description: 'Boost numerical reasoning speed and accuracy for corporate screening tests.',
+      actionText: 'Start Drill',
+      targetTab: 'aptitude'
+    },
+    {
+      key: 'resilience',
+      tag: 'Mindset & Calm',
+      tagBg: 'rgba(82, 98, 87, 0.1)',
+      tagColor: 'var(--btn-sage)',
+      xp: '+25 XP',
+      title: 'Pre-Placement Grounding & Thought Log',
+      description: 'Release performance anxiety, log daily takeaways, or do 2-min box breathing.',
+      actionText: 'Open Journal',
+      targetTab: 'journal'
+    }
+  ];
+
+  let flightStatusTitle = 'Preparing for Takeoff';
+  let flightStatusDesc = 'Complete your first sprint to initiate daily placement momentum.';
+  if (completedCount === 1) {
+    flightStatusTitle = 'Ascending • Gaining Altitude';
+    flightStatusDesc = 'Great start! 1 mission cleared. Keep the momentum building today.';
+  } else if (completedCount === 2) {
+    flightStatusTitle = 'Cruising Altitude • Steady Pace';
+    flightStatusDesc = 'Halfway through today’s flight plan! Placement consistency is compounding.';
+  } else if (completedCount === 3) {
+    flightStatusTitle = 'Optimal Flight Level • High Velocity';
+    flightStatusDesc = 'Almost clear! Just 1 more micro-mission to complete today.';
+  } else if (completedCount === 4) {
+    flightStatusTitle = 'Mission Accomplished • Drive Ready';
+    flightStatusDesc = 'All 4 flight missions completed! Outstanding placement consistency today.';
+  }
+
   return (
     <div style={{ flex: 1, padding: '36px 32px', maxWidth: '1280px', margin: '0 auto', width: '100%', fontFamily: 'var(--font-main)' }}>
       
@@ -88,236 +179,235 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* 2. PLACEMENT SCORE BOARD */}
+      {/* 2. DAILY FLIGHT PLAN (Replaced Placement Score Board) */}
       <section style={{ marginBottom: '36px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <h2 className="section-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
-            Placement Score Board
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0 }}>
-            Real-time performance evaluation across coding, speech, profile, and stress control.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '24px' }}>
-          
-          {/* Main Gauge Card */}
-          <div className="saas-card-spec" style={{ padding: '28px' }}>
-            <span className="pill-tag" style={{ marginBottom: '12px' }}>Overall Readiness</span>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--secondary-heading)', marginBottom: '20px' }}>
-              Placement Readiness Score
-            </h3>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-              <div style={{
-                width: '110px',
-                height: '110px',
-                borderRadius: '50%',
-                background: readinessScore > 0 
-                  ? `conic-gradient(#526257 ${readinessScore * 3.6}deg, #D8D2CE 0deg)`
-                  : '#D8D2CE',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 3px 10px rgba(82, 98, 87, 0.15)'
-              }}>
-                <div style={{
-                  width: '90px',
-                  height: '90px',
-                  borderRadius: '50%',
-                  backgroundColor: '#FCF9F6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'inset 0 2px 4px rgba(52, 52, 58, 0.05)'
-                }}>
-                  <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                    {readinessScore}%
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                {readinessScore === 0 ? (
-                  <>
-                    <p style={{ fontSize: '13px', color: 'var(--body-text)', marginBottom: '12px', lineHeight: 1.5 }}>
-                      No test scores recorded yet. Take an assessment to evaluate your placement readiness baseline.
-                    </p>
-                    <button 
-                      onClick={() => setActiveTab('mock')} 
-                      className="btn-primary-spec" 
-                      style={{ padding: '8px 18px', fontSize: '13px' }}
-                    >
-                      Take Test
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ fontSize: '14px', color: 'var(--body-text)', marginBottom: '8px', lineHeight: 1.5 }}>
-                      Weighted Formula: Coding (35%), Interview (30%), Speech (15%), Profile (10%), Stress Management (10%).
-                    </p>
-                    <span style={{ fontSize: '14px', color: 'var(--main-heading)', fontWeight: 700 }}>
-                      Latest score updated from active tests
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+          <div>
+            <h2 className="section-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
+              Daily Flight Plan
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '15px', margin: 0 }}>
+              Your guided daily micro-missions. Complete quick sprints to build steady, compound placement momentum.
+            </p>
           </div>
 
-          {/* Breakdown Score Cards with Circular Progress Rings & Green Buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {/* Flight Momentum & Streak Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--accent-terracotta)' }}>
+              <Flame style={{ width: '13px', height: '13px', color: 'var(--accent-terracotta)' }} />
+              Daily Momentum Active
+            </span>
+
+            <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--btn-sage)' }}>
+              <CheckCircle2 style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
+              {completedCount} of 4 Missions Cleared
+            </span>
+          </div>
+        </div>
+
+        {/* 2-Column Responsive Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.45fr) minmax(0, 1fr)', gap: '24px' }}>
+          
+          {/* LEFT: 4 Actionable Mission Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {flightMissionList.map((m) => {
+              const isDone = flightMissions[m.key];
+              return (
+                <div 
+                  key={m.key} 
+                  className="saas-card-spec"
+                  style={{
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    transition: 'all 0.2s ease',
+                    backgroundColor: isDone ? 'rgba(235, 245, 238, 0.45)' : 'var(--bg-card-solid)',
+                    border: isDone ? '1px solid rgba(82, 98, 87, 0.3)' : '1px solid var(--border-color)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                    <button
+                      onClick={() => toggleMission(m.key)}
+                      title={isDone ? 'Mark as incomplete' : 'Mark as completed'}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        marginTop: '2px',
+                        color: isDone ? 'var(--btn-sage)' : 'var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 style={{ width: '22px', height: '22px', color: 'var(--btn-sage)' }} />
+                      ) : (
+                        <Circle style={{ width: '22px', height: '22px' }} />
+                      )}
+                    </button>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          backgroundColor: m.tagBg,
+                          color: m.tagColor
+                        }}>
+                          {m.tag}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {m.xp}
+                        </span>
+                      </div>
+
+                      <h4 style={{
+                        fontSize: '15px',
+                        fontWeight: 700,
+                        color: isDone ? 'var(--text-muted)' : 'var(--main-heading)',
+                        textDecoration: isDone ? 'line-through' : 'none',
+                        margin: '0 0 2px 0',
+                        lineHeight: 1.3
+                      }}>
+                        {m.title}
+                      </h4>
+
+                      <p style={{
+                        fontSize: '12.5px',
+                        color: 'var(--body-text)',
+                        margin: 0,
+                        lineHeight: 1.4,
+                        opacity: isDone ? 0.75 : 1
+                      }}>
+                        {m.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab(m.targetTab)}
+                    className="btn-primary-spec"
+                    style={{
+                      padding: '7px 14px',
+                      fontSize: '12px',
+                      flexShrink: 0,
+                      gap: '4px',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <span>{m.actionText}</span>
+                    <ArrowRight style={{ width: '13px', height: '13px' }} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* RIGHT: Flight Telemetry & Readiness Trajectory */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
-            {/* 1. Coding Score */}
-            <div className="saas-card-spec" style={{ padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Coding Score</span>
-                
-                {/* Circular Progress Ring */}
-                <div style={{
-                  width: '74px',
-                  height: '74px',
-                  borderRadius: '50%',
-                  background: `conic-gradient(#526257 ${(codingState.score || 0) * 3.6}deg, #D8D2CE 0deg)`,
+            {/* 1. Daily Flight Status & Altitude Gauge */}
+            <div className="saas-card-spec" style={{ padding: '22px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <span className="pill-tag" style={{ margin: 0 }}>Flight Telemetry</span>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--main-heading)' }}>
+                  {flightPercentage}% Altitude
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--main-heading)', marginBottom: '6px' }}>
+                {flightStatusTitle}
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                {flightStatusDesc}
+              </p>
+
+              {/* Altitude Multi-Step Indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                {[1, 2, 3, 4].map((step) => (
+                  <div
+                    key={step}
+                    style={{
+                      flex: 1,
+                      height: '7px',
+                      borderRadius: '4px',
+                      backgroundColor: completedCount >= step ? 'var(--btn-sage)' : 'rgba(216, 210, 206, 0.45)',
+                      transition: 'background-color 0.3s ease'
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                <span>Runway</span>
+                <span>Ascending</span>
+                <span>Cruising</span>
+                <span>Drive Ready</span>
+              </div>
+            </div>
+
+            {/* 2. Target Destination Card */}
+            <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Target style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
+                <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                  Target Destination
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)', margin: 0 }}>
+                  {profile?.targetCompany || 'Top Tech Recruiters'}
+                </h4>
+                <span style={{ fontSize: '12px', color: 'var(--btn-sage)', fontWeight: 700 }}>
+                  {profile?.graduationYear || profile?.graduation_year || 2026} Campus Drive
+                </span>
+              </div>
+
+              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: '0 0 12px 0' }}>
+                Aiming for: <strong style={{ color: 'var(--secondary-heading)' }}>{profile?.targetRole || 'Software Development Engineer'}</strong>
+              </p>
+
+              <button
+                onClick={() => setActiveTab('company')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: 'var(--btn-sage)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '14px auto',
-                  boxShadow: '0 3px 8px rgba(82, 98, 87, 0.15)'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FCF9F6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'inset 0 1px 3px rgba(52, 52, 58, 0.06)'
-                  }}>
-                    <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                      {codingState.score || 0}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setActiveTab('coding')} className="btn-primary-spec" style={{ fontSize: '11px', padding: '8px 12px', marginTop: '8px', justifyContent: 'center', width: '100%' }}>
-                Take Coding Test
+                  gap: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>Review Company Interview Patterns</span>
+                <ArrowRight style={{ width: '13px', height: '13px' }} />
               </button>
             </div>
 
-            {/* 2. Interview Score */}
-            <div className="saas-card-spec" style={{ padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Interview Score</span>
-                
-                {/* Circular Progress Ring */}
-                <div style={{
-                  width: '74px',
-                  height: '74px',
-                  borderRadius: '50%',
-                  background: `conic-gradient(#526257 ${(interviewState.lastScore || 0) * 3.6}deg, #D8D2CE 0deg)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '14px auto',
-                  boxShadow: '0 3px 8px rgba(82, 98, 87, 0.15)'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FCF9F6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'inset 0 1px 3px rgba(52, 52, 58, 0.06)'
-                  }}>
-                    <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                      {interviewState.lastScore || 0}%
-                    </span>
-                  </div>
-                </div>
+            {/* 3. Daily Mentor Flight Pro-Tip */}
+            <div className="saas-card-spec" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <ShieldCheck style={{ width: '16px', height: '16px', color: 'var(--btn-sage)' }} />
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Coach Flight Pro-Tip
+                </span>
               </div>
-              <button onClick={() => setActiveTab('mock')} className="btn-primary-spec" style={{ fontSize: '11px', padding: '8px 12px', marginTop: '8px', justifyContent: 'center', width: '100%' }}>
-                Take Mock Test
-              </button>
-            </div>
-
-            {/* 3. Aptitude Score */}
-            <div className="saas-card-spec" style={{ padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Aptitude Score</span>
-                
-                {/* Circular Progress Ring */}
-                <div style={{
-                  width: '74px',
-                  height: '74px',
-                  borderRadius: '50%',
-                  background: `conic-gradient(#526257 ${(aptitudeState?.score || 0) * 3.6}deg, #D8D2CE 0deg)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '14px auto',
-                  boxShadow: '0 3px 8px rgba(82, 98, 87, 0.15)'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FCF9F6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'inset 0 1px 3px rgba(52, 52, 58, 0.06)'
-                  }}>
-                    <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                      {aptitudeState?.score || 0}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setActiveTab('aptitude')} className="btn-primary-spec" style={{ fontSize: '11px', padding: '8px 12px', marginTop: '8px', justifyContent: 'center', width: '100%' }}>
-                Take Apti Test
-              </button>
-            </div>
-
-            {/* 4. Stress Level */}
-            <div className="saas-card-spec" style={{ padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Stress Level</span>
-                
-                {/* Circular Progress Ring */}
-                <div style={{
-                  width: '74px',
-                  height: '74px',
-                  borderRadius: '50%',
-                  background: `conic-gradient(${(moodState.stress || 0) > 6 ? '#9A6854' : '#526257'} ${Math.min(100, ((moodState.stress || 0) / 10) * 100) * 3.6}deg, #D8D2CE 0deg)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '14px auto',
-                  boxShadow: '0 3px 8px rgba(82, 98, 87, 0.15)'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FCF9F6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'inset 0 1px 3px rgba(52, 52, 58, 0.06)'
-                  }}>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--main-heading)' }}>
-                      {moodState.stress || 0}/10
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setActiveTab('mood')} className="btn-primary-spec" style={{ fontSize: '11px', padding: '8px 12px', marginTop: '8px', justifyContent: 'center', width: '100%' }}>
-                Take Mood Check
-              </button>
+              <p style={{ fontSize: '13px', color: 'var(--body-text)', margin: 0, lineHeight: 1.5 }}>
+                "Explaining your thought process out loud before typing code yields higher interview marks than writing code in silence. Interviewers prioritize your reasoning path over pure syntax speed."
+              </p>
             </div>
 
           </div>

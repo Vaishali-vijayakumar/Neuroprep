@@ -41,12 +41,22 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
 
     const fetchAttempts = async () => {
       try {
-        if (db) {
-          const { data } = await db.from('aptitude_mock_attempts').select('*');
+        if (db && userEmail && userEmail !== 'guest') {
+          const { data } = await db.from('aptitude_mock_attempts').select('*').eq('user_email', userEmail).order('created_at', { ascending: false });
           if (data && data.length) {
-            setPastAttempts(data);
-            const cacheKey = `aptitude_attempts_${userEmail || 'guest'}`;
-            localStorage.setItem(cacheKey, JSON.stringify(data));
+            const mapped = data.map(row => ({
+              ...row,
+              mockTestId: row.test_id,
+              mockTestTitle: row.test_title,
+              accuracyPercent: row.breakdown?.accuracyPercent || Math.round((row.score / (row.total_questions || 1)) * 100),
+              isPassed: row.breakdown?.isPassed ?? true,
+              timeSpentSeconds: row.time_spent_seconds,
+              sectionalScores: row.breakdown?.sectionalScores || {},
+              userAnswers: row.breakdown?.userAnswers || {}
+            }));
+            setPastAttempts(mapped);
+            const cacheKey = `aptitude_attempts_${userEmail}`;
+            localStorage.setItem(cacheKey, JSON.stringify(mapped));
           }
         }
       } catch (e) {
@@ -174,7 +184,25 @@ export default function AptitudePractice({ setActiveTab, aptitudeState, setAptit
     };
 
     try {
-      if (db) await db.from('aptitude_mock_attempts').insert(attemptRecord);
+      if (db && userEmail && userEmail !== 'guest') {
+        await db.from('aptitude_mock_attempts').insert({
+          id: attemptRecord.id,
+          user_email: userEmail,
+          test_id: attemptRecord.test_id,
+          test_title: attemptRecord.test_title,
+          score: attemptRecord.score,
+          total_questions: attemptRecord.total_questions,
+          correct_count: attemptRecord.correct_count,
+          incorrect_count: attemptRecord.incorrect_count,
+          time_spent_seconds: attemptRecord.time_spent_seconds,
+          breakdown: {
+            ...attemptRecord.breakdown,
+            mockTestId: attemptRecord.test_id,
+            mockTestTitle: attemptRecord.test_title,
+            timeSpentSeconds: totalTimeSpentSeconds
+          }
+        });
+      }
     } catch (e) {
       console.warn('Aptitude attempt save notice:', e);
     }

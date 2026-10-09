@@ -302,11 +302,47 @@ export default function App() {
     }
   }, [codingState.score, interviewState.lastScore, interviewState.commScore, moodState.stress]);
 
-  // Reload journals whenever user email changes (after login)
+  // Helper to asynchronously load all user data from Supabase / dbService
+  const loadUserData = async (email) => {
+    if (!email || email === 'guest') return;
+    try {
+      const [journals, cs, is, ss, ms, as] = await Promise.all([
+        dbService.getJournalsForUser(email),
+        dbService.getTestScore('coding', email),
+        dbService.getTestScore('interview', email),
+        dbService.getTestScore('speech', email),
+        dbService.getTestScore('mood', email),
+        dbService.getTestScore('aptitude', email)
+      ]);
+      if (journals) setJournalEntries(journals);
+      if (cs) setCodingState({ score: cs.score || 0, solvedCount: cs.solvedCount || 0, lastUpdated: cs.date || null });
+      if (as) setAptitudeState(prev => ({ ...prev, score: as.score || 0, accuracy: as.accuracy || 0, totalTests: as.totalTests || 0, lastUpdated: as.date || null }));
+      if (is || ss) {
+        setInterviewState(prev => ({
+          ...prev,
+          lastScore: is?.score || 0,
+          commScore: ss?.score || 0,
+          totalCompleted: is?.totalCompleted || 0,
+          lastUpdated: is?.date || null
+        }));
+      }
+      if (ms) {
+        setMoodState(prev => ({
+          ...prev,
+          stress: ms.score || 0,
+          label: ms.label || (ms.score >= 7 ? 'Anxious' : ms.score > 0 ? 'Moderate' : 'Not Checked-in'),
+          lastUpdated: ms.date || null
+        }));
+      }
+    } catch (e) {
+      console.warn('Error loading user data from db:', e);
+    }
+  };
+
+  // Reload journals & test scores whenever user email changes (after login or verification)
   useEffect(() => {
     if (userEmail && userEmail !== 'guest') {
-      const saved = dbService.getJournalsForUser(userEmail);
-      setJournalEntries(saved);
+      loadUserData(userEmail);
     }
   }, [userEmail]);
 
@@ -337,7 +373,7 @@ export default function App() {
     setAuthModalOpen(true);
   };
 
-  const handleLoginSuccess = (userData) => {
+  const handleLoginSuccess = async (userData) => {
     const email = userData.email || 'guest';
     const newProfile = { ...profile, ...userData };
     setProfile(newProfile);
@@ -346,34 +382,8 @@ export default function App() {
     setIsLanding(false);
     setActiveTab('dashboard');
 
-    // Reload this user's journals from localStorage
-    const savedJournals = dbService.getJournalsForUser(email);
-    setJournalEntries(savedJournals);
-
-    // Reload per-test individual scores with their timestamps
-    const cs = dbService.getTestScore('coding', email);
-    const is = dbService.getTestScore('interview', email);
-    const ss = dbService.getTestScore('speech', email);
-    const ms = dbService.getTestScore('mood', email);
-
-    if (cs) setCodingState({ score: cs.score || 0, solvedCount: cs.solvedCount || 0, lastUpdated: cs.date || null });
-    if (is || ss) {
-      setInterviewState(prev => ({
-        ...prev,
-        lastScore: is?.score || 0,
-        commScore: ss?.score || 0,
-        totalCompleted: is?.totalCompleted || 0,
-        lastUpdated: is?.date || null
-      }));
-    }
-    if (ms) {
-      setMoodState(prev => ({
-        ...prev,
-        stress: ms.score || 0,
-        label: ms.label || (ms.score >= 7 ? 'Anxious' : ms.score > 0 ? 'Moderate' : 'Not Checked-in'),
-        lastUpdated: ms.date || null
-      }));
-    }
+    // Reload all data for this user
+    await loadUserData(email);
 
     // Save session in localStorage so page refresh stays logged in
     try {
@@ -406,21 +416,21 @@ export default function App() {
   };
 
   // Journal save handler — persists to per-user db and updates state
-  const handleSaveJournalEntry = (entry) => {
-    const updated = dbService.saveJournalForUser(entry, userEmail);
+  const handleSaveJournalEntry = async (entry) => {
+    const updated = await dbService.saveJournalForUser(entry, userEmail);
     setJournalEntries(updated);
     recordActivity(userEmail, 'journal');
   };
 
   // Journal delete handler — removes from per-user db and updates state
-  const handleDeleteJournalEntry = (entryId) => {
-    const updated = dbService.deleteJournalEntryForUser(entryId, userEmail);
+  const handleDeleteJournalEntry = async (entryId) => {
+    const updated = await dbService.deleteJournalEntryForUser(entryId, userEmail);
     setJournalEntries(updated);
   };
 
   // Journal clear all handler
-  const handleClearAllJournalEntries = () => {
-    const updated = dbService.clearAllJournalsForUser(userEmail);
+  const handleClearAllJournalEntries = async () => {
+    const updated = await dbService.clearAllJournalsForUser(userEmail);
     setJournalEntries(updated);
   };
 

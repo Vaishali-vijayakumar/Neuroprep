@@ -27,7 +27,15 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
   });
 
   // Load Report Snapshots & Previous Performance History
-  const [reportHistory, setReportHistory] = useState(() => dbService.getReportHistory(userEmail));
+  const [reportHistory, setReportHistory] = useState({ previousReport: null, latestReport: null, history: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    dbService.getReportHistory(userEmail).then(hist => {
+      if (!cancelled && hist) setReportHistory(hist);
+    });
+    return () => { cancelled = true; };
+  }, [userEmail]);
 
   useEffect(() => {
     // Snapshot current report to db for historical tracking if tests were taken
@@ -42,8 +50,11 @@ export default function Reports({ profile = {}, moodState = {}, interviewState =
         stress: moodState?.stress || 0,
         targetCompany
       };
-      dbService.saveReportSnapshot(currentSnapshot, userEmail);
-      setReportHistory(dbService.getReportHistory(userEmail));
+      dbService.saveReportSnapshot(currentSnapshot, userEmail).then(() => {
+        dbService.getReportHistory(userEmail).then(hist => {
+          if (hist) setReportHistory(hist);
+        });
+      });
     }
   }, [userEmail, readiness, codingState?.score, interviewState?.lastScore, aptitudeState?.score, moodState?.stress]);
 

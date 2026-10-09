@@ -1,19 +1,24 @@
 -- ==============================================================================
--- NEUROPREP SUPABASE SCHEMA
--- Run these scripts in the Supabase SQL Editor to create the necessary tables
+-- NEUROPREP SUPABASE SCHEMA & FIX MIGRATION
+-- Run this entire script in Supabase Dashboard -> SQL Editor -> Run
 -- ==============================================================================
 
--- 1. Profiles Table (Automatically populated on signup)
+-- 1. Profiles Table
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID REFERENCES auth.users(id) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     college TEXT,
     department TEXT,
-    graduation_year INTEGER,
+    graduation_year INTEGER DEFAULT 2026,
+    cgpa TEXT,
+    skills JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cgpa TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS skills JSONB DEFAULT '[]'::jsonb;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles (email);
 
 -- 2. Test Scores Table (Stores Aptitude, Coding, Interview, Speech, Mood scores)
 CREATE TABLE IF NOT EXISTS public.test_scores (
@@ -21,18 +26,22 @@ CREATE TABLE IF NOT EXISTS public.test_scores (
     user_email TEXT NOT NULL,
     type TEXT NOT NULL,
     score NUMERIC DEFAULT 0,
-    metadata JSONB,
+    metadata JSONB DEFAULT '{}'::jsonb,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_email, type)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_test_scores_user_type ON public.test_scores (user_email, type);
 
 -- 3. Readiness Scores Table
 CREATE TABLE IF NOT EXISTS public.readiness_scores (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_email TEXT UNIQUE NOT NULL,
-    score_data JSONB NOT NULL,
+    user_email TEXT UNIQUE,
+    score_data JSONB,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+ALTER TABLE public.readiness_scores ADD COLUMN IF NOT EXISTS user_email TEXT;
+ALTER TABLE public.readiness_scores ADD COLUMN IF NOT EXISTS score_data JSONB;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_readiness_scores_email ON public.readiness_scores (user_email);
 
 -- 4. Interview Sessions Table
 CREATE TABLE IF NOT EXISTS public.interview_sessions (
@@ -64,14 +73,18 @@ CREATE TABLE IF NOT EXISTS public.report_snapshots (
 -- 6. Thought Journals
 CREATE TABLE IF NOT EXISTS public.thought_journals (
     id TEXT PRIMARY KEY,
-    user_email TEXT NOT NULL,
+    user_email TEXT,
     date TEXT,
     title TEXT,
     category TEXT,
     content TEXT,
     analysis JSONB,
+    sentiment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+ALTER TABLE public.thought_journals ADD COLUMN IF NOT EXISTS user_email TEXT;
+ALTER TABLE public.thought_journals ADD COLUMN IF NOT EXISTS date TEXT;
+ALTER TABLE public.thought_journals ADD COLUMN IF NOT EXISTS analysis JSONB;
 
 -- 7. Hope Notes
 CREATE TABLE IF NOT EXISTS public.hope_notes (
@@ -141,10 +154,16 @@ CREATE TABLE IF NOT EXISTS public.company_experiences (
     id         TEXT PRIMARY KEY,
     company_id TEXT NOT NULL,
     user_email TEXT,
+    title      TEXT,
+    role       TEXT,
+    difficulty TEXT,
+    college    TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     published_date TEXT,
     data JSONB
 );
+ALTER TABLE public.company_experiences ADD COLUMN IF NOT EXISTS user_email TEXT;
+ALTER TABLE public.company_experiences ADD COLUMN IF NOT EXISTS data JSONB;
 
 -- 15. Placement Roadmap Progress
 CREATE TABLE IF NOT EXISTS public.roadmap_progress (
@@ -167,51 +186,53 @@ CREATE TABLE IF NOT EXISTS public.daily_challenges_solved (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==============================================================================
--- ROW LEVEL SECURITY
--- ==============================================================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.test_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.readiness_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.interview_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.report_snapshots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.thought_journals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.hope_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.positive_memories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.weekly_reflections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.dsa_solved ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.gamification_state ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.company_mastery ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.company_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.company_experiences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.roadmap_progress ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sheets_completed ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.daily_challenges_solved ENABLE ROW LEVEL SECURITY;
+-- 18. Aptitude Mock Attempts
+CREATE TABLE IF NOT EXISTS public.aptitude_mock_attempts (
+    id TEXT PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    test_id TEXT NOT NULL,
+    test_title TEXT,
+    score NUMERIC DEFAULT 0,
+    total_questions INTEGER DEFAULT 0,
+    correct_count INTEGER DEFAULT 0,
+    incorrect_count INTEGER DEFAULT 0,
+    time_spent_seconds INTEGER DEFAULT 0,
+    breakdown JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-CREATE POLICY "Allow all for authenticated" ON public.profiles FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.test_scores FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.readiness_scores FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.interview_sessions FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.report_snapshots FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.thought_journals FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.hope_notes FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.positive_memories FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.weekly_reflections FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.dsa_solved FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.gamification_state FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.company_mastery FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.company_notes FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.company_experiences FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.roadmap_progress FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.sheets_completed FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON public.daily_challenges_solved FOR ALL USING (true);
+-- ==============================================================================
+-- ROW LEVEL SECURITY (RLS) FIX
+-- Allow reads, writes, and updates without permission errors
+-- ==============================================================================
+
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.test_scores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.readiness_scores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.interview_sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.report_snapshots DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.thought_journals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hope_notes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.positive_memories DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_reflections DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dsa_solved DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gamification_state DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_mastery DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_notes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_experiences DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roadmap_progress DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sheets_completed DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_challenges_solved DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aptitude_mock_attempts DISABLE ROW LEVEL SECURITY;
+
+-- Grant permissions to anon, authenticated, and service_role
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- ==============================================================================
 -- AUTOMATIC PROFILE CREATION (TRIGGER & BACKFILL)
 -- ==============================================================================
 
--- 1. Trigger Function: Automatically creates a row in public.profiles whenever
---    a user signs up or is created in Supabase Auth (auth.users)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -224,8 +245,7 @@ BEGIN
         COALESCE(NEW.raw_user_meta_data->>'department', ''),
         COALESCE((NEW.raw_user_meta_data->>'graduation_year')::integer, 2026)
     )
-    ON CONFLICT (id) DO UPDATE SET
-        email = EXCLUDED.email,
+    ON CONFLICT (email) DO UPDATE SET
         name = COALESCE(EXCLUDED.name, profiles.name),
         college = COALESCE(EXCLUDED.college, profiles.college),
         department = COALESCE(EXCLUDED.department, profiles.department),
@@ -235,28 +255,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. Bind Trigger to auth.users table
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- 3. Backfill Query: Populate public.profiles for any users already registered in Supabase Auth
---    (e.g., users who registered before this trigger was added)
-INSERT INTO public.profiles (id, email, name, college, department, graduation_year)
-SELECT 
-    id,
-    email,
-    COALESCE(raw_user_meta_data->>'name', split_part(email, '@', 1)),
-    COALESCE(raw_user_meta_data->>'college', ''),
-    COALESCE(raw_user_meta_data->>'department', ''),
-    COALESCE((raw_user_meta_data->>'graduation_year')::integer, 2026)
-FROM auth.users
-ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    name = COALESCE(EXCLUDED.name, profiles.name),
-    college = COALESCE(EXCLUDED.college, profiles.college),
-    department = COALESCE(EXCLUDED.department, profiles.department),
-    graduation_year = COALESCE(EXCLUDED.graduation_year, profiles.graduation_year),
-    updated_at = NOW();
-

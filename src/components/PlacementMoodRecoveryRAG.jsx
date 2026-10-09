@@ -1,378 +1,500 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ShieldCheck, Brain, TrendingUp, AlertCircle, 
-  Sparkles, Database, CheckCircle2, RefreshCw, 
-  ArrowRight, FileText, Target, BookOpen, Layers
+  Send, ShieldCheck, CheckCheck, Sparkles, 
+  RefreshCw, Bot, User, Brain, TrendingUp, 
+  Target, CheckCircle2, Database, AlertCircle,
+  HelpCircle
 } from 'lucide-react';
-import { generateMoodRecoveryRAG, KNOWLEDGE_CHUNKS } from '../services/placementMoodRecoveryRAG';
+import { generateMoodRecoveryRAG } from '../services/placementMoodRecoveryRAG';
 
 export default function PlacementMoodRecoveryRAG() {
-  const [userVent, setUserVent] = useState('');
-  const [stage, setStage] = useState('technical_2');
-  const [companyType, setCompanyType] = useState('Fintech / Tier-1 Product');
-  const [isLoading, setIsLoading] = useState(false);
-  const [deconstructionResult, setDeconstructionResult] = useState(null);
-  const [showRetrievedChunks, setShowRetrievedChunks] = useState(false);
-
-  // Quick preset real-life candidate situations
-  const PRESET_SCENARIOS = [
+  const [messages, setMessages] = useState([
     {
-      label: 'Eliminated in Round 2',
-      vent: "I was eliminated in Round 2 of the fintech drive. Everyone else got through. I'm just not built for this, I should quit preparing.",
-      stage: 'technical_2',
-      companyType: 'Fintech Firm'
-    },
-    {
-      label: 'Froze on Live Coding',
-      vent: "I completely blanked out on a Graph question in front of the interviewer. My hands froze and I feel like an absolute fraud.",
-      stage: 'technical_1',
-      companyType: 'Product MNC'
-    },
-    {
-      label: 'Repeated OA Failures',
-      vent: "Failed 4 consecutive campus OAs this week while my batchmates are getting shortlisted. It feels like my preparation was completely useless.",
-      stage: 'oa',
-      companyType: 'Enterprise / MNC'
-    },
-    {
-      label: 'Batchmates Placed First',
-      vent: "My 3 closest friends just received their offer letters. I'm the only one left unplaced. I feel like my career is ruined before it even started.",
-      stage: 'final_round',
-      companyType: 'Campus Drive'
+      id: 'welcome_1',
+      sender: 'bot',
+      timestamp: 'Just now',
+      text: "Hey friend. I'm PivotAI, your placement reality guide. If you just faced a rejection, froze in a live interview, or feel like giving up, talk to me.\n\nI won't give you empty cheerleading like 'Don't worry, you'll do great!'. Instead, I'll give you actual hiring pipeline numbers, CBT reality checks, and verified alumni recovery stories. What happened?",
+      groundingData: null
     }
-  ];
+  ]);
 
-  const handleApplyPreset = (preset) => {
-    setUserVent(preset.vent);
-    setStage(preset.stage);
-    setCompanyType(preset.companyType);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [showRAGCorpusModal, setShowRAGCorpusModal] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleRunRAG = async (e) => {
-    if (e) e.preventDefault();
-    if (!userVent.trim()) return;
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
-    setIsLoading(true);
-    setDeconstructionResult(null);
+  const QUICK_PROMPTS = [
+    "I was eliminated in Round 2 of Fintech drive. Everyone else got through.",
+    "I completely froze on a live Graph question in front of the interviewer.",
+    "Failed 4 campus OAs this week; feel like my prep was useless.",
+    "My 3 close friends got placed today and I'm left unplaced."
+  ];
+
+  const handleSend = async (textToSend) => {
+    const text = (textToSend || inputText).trim();
+    if (!text || isTyping) return;
+
+    const userMsgId = `user_${Date.now()}`;
+    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // 1. Append user message
+    setMessages(prev => [
+      ...prev,
+      {
+        id: userMsgId,
+        sender: 'user',
+        timestamp: currentTimeStr,
+        text
+      }
+    ]);
+
+    setInputText('');
+    setIsTyping(true);
 
     try {
-      // Simulate slight micro-delay for vector retrieval feedback
-      await new Promise(r => setTimeout(r, 450));
-      const res = await generateMoodRecoveryRAG({
-        userVent,
-        stage,
-        companyType
+      // Simulate realistic retrieval & synthesis delay (800ms)
+      await new Promise(r => setTimeout(r, 750));
+
+      const ragResult = await generateMoodRecoveryRAG({
+        userVent: text,
+        stage: 'technical_2',
+        companyType: 'Campus Drive'
       });
-      setDeconstructionResult(res);
+
+      const botMsgId = `bot_${Date.now()}`;
+      setMessages(prev => [
+        ...prev,
+        {
+          id: botMsgId,
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: "I hear you, and it hurts to get dropped. But let's look at the actual facts before you write off your engineering ability:",
+          groundingData: ragResult
+        }
+      ]);
     } catch (err) {
-      console.error("RAG execution failed", err);
+      console.error("RAG pipeline error", err);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `bot_err_${Date.now()}`,
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: "I encountered an error retrieving pipeline chunks. But remember: 60-70% of Round 2 drops are purely capacity-driven, not capability-driven.",
+          groundingData: null
+        }
+      ]);
     } finally {
-      setIsLoading(false);
+      setIsTyping(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
   return (
-    <div className="saas-card-spec" style={{ padding: '32px', marginBottom: '36px', backgroundColor: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
+    <div className="saas-card-spec" style={{ 
+      padding: 0, 
+      marginBottom: '36px', 
+      overflow: 'hidden', 
+      border: '1px solid var(--border-color)',
+      backgroundColor: 'var(--bg-card-solid)',
+      boxShadow: 'var(--shadow-3d-card)'
+    }}>
       
-      {/* 1. Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '22px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', margin: 0, backgroundColor: 'rgba(82, 98, 87, 0.1)', color: 'var(--btn-sage)' }}>
-              <ShieldCheck style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
-              Placement Reality Engine
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
-              CBT Vector Knowledge Grounding
-            </span>
+      {/* ── 1. WHATSAPP STYLE CHAT HEADER ─────────────────────────────────── */}
+      <div style={{
+        padding: '14px 20px',
+        backgroundColor: 'var(--btn-sage)',
+        color: '#ffffff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Avatar with verified shield badge */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '16px',
+              color: '#ffffff'
+            }}>
+              PA
+            </div>
+            <div style={{
+              position: 'absolute',
+              bottom: '-2px',
+              right: '-2px',
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              border: '2px solid #ffffff'
+            }} />
           </div>
 
-          <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--secondary-heading)', margin: 0 }}>
-            Post-Interview Reality Check & Rebound Analyzer
-          </h3>
-          <p style={{ color: 'var(--body-text)', fontSize: '14px', margin: '6px 0 0 0', maxWidth: '780px', lineHeight: 1.5 }}>
-            A clinical RAG pipeline addressing placement burnout. Replaces generic cheerleading with grounded hiring math, 
-            CBT cognitive distortion diagnosis, and verified alumni rebound trajectories.
-          </p>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
+                PivotAI • Placement Recovery Mentor
+              </h3>
+              <ShieldCheck style={{ width: '16px', height: '16px', color: '#A7F3D0' }} />
+            </div>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>Online</span>
+              <span>•</span>
+              <span>CBT Grounding & Placement Reality Check</span>
+            </p>
+          </div>
         </div>
 
         <button
           type="button"
-          onClick={() => setShowRetrievedChunks(!showRetrievedChunks)}
+          onClick={() => setShowRAGCorpusModal(!showRAGCorpusModal)}
           style={{
-            padding: '7px 14px',
-            fontSize: '12px',
+            background: 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
             borderRadius: '8px',
-            border: '1px solid var(--border-color)',
-            backgroundColor: 'transparent',
-            color: 'var(--body-text)',
+            padding: '6px 12px',
+            color: '#ffffff',
+            fontSize: '11.5px',
+            fontWeight: 600,
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px'
           }}
         >
-          <Database style={{ width: '13px', height: '13px', color: 'var(--btn-sage)' }} />
-          <span>{showRetrievedChunks ? 'Hide Knowledge Base' : 'Inspect RAG Corpus'}</span>
+          <Database style={{ width: '13px', height: '13px' }} />
+          <span>{showRAGCorpusModal ? 'Hide Corpus' : 'Inspect RAG Corpus'}</span>
         </button>
       </div>
 
-      {/* Expandable Knowledge Base Inspection */}
-      {showRetrievedChunks && (
+      {/* RAG Corpus Inspector Dropdown */}
+      {showRAGCorpusModal && (
         <div style={{
-          marginBottom: '24px',
-          padding: '18px 20px',
-          borderRadius: '12px',
-          backgroundColor: 'var(--bg-main)',
-          border: '1px solid var(--border-color)'
+          padding: '14px 20px',
+          backgroundColor: '#F3F4F1',
+          borderBottom: '1px solid var(--border-color)',
+          fontSize: '12px',
+          color: 'var(--body-text)'
         }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '13.5px', fontWeight: 800, color: 'var(--main-heading)' }}>
-            Active RAG Grounding Vector Store (3 Domain Corpora)
-          </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
-            <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
-              <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', display: 'block', marginBottom: '4px' }}>1. CBT Distortion Corpus</strong>
-              <p style={{ fontSize: '11.5px', color: 'var(--body-text)', margin: 0 }}>CBT Thought records separating isolated technical variables from personal capacity.</p>
+          <strong style={{ color: 'var(--main-heading)', display: 'block', marginBottom: '6px' }}>
+            RAG Grounding Corpus Active:
+          </strong>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
+            <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
+              <span style={{ color: 'var(--btn-sage)', fontWeight: 700 }}>1. CBT Distortion Corpus:</span> All-or-Nothing & Overgeneralization reframing templates.
             </div>
-            <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
-              <strong style={{ fontSize: '12px', color: 'var(--accent-terracotta)', display: 'block', marginBottom: '4px' }}>2. Placement Funnel Realities</strong>
-              <p style={{ fontSize: '11.5px', color: 'var(--body-text)', margin: 0 }}>60-75% Round 2 attrition statistics, quota caps, and automated OA threshold mechanics.</p>
+            <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
+              <span style={{ color: 'var(--accent-terracotta)', fontWeight: 700 }}>2. Funnel Math:</span> 60-75% Round 2 attrition statistics & capacity filters.
             </div>
-            <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bg-card-solid)', border: '1px solid var(--border-color)' }}>
-              <strong style={{ fontSize: '12px', color: 'var(--secondary-olive)', display: 'block', marginBottom: '4px' }}>3. Verified Alumni Case Studies</strong>
-              <p style={{ fontSize: '11.5px', color: 'var(--body-text)', margin: 0 }}>Anonymized recovery timelines showing 48h skill gap fixes yielding offers within 7-14 days.</p>
+            <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
+              <span style={{ color: 'var(--secondary-olive)', fontWeight: 700 }}>3. Alumni Precedents:</span> Verified timelines of 48h fixes converting to offers.
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. Scenario Presets */}
-      <div style={{ marginBottom: '16px' }}>
-        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '8px' }}>
-          Select a Common Situation or Describe Your Own
-        </span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {PRESET_SCENARIOS.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleApplyPreset(p)}
+      {/* ── 2. WHATSAPP CHAT WALLPAPER & CONVERSATION BODY ─────────────────── */}
+      <div style={{
+        height: '420px',
+        overflowY: 'auto',
+        padding: '20px',
+        backgroundColor: '#F9F8F6',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        {messages.map((msg) => {
+          const isUser = msg.sender === 'user';
+          return (
+            <div
+              key={msg.id}
               style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-main)',
-                color: 'var(--main-heading)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--btn-sage)';
-                e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.backgroundColor = 'var(--bg-main)';
+                display: 'flex',
+                justifyContent: isUser ? 'flex-end' : 'flex-start',
+                width: '100%'
               }}
             >
-              {p.label}
-            </button>
-          ))}
-        </div>
+              <div style={{
+                maxWidth: isUser ? '75%' : '88%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: isUser ? 'flex-end' : 'flex-start'
+              }}>
+                
+                {/* Bubble Container */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                  backgroundColor: isUser ? '#E8EFE9' : '#FFFFFF',
+                  border: isUser ? '1px solid rgba(82, 98, 87, 0.25)' : '1px solid var(--border-color)',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  color: 'var(--main-heading)',
+                  fontSize: '13.5px',
+                  lineHeight: 1.5,
+                  position: 'relative'
+                }}>
+                  
+                  {/* Message Main Text */}
+                  <div style={{ whiteSpace: 'pre-line', marginBottom: msg.groundingData ? '12px' : '4px' }}>
+                    {msg.text}
+                  </div>
+
+                  {/* Grounded Deconstruction Card (If Bot Provided Evidence) */}
+                  {msg.groundingData && (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      marginTop: '10px',
+                      padding: '14px',
+                      backgroundColor: '#FBFDF9',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(82, 98, 87, 0.2)'
+                    }}>
+                      
+                      {/* Pillar 1: Cognitive Trap */}
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <Brain style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
+                          <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            1. Brain Trap Diagnosed
+                          </strong>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
+                          {msg.groundingData.diagnosis.distortionType}
+                        </div>
+                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--body-text)' }}>
+                          {msg.groundingData.diagnosis.mechanism}
+                        </p>
+                      </div>
+
+                      {/* Pillar 2: The Hiring Math Reality */}
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <TrendingUp style={{ width: '14px', height: '14px', color: 'var(--accent-terracotta)' }} />
+                          <strong style={{ fontSize: '12px', color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            2. Placement Math & Funnel Reality
+                          </strong>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
+                          {msg.groundingData.realityCheck.pipelineMetric}
+                        </div>
+                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--body-text)' }}>
+                          {msg.groundingData.realityCheck.factualContext}
+                        </p>
+                      </div>
+
+                      {/* Pillar 3: What Failed vs Who You Are */}
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <Target style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
+                          <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            3. Specific Gap vs Your Self-Worth
+                          </strong>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
+                          Isolated Factor: {msg.groundingData.gapSeparation.isolatedVariable}
+                        </div>
+                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--body-text)' }}>
+                          {msg.groundingData.gapSeparation.competenceVsWorth}
+                        </p>
+                      </div>
+
+                      {/* Pillar 4: Real Alumni Turnaround */}
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <CheckCircle2 style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
+                          <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            4. Alumni Turnaround Precedent
+                          </strong>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
+                          {msg.groundingData.precedentAnchor.caseTitle}
+                        </div>
+                        <p style={{ margin: '3px 0 6px 0', fontSize: '12px', color: 'var(--body-text)' }}>
+                          {msg.groundingData.precedentAnchor.alumniTrajectory}
+                        </p>
+                        <div style={{ borderTop: '1px dashed #D8D2CE', paddingTop: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--secondary-heading)' }}>Immediate 48-Hour Plan:</span>
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '11.5px', color: 'var(--body-text)' }}>
+                            {msg.groundingData.precedentAnchor.actionableReboundPlan.map((step, idx) => (
+                              <li key={idx} style={{ marginBottom: '2px' }}>{step}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* Timestamp & Read Receipt */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: '4px',
+                    fontSize: '10.5px',
+                    color: 'var(--text-muted)',
+                    marginTop: '4px'
+                  }}>
+                    <span>{msg.timestamp}</span>
+                    {isUser && <CheckCheck style={{ width: '13px', height: '13px', color: '#10B981' }} />}
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Typing indicator */}
+        {isTyping && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              padding: '10px 16px',
+              borderRadius: '16px 16px 16px 2px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid var(--border-color)',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '12.5px',
+              color: 'var(--text-muted)'
+            }}>
+              <RefreshCw style={{ width: '13px', height: '13px', animation: 'spin 1s infinite linear', color: 'var(--btn-sage)' }} />
+              <span>PivotAI is retrieving placement data & typing...</span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Input Query Form */}
-      <form onSubmit={handleRunRAG} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-        <textarea
-          rows={3}
-          value={userVent}
-          onChange={(e) => setUserVent(e.target.value)}
-          placeholder="Describe your interview setback or thoughts (e.g., Eliminated in Round 2, froze on graph traversal, feel like quitting...)"
+      {/* ── 3. QUICK CHIP PROMPTS ────────────────────────────────────────── */}
+      <div style={{
+        padding: '10px 16px',
+        backgroundColor: '#F3F2EF',
+        borderTop: '1px solid var(--border-color)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        overflowX: 'auto',
+        whiteSpace: 'nowrap'
+      }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', flexShrink: 0 }}>
+          Tap to vent:
+        </span>
+        {QUICK_PROMPTS.map((prompt, pIdx) => (
+          <button
+            key={pIdx}
+            type="button"
+            onClick={() => handleSend(prompt)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: '#FFFFFF',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              color: 'var(--main-heading)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--btn-sage)';
+              e.currentTarget.style.backgroundColor = '#EAEFE9';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.backgroundColor = '#FFFFFF';
+            }}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      {/* ── 4. CHAT INPUT BAR ────────────────────────────────────────────── */}
+      <div style={{
+        padding: '12px 16px',
+        backgroundColor: '#FFFFFF',
+        borderTop: '1px solid var(--border-color)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <input
+          type="text"
+          placeholder="Message PivotAI about your rejection or interview stress..."
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isTyping}
           style={{
-            width: '100%',
-            padding: '12px 14px',
-            borderRadius: '10px',
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '20px',
             border: '1px solid var(--border-color)',
-            fontSize: '13.5px',
+            fontSize: '13px',
             fontFamily: 'inherit',
-            backgroundColor: 'var(--bg-main)',
+            backgroundColor: '#F9F8F6',
             color: 'var(--main-heading)',
-            outline: 'none',
-            resize: 'vertical',
-            lineHeight: 1.5
+            outline: 'none'
           }}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, marginRight: '6px' }}>Round Stage:</span>
-              <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value)}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'var(--bg-main)',
-                  color: 'var(--main-heading)',
-                  fontSize: '12px',
-                  outline: 'none'
-                }}
-              >
-                <option value="oa">Online Assessment (OA)</option>
-                <option value="technical_1">Round 1 Technical</option>
-                <option value="technical_2">Round 2 Technical</option>
-                <option value="final_round">Final / Managerial Round</option>
-                <option value="hr">HR Round</option>
-              </select>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, marginRight: '6px' }}>Target Sector:</span>
-              <select
-                value={companyType}
-                onChange={(e) => setCompanyType(e.target.value)}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'var(--bg-main)',
-                  color: 'var(--main-heading)',
-                  fontSize: '12px',
-                  outline: 'none'
-                }}
-              >
-                <option value="Fintech Firm">Fintech Firm</option>
-                <option value="Product MNC">Tier-1 Product MNC</option>
-                <option value="Fast Startup">Fast-Growing Startup</option>
-                <option value="Enterprise / MNC">Enterprise / Campus Recruiter</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !userVent.trim()}
-            className="btn-primary-spec"
-            style={{
-              padding: '9px 20px',
-              fontSize: '13px',
-              fontWeight: 600,
-              borderRadius: '8px',
-              backgroundColor: 'var(--btn-sage)',
-              color: '#ffffff',
-              border: '1px solid var(--btn-sage-hover)',
-              cursor: isLoading || !userVent.trim() ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !userVent.trim() ? 0.7 : 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {isLoading ? <RefreshCw style={{ width: '14px', height: '14px', animation: 'spin 1s infinite linear', color: '#ffffff' }} /> : <Sparkles style={{ width: '14px', height: '14px', color: '#ffffff' }} />}
-            <span style={{ color: '#ffffff' }}>{isLoading ? 'Retrieving Grounding Chunks...' : 'Deconstruct Rejection with RAG'}</span>
-          </button>
-        </div>
-      </form>
-
-      {/* 4. Structured RAG Deconstruction Output */}
-      {deconstructionResult && (
-        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--main-heading)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Clinical Evidence-Grounded Audit
-            </span>
-            <span style={{ fontSize: '11.5px', color: 'var(--btn-sage)', fontWeight: 700 }}>
-              3 Grounded Vector Anchors Retrieved
-            </span>
-          </div>
-
-          {/* 4-Pillar Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            
-            {/* Pillar 1: Cognitive Distortion Diagnosis */}
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Brain style={{ width: '15px', height: '15px', color: 'var(--btn-sage)' }} />
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                  1. Cognitive Distortion Diagnosis
-                </span>
-              </div>
-              <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--main-heading)' }}>
-                {deconstructionResult.diagnosis.distortionType}
-              </h5>
-              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--body-text)', lineHeight: 1.45 }}>
-                {deconstructionResult.diagnosis.mechanism}
-              </p>
-              <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px dashed var(--border-color)', fontSize: '11px', color: 'var(--secondary-olive)', fontStyle: 'italic' }}>
-                Reframing Anchor: {deconstructionResult.diagnosis.cbtAnchor}
-              </div>
-            </div>
-
-            {/* Pillar 2: Data-Grounded Reality Check */}
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp style={{ width: '15px', height: '15px', color: 'var(--accent-terracotta)' }} />
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                  2. Pipeline Conversion Math
-                </span>
-              </div>
-              <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--main-heading)' }}>
-                {deconstructionResult.realityCheck.pipelineMetric}
-              </h5>
-              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--body-text)', lineHeight: 1.45 }}>
-                {deconstructionResult.realityCheck.factualContext}
-              </p>
-              <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px dashed var(--border-color)', fontSize: '11.5px', color: 'var(--accent-terracotta)', fontWeight: 600 }}>
-                {deconstructionResult.realityCheck.stageAnalysis}
-              </div>
-            </div>
-
-            {/* Pillar 3: Knowledge Gap vs. Self-Worth */}
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Target style={{ width: '15px', height: '15px', color: 'var(--btn-sage)' }} />
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                  3. Isolated Variable vs Self-Worth
-                </span>
-              </div>
-              <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--main-heading)' }}>
-                Identified Gap: {deconstructionResult.gapSeparation.isolatedVariable}
-              </h5>
-              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--body-text)', lineHeight: 1.45 }}>
-                {deconstructionResult.gapSeparation.competenceVsWorth}
-              </p>
-            </div>
-
-            {/* Pillar 4: Verified Alumni Precedent */}
-            <div style={{ padding: '18px', borderRadius: '12px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 style={{ width: '15px', height: '15px', color: 'var(--btn-sage)' }} />
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                  4. Alumni Precedent & 48-Hour Plan
-                </span>
-              </div>
-              <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--main-heading)' }}>
-                {deconstructionResult.precedentAnchor.caseTitle}
-              </h5>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--body-text)', lineHeight: 1.45 }}>
-                {deconstructionResult.precedentAnchor.alumniTrajectory}
-              </p>
-              <ul style={{ margin: '6px 0 0 16px', padding: 0, fontSize: '11.5px', color: 'var(--secondary-heading)', lineHeight: 1.45 }}>
-                {deconstructionResult.precedentAnchor.actionableReboundPlan.map((step, sIdx) => (
-                  <li key={sIdx}>{step}</li>
-                ))}
-              </ul>
-            </div>
-
-          </div>
-
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={() => handleSend()}
+          disabled={!inputText.trim() || isTyping}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--btn-sage)',
+            border: 'none',
+            cursor: !inputText.trim() || isTyping ? 'not-allowed' : 'pointer',
+            opacity: !inputText.trim() || isTyping ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+            boxShadow: '0 2px 5px rgba(82, 98, 87, 0.3)'
+          }}
+          title="Send message"
+        >
+          <Send style={{ width: '16px', height: '16px', color: '#ffffff', marginLeft: '2px' }} />
+        </button>
+      </div>
 
     </div>
   );

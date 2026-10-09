@@ -237,12 +237,17 @@ export default function Dashboard({
             style={{ 
               padding: '12px 24px', 
               fontSize: '0.9rem', 
+              fontWeight: 600,
               borderRadius: '12px',
               whiteSpace: 'nowrap',
-              flexShrink: 0
+              flexShrink: 0,
+              backgroundColor: 'var(--btn-sage)',
+              color: '#ffffff',
+              border: '1px solid var(--btn-sage-hover)',
+              cursor: 'pointer'
             }}
           >
-            Write Today's Diary Entry
+            <span style={{ color: '#ffffff' }}>Write Today's Diary Entry</span>
           </button>
         </div>
       </section>
@@ -293,16 +298,21 @@ export default function Dashboard({
                 onClick={() => setShowAddGoalModal(!showAddGoalModal)}
                 className="btn-primary-spec"
                 style={{
-                  padding: '7px 14px',
-                  fontSize: '12px',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
                   borderRadius: '8px',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  backgroundColor: 'var(--btn-sage)',
+                  color: '#ffffff',
+                  border: '1px solid var(--btn-sage-hover)',
+                  cursor: 'pointer'
                 }}
               >
-                {showAddGoalModal ? <X style={{ width: '13px', height: '13px' }} /> : <Plus style={{ width: '13px', height: '13px' }} />}
-                <span>{showAddGoalModal ? 'Cancel' : 'Add a Personal Goal'}</span>
+                {showAddGoalModal ? <X style={{ width: '13px', height: '13px', color: '#ffffff' }} /> : <Plus style={{ width: '13px', height: '13px', color: '#ffffff' }} />}
+                <span style={{ color: '#ffffff' }}>{showAddGoalModal ? 'Cancel' : 'Add a Personal Goal'}</span>
               </button>
             </div>
 
@@ -410,12 +420,17 @@ export default function Dashboard({
                     type="submit"
                     className="btn-primary-spec"
                     style={{
-                      padding: '7px 18px',
-                      fontSize: '12px',
-                      borderRadius: '8px'
+                      padding: '8px 18px',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--btn-sage)',
+                      color: '#ffffff',
+                      border: '1px solid var(--btn-sage-hover)',
+                      cursor: 'pointer'
                     }}
                   >
-                    Add Task (Start 24h Timer)
+                    <span style={{ color: '#ffffff' }}>Add Task (Start 24h Timer)</span>
                   </button>
                 </div>
               </form>
@@ -434,10 +449,20 @@ export default function Dashboard({
                 <button
                   onClick={() => setShowAddGoalModal(true)}
                   className="btn-primary-spec"
-                  style={{ fontSize: '12px', padding: '8px 18px', margin: '0 auto' }}
+                  style={{
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    padding: '8px 18px',
+                    margin: '0 auto',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--btn-sage)',
+                    color: '#ffffff',
+                    border: '1px solid var(--btn-sage-hover)',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <Plus style={{ width: '13px', height: '13px', marginRight: '4px' }} />
-                  Add Your First Task
+                  <Plus style={{ width: '13px', height: '13px', marginRight: '4px', color: '#ffffff' }} />
+                  <span style={{ color: '#ffffff' }}>Add Your First Task</span>
                 </button>
               </div>
             ) : (
@@ -544,16 +569,23 @@ export default function Dashboard({
                         onClick={() => toggleGoal(g.id)}
                         className="btn-primary-spec"
                         style={{
-                          padding: '7px 14px',
+                          padding: '7px 15px',
                           fontSize: '12px',
-                          gap: '4px',
+                          fontWeight: 600,
+                          gap: '5px',
                           borderRadius: '8px',
-                          backgroundColor: isDone ? 'rgba(82, 98, 87, 0.2)' : undefined,
-                          color: isDone ? 'var(--btn-sage)' : undefined
+                          backgroundColor: isDone ? 'rgba(82, 98, 87, 0.2)' : 'var(--btn-sage)',
+                          color: isDone ? 'var(--btn-sage)' : '#ffffff',
+                          border: isDone ? '1px solid rgba(82, 98, 87, 0.35)' : '1px solid var(--btn-sage-hover)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center'
                         }}
                       >
-                        <span>{isDone ? 'Completed' : 'Mark Done'}</span>
-                        <Check style={{ width: '13px', height: '13px' }} />
+                        <span style={{ color: isDone ? 'var(--btn-sage)' : '#ffffff' }}>
+                          {isDone ? 'Completed' : 'Mark Done'}
+                        </span>
+                        <Check style={{ width: '13px', height: '13px', color: isDone ? 'var(--btn-sage)' : '#ffffff' }} />
                       </button>
 
                       {/* Delete button */}

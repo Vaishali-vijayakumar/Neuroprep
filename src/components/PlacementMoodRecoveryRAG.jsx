@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, ShieldCheck, CheckCheck, Sparkles, 
-  RefreshCw, Bot, User, Brain, TrendingUp, 
-  Target, CheckCircle2, Database, AlertCircle,
-  HelpCircle
+  RefreshCw, Heart, User, Brain, TrendingUp, 
+  Target, CheckCircle2, HelpCircle
 } from 'lucide-react';
 import { generateMoodRecoveryRAG } from '../services/placementMoodRecoveryRAG';
 
@@ -13,14 +12,14 @@ export default function PlacementMoodRecoveryRAG() {
       id: 'welcome_1',
       sender: 'bot',
       timestamp: 'Just now',
-      text: "Hey friend. I'm PivotAI, your placement reality guide. If you just faced a rejection, froze in a live interview, or feel like giving up, talk to me.\n\nI won't give you empty cheerleading like 'Don't worry, you'll do great!'. Instead, I'll give you actual hiring pipeline numbers, CBT reality checks, and verified alumni recovery stories. What happened?",
+      text: "Hey there, take a slow, gentle breath. I'm Pivot, your friendly placement companion and senior. If you just faced a tough rejection, went blank in an interview, or feel exhausted and overwhelmed, please know you are not alone.\n\nI won't give you empty, shallow advice. I'm here to truly listen, explain what really happened behind the scenes, and help you find your footing again with warmth and real senior stories. What's on your heart right now?",
       groundingData: null
     }
   ]);
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showRAGCorpusModal, setShowRAGCorpusModal] = useState(false);
+  const [showHelperModal, setShowHelperModal] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -32,10 +31,10 @@ export default function PlacementMoodRecoveryRAG() {
   }, [messages, isTyping]);
 
   const QUICK_PROMPTS = [
-    "I was eliminated in Round 2 of Fintech drive. Everyone else got through.",
-    "I completely froze on a live Graph question in front of the interviewer.",
-    "Failed 4 campus OAs this week; feel like my prep was useless.",
-    "My 3 close friends got placed today and I'm left unplaced."
+    "I got dropped in Round 2 today. It feels like everyone else made it except me.",
+    "I froze on a coding question during the interview and felt so embarrassed.",
+    "Failed 4 online tests this week. I feel so tired and defeated.",
+    "My close friends got placed today and I feel left behind and scared."
   ];
 
   const handleSend = async (textToSend) => {
@@ -60,7 +59,7 @@ export default function PlacementMoodRecoveryRAG() {
     setIsTyping(true);
 
     try {
-      // Simulate realistic retrieval & synthesis delay (800ms)
+      // Simulate realistic retrieval & thinking delay (750ms)
       await new Promise(r => setTimeout(r, 750));
 
       const ragResult = await generateMoodRecoveryRAG({
@@ -76,19 +75,19 @@ export default function PlacementMoodRecoveryRAG() {
           id: botMsgId,
           sender: 'bot',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: "I hear you, and it hurts to get dropped. But let's look at the actual facts before you write off your engineering ability:",
+          text: "I hear you, and my heart goes out to you. Getting rejected really stings, but please don't let it shake your belief in yourself. Let's look at what really happened together:",
           groundingData: ragResult
         }
       ]);
     } catch (err) {
-      console.error("RAG pipeline error", err);
+      console.error("Recovery companion error", err);
       setMessages(prev => [
         ...prev,
         {
           id: `bot_err_${Date.now()}`,
           sender: 'bot',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: "I encountered an error retrieving pipeline chunks. But remember: 60-70% of Round 2 drops are purely capacity-driven, not capability-driven.",
+          text: "I'm right here with you. Even when things feel heavy, remember: most rejections are just about limited company slots, never about your worth or talent. Take a slow, quiet breath.",
           groundingData: null
         }
       ]);
@@ -114,7 +113,7 @@ export default function PlacementMoodRecoveryRAG() {
       boxShadow: 'var(--shadow-3d-card)'
     }}>
       
-      {/* ── 1. WHATSAPP STYLE CHAT HEADER ─────────────────────────────────── */}
+      {/* ── 1. FRIENDLY CHAT HEADER ────────────────────────────────────────── */}
       <div style={{
         padding: '14px 20px',
         backgroundColor: 'var(--btn-sage)',
@@ -126,7 +125,7 @@ export default function PlacementMoodRecoveryRAG() {
         gap: '12px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Avatar with verified shield badge */}
+          {/* Avatar with friendly online indicator */}
           <div style={{ position: 'relative' }}>
             <div style={{
               width: '42px',
@@ -141,7 +140,7 @@ export default function PlacementMoodRecoveryRAG() {
               fontSize: '16px',
               color: '#ffffff'
             }}>
-              PA
+              P
             </div>
             <div style={{
               position: 'absolute',
@@ -158,21 +157,21 @@ export default function PlacementMoodRecoveryRAG() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
-                PivotAI • Placement Recovery Mentor
+                Pivot • Your Placement Friend
               </h3>
               <ShieldCheck style={{ width: '16px', height: '16px', color: '#A7F3D0' }} />
             </div>
-            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>Online</span>
               <span>•</span>
-              <span>CBT Grounding & Placement Reality Check</span>
+              <span>Always here to listen and help you bounce back</span>
             </p>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => setShowRAGCorpusModal(!showRAGCorpusModal)}
+          onClick={() => setShowHelperModal(!showHelperModal)}
           style={{
             background: 'rgba(255, 255, 255, 0.15)',
             border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -187,13 +186,13 @@ export default function PlacementMoodRecoveryRAG() {
             gap: '6px'
           }}
         >
-          <Database style={{ width: '13px', height: '13px' }} />
-          <span>{showRAGCorpusModal ? 'Hide Corpus' : 'Inspect RAG Corpus'}</span>
+          <HelpCircle style={{ width: '13px', height: '13px' }} />
+          <span>{showHelperModal ? 'Hide Info' : 'Why This Helps You'}</span>
         </button>
       </div>
 
-      {/* RAG Corpus Inspector Dropdown */}
-      {showRAGCorpusModal && (
+      {/* Helpful Info Dropdown */}
+      {showHelperModal && (
         <div style={{
           padding: '14px 20px',
           backgroundColor: '#F3F4F1',
@@ -202,23 +201,23 @@ export default function PlacementMoodRecoveryRAG() {
           color: 'var(--body-text)'
         }}>
           <strong style={{ color: 'var(--main-heading)', display: 'block', marginBottom: '6px' }}>
-            RAG Grounding Corpus Active:
+            What Pivot brings to help you feel better:
           </strong>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
             <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
-              <span style={{ color: 'var(--btn-sage)', fontWeight: 700 }}>1. CBT Distortion Corpus:</span> All-or-Nothing & Overgeneralization reframing templates.
+              <span style={{ color: 'var(--btn-sage)', fontWeight: 700 }}>1. Gentle Mindset Support:</span> Helping you catch harsh thoughts and treat yourself with kindness.
             </div>
             <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
-              <span style={{ color: 'var(--accent-terracotta)', fontWeight: 700 }}>2. Funnel Math:</span> 60-75% Round 2 attrition statistics & capacity filters.
+              <span style={{ color: 'var(--accent-terracotta)', fontWeight: 700 }}>2. Real Placement Facts:</span> Explaining how hiring seats work so you know it wasn't your fault.
             </div>
             <div style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #D8D2CE' }}>
-              <span style={{ color: 'var(--secondary-olive)', fontWeight: 700 }}>3. Alumni Precedents:</span> Verified timelines of 48h fixes converting to offers.
+              <span style={{ color: 'var(--secondary-olive)', fontWeight: 700 }}>3. Real Senior Stories:</span> True journeys of friends who felt stuck and bounced back to great offers.
             </div>
           </div>
         </div>
       )}
 
-      {/* ── 2. WHATSAPP CHAT WALLPAPER & CONVERSATION BODY ─────────────────── */}
+      {/* ── 2. CHAT CONVERSATION BODY ──────────────────────────────────────── */}
       <div style={{
         height: '420px',
         overflowY: 'auto',
@@ -264,7 +263,7 @@ export default function PlacementMoodRecoveryRAG() {
                     {msg.text}
                   </div>
 
-                  {/* Grounded Deconstruction Card (If Bot Provided Evidence) */}
+                  {/* Caring Support Card (If Bot Provided Breakdown) */}
                   {msg.groundingData && (
                     <div style={{
                       display: 'flex',
@@ -277,12 +276,12 @@ export default function PlacementMoodRecoveryRAG() {
                       border: '1px solid rgba(82, 98, 87, 0.2)'
                     }}>
                       
-                      {/* Pillar 1: Cognitive Trap */}
+                      {/* Pillar 1: Mindset */}
                       <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                           <Brain style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
                           <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            1. Brain Trap Diagnosed
+                            1. What your mind is telling you right now
                           </strong>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
@@ -293,12 +292,12 @@ export default function PlacementMoodRecoveryRAG() {
                         </p>
                       </div>
 
-                      {/* Pillar 2: The Hiring Math Reality */}
+                      {/* Pillar 2: Real Facts */}
                       <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                           <TrendingUp style={{ width: '14px', height: '14px', color: 'var(--accent-terracotta)' }} />
                           <strong style={{ fontSize: '12px', color: 'var(--accent-terracotta)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            2. Placement Math & Funnel Reality
+                            2. Behind the scenes: Why this wasn't your fault
                           </strong>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
@@ -309,28 +308,28 @@ export default function PlacementMoodRecoveryRAG() {
                         </p>
                       </div>
 
-                      {/* Pillar 3: What Failed vs Who You Are */}
+                      {/* Pillar 3: Self-Worth */}
                       <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                           <Target style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
                           <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            3. Specific Gap vs Your Self-Worth
+                            3. You are so much more than one interview
                           </strong>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
-                          Isolated Factor: {msg.groundingData.gapSeparation.isolatedVariable}
+                          What was tricky today: {msg.groundingData.gapSeparation.isolatedVariable}
                         </div>
                         <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--body-text)' }}>
                           {msg.groundingData.gapSeparation.competenceVsWorth}
                         </p>
                       </div>
 
-                      {/* Pillar 4: Real Alumni Turnaround */}
+                      {/* Pillar 4: Inspiring Senior Story */}
                       <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                           <CheckCircle2 style={{ width: '14px', height: '14px', color: 'var(--btn-sage)' }} />
                           <strong style={{ fontSize: '12px', color: 'var(--btn-sage)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            4. Alumni Turnaround Precedent
+                            4. A real senior's story to give you hope
                           </strong>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--main-heading)' }}>
@@ -340,10 +339,10 @@ export default function PlacementMoodRecoveryRAG() {
                           {msg.groundingData.precedentAnchor.alumniTrajectory}
                         </p>
                         <div style={{ borderTop: '1px dashed #D8D2CE', paddingTop: '6px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--secondary-heading)' }}>Immediate 48-Hour Plan:</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--secondary-heading)' }}>Gentle next steps for the next 2 days:</span>
                           <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '11.5px', color: 'var(--body-text)' }}>
                             {msg.groundingData.precedentAnchor.actionableReboundPlan.map((step, idx) => (
-                              <li key={idx} style={{ marginBottom: '2px' }}>{step}</li>
+                              <li key={idx} style={{ marginBottom: '3px' }}>{step}</li>
                             ))}
                           </ul>
                         </div>
@@ -389,7 +388,7 @@ export default function PlacementMoodRecoveryRAG() {
               color: 'var(--text-muted)'
             }}>
               <RefreshCw style={{ width: '13px', height: '13px', animation: 'spin 1s infinite linear', color: 'var(--btn-sage)' }} />
-              <span>PivotAI is retrieving placement data & typing...</span>
+              <span>Pivot is writing back with care...</span>
             </div>
           </div>
         )}
@@ -409,7 +408,7 @@ export default function PlacementMoodRecoveryRAG() {
         whiteSpace: 'nowrap'
       }}>
         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', flexShrink: 0 }}>
-          Tap to vent:
+          Share what happened:
         </span>
         {QUICK_PROMPTS.map((prompt, pIdx) => (
           <button
@@ -453,7 +452,7 @@ export default function PlacementMoodRecoveryRAG() {
       }}>
         <input
           type="text"
-          placeholder="Message PivotAI about your rejection or interview stress..."
+          placeholder="Tell Pivot what happened... I'm right here listening."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}

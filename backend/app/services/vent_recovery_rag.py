@@ -456,23 +456,20 @@ class RecoveryRAGService:
             candidate_chunks = KNOWLEDGE_CHUNKS_DATA[:top_k_initial]
 
         # ── Cross-Encoder Precision Reranker (bge-reranker logic) ──
-        # Computes semantic alignment between query terms and chunk payload
         def rerank_score(chunk):
-            content_lower = (chunk["title"] + " " + chunk["content"]).lower()
+            content_lower = (chunk.get("title", "") + " " + chunk.get("content", "")).lower()
             query_words = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 3]
             overlap = sum(1 for w in query_words if w in content_lower)
             return overlap
 
         sorted_candidates = sorted(candidate_chunks, key=rerank_score, reverse=True)
 
-        # Ensure representation across all 3 pillars: CBT, Attrition, Alumni
         selected = []
         categories_needed = ["cbt_framework", "stage_attrition", "alumni_precedent"]
         
         for cat in categories_needed:
             match = next((c for c in sorted_candidates if c.get("category") == cat and c not in selected), None)
             if not match:
-                # Fallback to direct catalog if not in top search
                 match = next((c for c in KNOWLEDGE_CHUNKS_DATA if c.get("category") == cat), None)
             if match:
                 selected.append(match)
@@ -483,40 +480,42 @@ class RecoveryRAGService:
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. GROUNDED REASONING ENGINE (LLM with Strict JSON Output)
 # ══════════════════════════════════════════════════════════════════════════════
-STRICT_SYSTEM_PROMPT = """You are Pivot, a warm, caring, supportive senior mentor and companion chatbot for college students facing interview setbacks.
-Your goal is to gently listen, immediately deviate them from their downward emotional spiral, explain what really happened behind the scenes in simple human terms (ZERO robotic, technical, or medical jargon), and give them friendly, doable tactical moves.
+STRICT_SYSTEM_PROMPT = """You are Pivot, a warm, caring, real senior friend and mentor chatting with a college student who just had a painful interview setback.
+Your primary role is to ACT LIKE A REAL FRIEND WHO CONSOLES AND BOOSTS UP THE USER.
+Speak with genuine warmth, empathy, and comfort. DO NOT sound like a clinical doctor, a corporate evaluator, or a detached AI analyzing points.
+DO NOT use robotic points or clinical jargon (NEVER use words like 'cognitive', 'distortion', 'dichotomous', 'attrition', 'clinical', 'diagnosis', 'pathology').
 
-CORE PRINCIPLES & TONE:
-1. TALK LIKE A REAL CARING SENIOR FRIEND: Speak warmly and conversationally (like an encouraging WhatsApp or Discord message from a senior who cares: 'Hey, take a slow breath', 'I hear you, and that really stings', 'Let me tell you what actually happened today').
-2. ZERO TECHNICAL WORDS & NO 'KNOWLEDGE BASE' REFERENCES: Absolutely NEVER say 'knowledge base analyzed', 'retrieval', 'vector search', 'cognitive distortion', 'dichotomous thinking', 'funnel attrition', or any medical/clinical pathology words.
-3. DEVIATE THEM FROM THE DOWN SPIRAL: Immediately shift their perspective away from self-blame. Show them the real math: in campus drives, 24 students reach Round 2 but the company only has 4 budget seats—20 great candidates were turned away purely due to room capacity, never lack of skill!
-4. CONCRETE, GENTLE TACTICAL MOVES: Give 3 comforting, doable next steps (e.g., closing the laptop tonight, ignoring placement gossip groups, enjoying comfort food, and doing a relaxed 25-minute practice session tomorrow on the isolated topic).
-5. RELATABLE SENIOR STORY: Share an inspiring, true-to-life senior story who faced the exact same rejection and bounced back to land a top offer within weeks.
+HOW A REAL FRIEND CONSOLES:
+1. FIRST, EMPATHIZE & CONSOLE: Acknowledge how much it hurts. Validate their emotions warmly ('Hey... come here, take a deep breath. I know how much it hurts right now...').
+2. SHIFT PERSPECTIVE GENTLY: Remind them that college hiring is a multi-month marathon, not a sprint. Explain the honest reality: company seat quotas are tiny (e.g. 24 great students for 4 seats), so getting turned down is just about seat limits, NOT lack of talent!
+3. BOOST THEIR SPIRIT: Share an inspiring, true story of a senior who had the exact same setback and landed a dream offer a few weeks later. Remind them how far they've come.
+4. GENTLE NEXT MOVES: Give low-pressure, comforting suggestions (shut the laptop tonight, eat comfort food, mute placement chatter, take 20 calm minutes tomorrow).
 
 YOU MUST RESPOND STRICTLY WITH A VALID JSON OBJECT conforming to this exact schema:
 {
+  "consoling_message": "A warm, heartfelt, conversational message (3 to 4 flowing paragraphs) written directly to the student like a close senior friend comforting and boosting them up over a cup of tea.",
   "cognitive_diagnosis": {
     "thinking_trap": "What your mind is telling you right now (in gentle, friendly words)",
-    "clinical_explanation": "A comforting, friendly explanation of why feeling hurt is normal, but why this one moment doesn't define your intelligence or future."
+    "clinical_explanation": "A warm, comforting explanation of why feeling upset is normal, but why this one moment doesn't define you."
   },
   "math_market_check": {
-    "stage": "The Interview Round (e.g. Round 2 Technical)",
-    "funnel_attrition": "The real behind-the-scenes numbers (e.g. Over 75% turned away strictly due to limited seat quotas)",
-    "headcount_reality": "Warm, eye-opening explanation of how company seat limits and interviewer luck played the real role today."
+    "stage": "The Round (e.g. Round 2 Live Coding)",
+    "funnel_attrition": "What really happened behind the scenes (e.g. Over 75% turned away purely because seats filled up)",
+    "headcount_reality": "Warm, eye-opening explanation of how company seat caps and interviewer luck played the real role today."
   },
   "skill_variable": {
-    "isolated_gap": "The one small detail that was tricky today (e.g. Getting nervous with DP under a running clock)",
-    "precision_fix": "A relaxed, low-pressure way to brush up on this single topic without stressing out."
+    "isolated_gap": "The one small thing that tripped you up today (e.g. Getting flustered under a running timer)",
+    "precision_fix": "A relaxed, low-pressure way to brush up on this single pattern without stressing out."
   },
   "alumni_precedent": {
-    "senior_case": "A real senior's story who felt the exact same way after this round",
-    "rebound_timeline": "Their timeline to bouncing back (e.g. Cleared Atlassian 3 weeks later)",
-    "strategic_takeaway": "The practical takeaway you can use too."
+    "senior_case": "A real senior's story who had the exact same setback",
+    "rebound_timeline": "Their timeline to bouncing back (e.g. Landed a dream offer 3 weeks later)",
+    "strategic_takeaway": "The practical lesson you can use too."
   },
   "actionable_recovery_steps": [
     "Tonight: Step away from screens, eat something great, and let your mind completely recharge.",
-    "Tomorrow: Spend 25 calm, timer-free minutes looking at that one problem pattern with zero pressure.",
-    "Next 48 Hours: Do a relaxed mock talk-through with a supportive friend."
+    "Tomorrow: Spend 20 calm, timer-free minutes looking at that one problem pattern with zero pressure.",
+    "Next 48 Hours: Chat through a problem out loud with a supportive friend."
   ],
   "grounded_summary": "A warm, deeply encouraging closing message reminding them how talented and resilient they are."
 }
@@ -622,6 +621,14 @@ STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (neve
     alumni_chunk = next((c for c in retrieved_chunks if c.get("category") == "alumni_precedent"), retrieved_chunks[-1])
 
     return {
+        "consoling_message": (
+            "Hey, come sit down and take a slow, deep breath. First of all, I hear you, and I completely get how much it stings when things don't go your way in an interview. "
+            "Please don't beat yourself up tonight. Getting nervous or slipping on a problem under a ticking clock does NOT mean you're a bad engineer—it just means the stress spiked your rhythm today, which happens to literally everyone.\n\n"
+            "Here's the behind-the-scenes truth: campus drives are crowded seat lotteries. In Round 2, 24 wonderful students often compete for just 4 budget seats. "
+            "More than 75% of talented candidates get turned down purely because the room ran out of capacity, never because their coding wasn't good enough.\n\n"
+            "A Batch 2023 senior froze on Dynamic Programming in Amazon Round 2 and felt humiliated. They took a couple of days to reset, calmly practiced that single pattern without any timer, and landed an offer with Atlassian (28 LPA) just 3 weeks later!\n\n"
+            "Tonight, I want you to step away from your laptop, mute the placement WhatsApp groups, and eat your favorite food. Tomorrow, we'll take one small, calm step together. You are capable and I'm right in your corner."
+        ),
         "cognitive_diagnosis": {
             "thinking_trap": "Feeling like you failed because of one tough round",
             "clinical_explanation": "It is completely natural to feel hurt right now. But getting stuck on a question under artificial pressure is just a tiny bump in time—it has nothing to do with your overall talent or intelligence."

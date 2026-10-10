@@ -35,6 +35,7 @@ class AlumniPrecedent(BaseModel):
     strategic_takeaway: str
 
 class RecoveryCard(BaseModel):
+    consoling_message: Optional[str] = None
     cognitive_diagnosis: CognitiveDiagnosis
     math_market_check: MathMarketCheck
     skill_variable: SkillVariable

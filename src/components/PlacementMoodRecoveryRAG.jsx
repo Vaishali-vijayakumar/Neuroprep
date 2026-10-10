@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mic, MicOff, Send, ShieldCheck, Sparkles, RefreshCw, 
   Heart, TrendingUp, Target, CheckCircle2, AlertCircle, 
-  Clock, Trash2, ChevronRight, Activity, ArrowUpRight
+  Clock, Trash2, ChevronRight, Activity, ArrowUpRight,
+  Coffee, MessageCircle
 } from 'lucide-react';
 import { 
   submitTextVentRAG, 
@@ -10,7 +11,7 @@ import {
   fetchVentStages 
 } from '../services/placementMoodRecoveryRAG';
 
-const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v1';
+const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v2';
 
 // Scrub any accidental technical or clinical terms into friendly, caring words
 const cleanFriendlyChat = (text) => {
@@ -740,303 +741,275 @@ export default function PlacementMoodRecoveryRAG() {
           </div>
         )}
 
-        {/* ── 7. FRIENDLY RECOVERY COMPANION CARDS ───────────────────────────── */}
-        {currentResult && currentResult.recovery_card && !isLoading && (
-          <div style={{
-            borderRadius: '16px',
-            backgroundColor: '#FFFFFF',
-            border: '1px solid var(--border-color)',
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow-3d-card)'
-          }}>
-            
-            {/* Card Top Banner */}
+        {/* ── 7. FRIENDLY CONSOLING ADVICE (Real Senior Friend View) ─────────── */}
+        {currentResult && currentResult.recovery_card && !isLoading && (() => {
+          const card = currentResult.recovery_card;
+          
+          // Formulate full natural flowing consoling message from a real friend
+          const consolingText = card.consoling_message || (
+            `Hey... come here, take a slow deep breath. First of all, I hear you, and I completely get how much it hurts right now. ${cleanFriendlyChat(card.cognitive_diagnosis?.clinical_explanation || '')}\n\n` +
+            `Here's what really goes on behind the scenes that nobody talks about: ${cleanFriendlyChat(card.math_market_check?.headcount_reality || '')} Please don't let this one round fool you into questioning your talent.\n\n` +
+            `Let me share a quick story: ${cleanFriendlyChat(card.alumni_precedent?.senior_case || '')} ${cleanFriendlyChat(card.alumni_precedent?.strategic_takeaway || '')}\n\n` +
+            `${cleanFriendlyChat(card.grounded_summary || 'You are capable, you have worked hard, and your time is definitely coming. Be kind to yourself tonight—I am right in your corner!')}`
+          );
+
+          const paragraphs = consolingText.split('\n\n').filter(p => p.trim());
+
+          const actionSteps = card.actionable_recovery_steps || [
+            "Tonight: Shut the laptop, mute placement WhatsApp groups, and eat something comforting.",
+            "Tomorrow: Spend 20 calm, timer-free minutes looking at that one problem pattern without any pressure.",
+            "Next 48 Hours: Talk through a problem out loud with a supportive friend to get your natural flow back."
+          ];
+
+          return (
             <div style={{
-              padding: '16px 22px',
-              backgroundColor: 'rgba(82, 98, 87, 0.08)',
-              borderBottom: '1px solid var(--border-color)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '10px'
+              borderRadius: '18px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid var(--border-color)',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-3d-card)'
             }}>
-              <div>
-                <div style={{
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: 'var(--btn-sage)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  fontFamily: 'var(--font-body)'
-                }}>
-                  Friendly Senior Advice & Reset Guide
-                </div>
-                <div style={{
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  color: 'var(--main-heading)',
-                  fontFamily: 'var(--font-heading)',
-                  marginTop: '2px'
-                }}>
-                  {formatFriendlyRound(currentResult.recovery_card.math_market_check.stage)}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  padding: '4px 10px',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(82, 98, 87, 0.12)',
-                  color: 'var(--btn-sage)',
-                  border: '1px solid rgba(82, 98, 87, 0.25)',
-                  fontFamily: 'var(--font-btn)'
-                }}>
-                  💛 Senior Companion Note
-                </span>
-                <span style={{
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  padding: '4px 10px',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(154, 104, 84, 0.12)',
-                  color: 'var(--accent-terracotta)',
-                  border: '1px solid rgba(154, 104, 84, 0.25)',
-                  fontFamily: 'var(--font-btn)'
-                }}>
-                  {currentResult.input_type === 'audio' ? 'Voice Note' : 'Chat Vent'}
-                </span>
-              </div>
-            </div>
-
-            {/* Sanitized Vent Bar */}
-            {currentResult.sanitized_query && (
-              <div style={{
-                padding: '11px 22px',
-                backgroundColor: 'var(--bg-card-solid)',
-                borderBottom: '1px solid var(--border-color)',
-                fontSize: '13px',
-                color: 'var(--body-text)',
-                fontStyle: 'italic',
-                fontFamily: 'var(--font-body)'
-              }}>
-                <strong style={{ color: 'var(--main-heading)', fontStyle: 'normal' }}>What you shared: </strong>
-                "{cleanFriendlyChat(currentResult.sanitized_query)}"
-              </div>
-            )}
-
-            {/* 4 Pillars Grid (Friendly, Conversational & Deviating from Down Feelings) */}
-            <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Pillar 1: Lifting Mindset */}
+              {/* Senior Friend Header Bar */}
               <div style={{
-                padding: '16px 18px',
-                borderRadius: '12px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border-color)',
-                borderLeft: '4px solid var(--accent-terracotta)'
+                padding: '16px 22px',
+                backgroundColor: 'rgba(82, 98, 87, 0.08)',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <Heart size={16} color="var(--accent-terracotta)" />
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    color: 'var(--accent-terracotta)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    💖 What your mind is telling you right now
-                  </span>
-                </div>
-                <div style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: 'var(--main-heading)',
-                  fontFamily: 'var(--font-heading)',
-                  marginBottom: '6px'
-                }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.cognitive_diagnosis.thinking_trap)}
-                </div>
-                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.cognitive_diagnosis.clinical_explanation)}
-                </p>
-              </div>
-
-              {/* Pillar 2: Real Hiring Math (Deviating from Down Feelings) */}
-              <div style={{
-                padding: '16px 18px',
-                borderRadius: '12px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border-color)',
-                borderLeft: '4px solid var(--btn-sage)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <TrendingUp size={16} color="var(--btn-sage)" />
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    color: 'var(--btn-sage)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    📊 Behind the scenes: Why today wasn't your fault
-                  </span>
-                </div>
-                <div style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: 'var(--main-heading)',
-                  fontFamily: 'var(--font-heading)',
-                  marginBottom: '6px'
-                }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.math_market_check.funnel_attrition)}
-                </div>
-                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.math_market_check.headcount_reality)}
-                </p>
-              </div>
-
-              {/* Pillar 3: One Small Detail to Tweak */}
-              <div style={{
-                padding: '16px 18px',
-                borderRadius: '12px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border-color)',
-                borderLeft: '4px solid var(--secondary-olive)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <Target size={16} color="var(--secondary-olive)" />
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    color: 'var(--secondary-olive)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    💡 One small detail to tweak (and you've got this!)
-                  </span>
-                </div>
-                <div style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: 'var(--main-heading)',
-                  fontFamily: 'var(--font-heading)',
-                  marginBottom: '6px'
-                }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.skill_variable.isolated_gap)}
-                </div>
-                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.skill_variable.precision_fix)}
-                </p>
-              </div>
-
-              {/* Pillar 4: Verified Senior Rebound Precedent */}
-              <div style={{
-                padding: '16px 18px',
-                borderRadius: '12px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border-color)',
-                borderLeft: '4px solid var(--accent-terracotta)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <CheckCircle2 size={16} color="var(--accent-terracotta)" />
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    color: 'var(--accent-terracotta)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    🌟 A real senior's bounce-back story
-                  </span>
-                </div>
-                <div style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: 'var(--main-heading)',
-                  fontFamily: 'var(--font-heading)',
-                  marginBottom: '4px'
-                }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.alumni_precedent.senior_case)}
-                </div>
-                <div style={{
-                  display: 'inline-block',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: 'var(--accent-terracotta)',
-                  backgroundColor: 'rgba(154, 104, 84, 0.1)',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  marginBottom: '8px',
-                  fontFamily: 'var(--font-code)'
-                }}>
-                  ⏱️ {currentResult.recovery_card.alumni_precedent.rebound_timeline}
-                </div>
-                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  <strong style={{ color: 'var(--main-heading)' }}>Takeaway: </strong>
-                  {cleanFriendlyChat(currentResult.recovery_card.alumni_precedent.strategic_takeaway)}
-                </p>
-              </div>
-
-              {/* Tactical Next Moves Checklist (Friendly & Calm) */}
-              {currentResult.recovery_card.actionable_recovery_steps?.length > 0 && (
-                <div style={{
-                  padding: '18px 20px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(82, 98, 87, 0.05)',
-                  border: '1px dashed var(--border-color)'
-                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    color: 'var(--secondary-heading)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: '10px',
-                    fontFamily: 'var(--font-body)'
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-terracotta)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(154, 104, 84, 0.35)',
+                    flexShrink: 0
                   }}>
-                    🎯 Friendly Next Moves (Tonight & Tomorrow):
+                    <Heart size={20} fill="#FFFFFF" />
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--main-heading)', fontSize: '13.5px', lineHeight: 1.6 }}>
-                    {currentResult.recovery_card.actionable_recovery_steps.map((step, idx) => (
-                      <li key={idx} style={{ marginBottom: '8px' }}>{cleanFriendlyChat(step)}</li>
-                    ))}
-                  </ul>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: 'var(--main-heading)',
+                        fontFamily: 'var(--font-heading)'
+                      }}>
+                        Pivot • Your Senior Friend
+                      </span>
+                      <span style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: '#10B981',
+                        display: 'inline-block'
+                      }} title="Here for you" />
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: 'var(--body-text)',
+                      fontFamily: 'var(--font-body)'
+                    }}>
+                      Listening with care • In your corner
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(82, 98, 87, 0.12)',
+                    color: 'var(--btn-sage)',
+                    border: '1px solid rgba(82, 98, 87, 0.25)',
+                    fontFamily: 'var(--font-btn)'
+                  }}>
+                    {formatFriendlyRound(card.math_market_check?.stage)}
+                  </span>
+                  <span style={{
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(154, 104, 84, 0.12)',
+                    color: 'var(--accent-terracotta)',
+                    border: '1px solid rgba(154, 104, 84, 0.25)',
+                    fontFamily: 'var(--font-btn)'
+                  }}>
+                    {currentResult.input_type === 'audio' ? 'Voice Note' : 'Chat Vent'}
+                  </span>
+                </div>
+              </div>
+
+              {/* What Student Shared (Gently Echoed) */}
+              {currentResult.sanitized_query && (
+                <div style={{
+                  padding: '12px 24px',
+                  backgroundColor: 'var(--bg-card-solid)',
+                  borderBottom: '1px solid var(--border-color)',
+                  fontSize: '13px',
+                  color: 'var(--body-text)',
+                  fontFamily: 'var(--font-body)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <MessageCircle size={15} color="var(--btn-sage)" style={{ flexShrink: 0 }} />
+                  <span>
+                    <strong style={{ color: 'var(--main-heading)' }}>You shared: </strong>
+                    <span style={{ fontStyle: 'italic' }}>"{cleanFriendlyChat(currentResult.sanitized_query)}"</span>
+                  </span>
                 </div>
               )}
 
-              {/* Warm Senior Encouragement Closing */}
-              <div style={{
-                padding: '14px 20px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(82, 98, 87, 0.08)',
-                border: '1px solid rgba(82, 98, 87, 0.22)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <Sparkles size={20} color="var(--btn-sage)" style={{ flexShrink: 0 }} />
-                <p style={{
-                  margin: 0,
-                  fontSize: '13.5px',
-                  color: 'var(--main-heading)',
-                  fontStyle: 'italic',
-                  lineHeight: 1.5,
-                  fontFamily: 'var(--font-body)'
+              {/* Main Consoling Conversation Bubble */}
+              <div style={{ padding: '24px 24px 16px 24px' }}>
+                <div style={{
+                  backgroundColor: 'rgba(82, 98, 87, 0.04)',
+                  border: '1.5px solid rgba(82, 98, 87, 0.18)',
+                  borderRadius: '16px',
+                  padding: '22px 24px',
+                  marginBottom: '20px',
+                  position: 'relative'
                 }}>
-                  {cleanFriendlyChat(currentResult.recovery_card.grounded_summary)}
-                </p>
-              </div>
+                  {paragraphs.map((p, idx) => (
+                    <p 
+                      key={idx}
+                      style={{
+                        margin: idx === paragraphs.length - 1 ? 0 : '0 0 14px 0',
+                        fontSize: '14.5px',
+                        lineHeight: 1.7,
+                        color: 'var(--main-heading)',
+                        fontFamily: 'var(--font-body)',
+                        letterSpacing: '-0.005em'
+                      }}
+                    >
+                      {cleanFriendlyChat(p)}
+                    </p>
+                  ))}
+                </div>
 
+                {/* 3 Gentle Tactical Moves (Tonight, Tomorrow, Next Days) */}
+                <div style={{
+                  marginBottom: '20px',
+                  padding: '18px 20px',
+                  borderRadius: '14px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    color: 'var(--secondary-heading)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '12px',
+                    fontFamily: 'var(--font-body)'
+                  }}>
+                    <Coffee size={16} color="var(--accent-terracotta)" />
+                    <span>How we're going to take care of this:</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {actionSteps.map((step, idx) => {
+                      const icons = ['☕', '🌱', '💬'];
+                      const labels = ['Tonight', 'Tomorrow', 'Next Step'];
+                      return (
+                        <div 
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '10px',
+                            fontSize: '13.5px',
+                            lineHeight: 1.55,
+                            color: 'var(--main-heading)',
+                            fontFamily: 'var(--font-body)'
+                          }}
+                        >
+                          <span style={{ fontSize: '15px' }}>{icons[idx] || '✨'}</span>
+                          <div>
+                            <strong style={{ color: 'var(--accent-terracotta)', marginRight: '6px' }}>
+                              {labels[idx] ? `${labels[idx]}:` : 'Next:'}
+                            </strong>
+                            <span>{cleanFriendlyChat(step.replace(/^(tonight|tomorrow|next 48 hours|this week):?\s*/i, ''))}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Follow-up Quick Chat Chips */}
+                <div>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    marginBottom: '10px',
+                    fontFamily: 'var(--font-body)'
+                  }}>
+                    Want to talk more? Tap any of these:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {[
+                      { label: "How do I stop comparing myself to placed friends? 💭", prompt: "I still feel insecure seeing my friends get placed. How do I stop comparing myself to them?" },
+                      { label: "Give me another senior boost 🌟", prompt: "Can you tell me another senior rebound story to keep my spirits up?" },
+                      { label: "What is 1 calm thing I can practice tomorrow? 💡", prompt: "What is just one calm, low-stress coding thing I should look at tomorrow?" },
+                      { label: "Thank you Pivot, I really needed this 💛", prompt: "Thank you for the comfort Pivot, I feel a lot lighter now." }
+                    ].map((followUp, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleTextSubmit(followUp.prompt)}
+                        disabled={isLoading || isRecording}
+                        style={{
+                          backgroundColor: 'rgba(82, 98, 87, 0.06)',
+                          color: 'var(--secondary-heading)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '16px',
+                          padding: '6px 13px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          fontFamily: 'var(--font-body)',
+                          cursor: 'pointer',
+                          transition: 'all 0.18s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.12)';
+                          e.currentTarget.style.borderColor = 'var(--btn-sage)';
+                          e.currentTarget.style.color = 'var(--main-heading)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.06)';
+                          e.currentTarget.style.borderColor = 'var(--border-color)';
+                          e.currentTarget.style.color = 'var(--secondary-heading)';
+                        }}
+                      >
+                        {followUp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </div>

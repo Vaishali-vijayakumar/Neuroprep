@@ -121,9 +121,12 @@ function generateClientFallbackRecovery({ text, stage }) {
   ];
   let groundedSummary = "Reaching this round already proves your technical fundamentals are strong. Be kind to yourself tonight—your placement journey has plenty of wonderful chapters ahead.";
 
+  let consolingMessage = "Hey, come sit down with me and take a slow, deep breath. First of all, I hear you, and I completely get how much it hurts when things don't go your way in an interview. Please don't beat yourself up tonight. Getting nervous or slipping on a problem under a ticking clock does NOT mean you're a bad engineer—it just means the stress spiked your rhythm today, which happens to literally everyone.\n\nHere's the behind-the-scenes truth: campus drives are crowded seat lotteries. In Round 2, 24 wonderful students often compete for just 4 budget seats. More than 75% of talented candidates get turned down purely because the room ran out of capacity, never because their coding wasn't good enough.\n\nA Batch 2023 senior froze on Dynamic Programming in Amazon Round 2 and felt humiliated. They took a couple of days to reset, calmly practiced that single pattern without any timer, and landed an offer with Atlassian (28 LPA) just 3 weeks later!\n\nTonight, I want you to step away from your laptop, mute the placement WhatsApp groups, and eat your favorite food. Tomorrow, we'll take one small, calm step together. You are capable and I'm right in your corner.";
+
   if (lower.includes('dp') || lower.includes('dynamic programming')) {
     isolatedGap = "Handling tricky DP state transitions while being watched";
     precisionFix = "Sketch 3 or 4 state diagrams on paper first without writing code. Once the transition is clear in your head, the code writes itself.";
+    consolingMessage = "Hey, take a slow deep breath. Getting stuck on a Dynamic Programming state transition while an interviewer watches you is one of the most stressful situations in tech. It does NOT mean you're a bad coder—it just means today's pressure spike threw your rhythm off.\n\nIn typical campus Round 2 drives, 24 talented candidates compete for just 4 open seats. More than 75% of great students get turned down purely because the seats filled up, never because their coding wasn't good.\n\nA 2023 senior completely froze on DP in Amazon Round 2, felt heartbroken, took the weekend off to reset, and landed Atlassian with 28 LPA just 3 weeks later! Tonight, shut the laptop, have some comfort food, and let your mind recharge. You've got this!";
   } else if (lower.includes('oa') || lower.includes('timeout') || lower.includes('test case')) {
     thinkingTrap = "Blaming your intelligence for automated test platform cutoffs";
     clinicalExplanation = "Automated test platforms reject 92% of students over hidden time-slice limits and platform glitches. It has zero bearing on your true engineering talent.";
@@ -134,6 +137,7 @@ function generateClientFallbackRecovery({ text, stage }) {
     seniorPrecedent = "A senior failed 6 straight campus online tests in August, patched their quick edge-case checklist, and cleared Goldman Sachs on attempt #7.";
     reboundTimeline = "Turned 6 rejections into a top FinTech offer";
     strategicTakeaway = "Treat online tests like practice rounds until the numbers align in your favor.";
+    consolingMessage = "Hey, take a deep breath. Failing automated campus tests stings, but it has zero bearing on your true engineering intelligence. When 1,000 students take an online test for 40 interview spots, automated test platforms reject 92% of candidates over hidden test cases and server time limits. It is an automated numbers game, not a measure of your worth.\n\nA senior in Batch 2024 failed 6 straight campus online tests in August, patched their quick edge-case checklist, and cleared Goldman Sachs on attempt #7! Tonight, step away from coding platforms and take a walk. Tomorrow, make a simple 4-point checklist for empty inputs and bounds. You are going to crack this!";
     actionSteps = [
       "Tonight: Take a walk and completely clear your head. Don't touch coding platforms tonight.",
       "Tomorrow: Make a simple 4-point edge-case checklist and stick it on your desk.",
@@ -149,6 +153,7 @@ function generateClientFallbackRecovery({ text, stage }) {
     seniorPrecedent = "A candidate had 0 offers in September while 40% of classmates were placed; they stayed steady and landed 3 competing Tier-1 product offers in late January.";
     reboundTimeline = "0 offers in Sept -> 3 top product offers in Jan";
     strategicTakeaway = "Comparison steals your energy. Your offer is coming on its own timeline.";
+    consolingMessage = "Hey... come here, take a deep breath. First of all, I hear you, and it completely sucks to feel left behind when your friends are celebrating their offers. Anyone in your shoes would feel terrible. But listen to me: campus placements are a marathon that runs all the way to spring, not a 100-meter sprint. You are NOT falling behind, and your time is coming.\n\nHere is what really goes on behind the scenes: companies hire in waves, and more than 50% of the highest-paying offers don't even open until late fall and winter. A senior in my batch had zero offers by October while 45% of classmates were celebrating. They stayed calm, kept their daily rhythm, and landed three competing product offers in January!\n\nTonight, please be kind to yourself. Close your laptop, mute the placement WhatsApp groups for 24 hours, and eat something you love. Tomorrow, we will take one small, relaxed step together. You are capable, resilient, and I'm right here in your corner.";
     actionSteps = [
       "Tonight: Mute placement announcement groups for 24 hours to let your mind quiet down.",
       "Tomorrow: Connect with 1 trusted peer who uplifts you, rather than discussing placement stats.",
@@ -169,6 +174,7 @@ function generateClientFallbackRecovery({ text, stage }) {
       { category: 'alumni_precedent', title: 'Senior Bounce-Back Story', key_metric: 'Landed top offer in 3 weeks' }
     ],
     recovery_card: {
+      consoling_message: consolingMessage,
       cognitive_diagnosis: {
         thinking_trap: thinkingTrap,
         clinical_explanation: clinicalExplanation

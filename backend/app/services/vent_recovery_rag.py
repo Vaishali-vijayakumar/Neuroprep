@@ -619,14 +619,26 @@ STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (neve
     lower = (vent_text or "").lower()
     snippet = vent_text[:65] + "..." if len(vent_text) > 65 else vent_text
 
-    if any(k in lower for k in ["blank", "froze", "choked", "stuck", "couldn't think"]):
+    is_celebration = any(k in lower for k in ["happy", "got placed", "got offer", "got the offer", "selected", "cracked", "cleared", "offer letter", "celebrate", "congrat", "congrats", "success", "proud", "won"]) and not any(k in lower for k in ["not placed", "didn't get", "haven't", "failed", "rejected", "left behind", "sad", "crying", "unplaced"])
+
+    if is_celebration:
+        consoling_msg = f"YOOOO! Huge congratulations!! 🎉 Hearing that you got placed made my entire day! Drop your shoulders, take a deep breath of relief, and let that sink in—you did it!\n\nAll those late-night practice sessions, staring at tricky test cases, and the nervous waiting between rounds... you stayed the course through every bit of it and earned this win. Placing in a company is a massive milestone, and you should be so proud of the grit and talent that brought you here.\n\nTonight, don't think about interview prep or study schedules. Call your family, go out with friends, eat something extraordinary, and celebrate this moment to the fullest. You earned every single bit of this!"
+        gap = "None"
+        fix = "Celebrate your success to the fullest!"
+        story = "Hard work compounds and delivers results—celebrate every step of the journey!"
+        timeline = "Offer letter in hand!"
+        takeaway = "Persistence through tough preparation always pays off."
+    elif any(k in lower for k in ["blank", "froze", "choked", "stuck", "couldn't think"]):
         consoling_msg = f"Hey, take a slow deep breath with me. When you shared \"{snippet}\", I want you to know this happens to literally every single engineer. Under an interview clock, your brain spikes adrenaline, which temporarily fogs working memory. It is purely biological, NOT a sign that you don't know how to code.\n\nEven staff engineers blank out under artificial test setups. A senior in 2024 went completely silent on a basic problem in Microsoft Round 1, felt embarrassed for days, but learned to ask for a 30-second breather. Two weeks later, they cleared Oracle comfortably.\n\nTonight, close your IDE, take a warm shower, and give your nervous system rest. Tomorrow, we'll practice one calm talk-through together. You've got this!"
         gap = "Recovering your composure when your mind goes momentarily quiet"
         fix = "Next time, pause and say: 'Let me take 30 seconds to sketch this out on scratch paper.' Interviewers respect that maturity."
         story = "A 2024 senior blanked out on a basic string problem in Microsoft Round 1, practiced speaking thoughts aloud, and cleared Oracle 10 days later."
         timeline = "Turned a memory freeze into a 24 LPA offer in 10 days"
         takeaway = "You don't need to be robotic; you just need a 30-second reset phrase when the timer rushes you."
-    elif any(k in lower for k in ["friend", "left behind", "placed", "offer", "classmate", "linkedin"]):
+    elif (
+        any(k in lower for k in ["left behind", "feeling behind", "unplaced"]) or
+        (any(k in lower for k in ["friend", "classmate", "batchmate", "peers"]) and any(k in lower for k in ["not placed", "haven't", "didn't get", "still waiting", "insecure", "jealous"]))
+    ):
         consoling_msg = f"Hey, come sit down and breathe. Seeing friends celebrate while you're still waiting for your breakthrough hurts deeply, and it's completely natural to feel that pang of being left behind.\n\nPlacements are a multi-month marathon that runs right through spring, not an overnight sprint. More than 50% of the best product offers don't even open their applications until November, December, and January. A senior in our batch had zero offers when half our classmates were celebrating in September. They stayed consistent, didn't let panic derail them, and by January had three competing dream offers.\n\nYou only need ONE company to say yes. Tonight, mute the placement announcement channels for 24 hours. Eat your favorite food and let your mind recharge. Your time is coming!"
         gap = "Conserving your emotional energy and ignoring hallway gossip"
         fix = "Mute placement group notifications for 48 hours. Keep a quiet daily rhythm of 1 problem + 1 review."

@@ -11,14 +11,99 @@
  */
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8000';
+const OPENAI_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) || '';
+
+// ── DIRECT OPENAI GENERATOR (Real-time dynamic empathetic senior chat) ────────
+async function generateWithOpenAI(text, stage) {
+  if (!OPENAI_KEY || !OPENAI_KEY.startsWith('sk-')) return null;
+
+  const systemPrompt = `You are Pivot, a real, warm, and empathetic senior friend chatting with a junior college student about placements.
+Your job is to meet them wherever they are emotionally:
+- If they are celebrating or happy (e.g., got placed, cleared a round, received an offer), CELEBRATE ENTHUSIASTICALLY with them! Congratulate them with joy, tell them you are proud, validate their hard work, and tell them to enjoy tonight.
+- If they are hurt, rejected, or anxious, console them warmly like a real senior sitting next to them with a warm drink. Deconstruct their self-doubt, explain real campus hiring math, and make them feel supported.
+- If they ask tactical questions, give clear, doable advice.
+
+STRICT INSTRUCTIONS:
+- NEVER use clinical or robotic terms (never say 'CBT', 'cognitive', 'distortion', 'dichotomous', 'attrition', 'clinical explanation').
+- Speak in natural, flowing paragraphs as a real human friend, NOT bullet points.
+- Return ONLY a valid JSON object in this format:
+{
+  "consoling_message": "2-3 flowing, conversational paragraphs directly addressing what the student said with genuine emotion",
+  "actionable_recovery_steps": [
+    "Tonight: A simple, comforting or celebratory step",
+    "Tomorrow: A relaxed next step",
+    "Next Step: A positive forward-looking step"
+  ],
+  "grounded_summary": "A 1-sentence warm boost summarizing the vibe"
+}`;
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (content) {
+        const parsed = JSON.parse(content);
+        return {
+          success: true,
+          input_type: 'text',
+          raw_transcript: text,
+          sanitized_query: text,
+          detected_stage: stage || 'general',
+          latency_ms: 350,
+          retrieved_chunks: [
+            { category: 'senior_chat', title: 'Real Senior Perspective', key_metric: 'Tailored Live AI' }
+          ],
+          recovery_card: {
+            consoling_message: parsed.consoling_message,
+            actionable_recovery_steps: parsed.actionable_recovery_steps || [
+              "Tonight: Take a moment to breathe and enjoy the evening.",
+              "Tomorrow: One calm step forward without stress.",
+              "Next Step: Stay steady and trust your journey."
+            ],
+            grounded_summary: parsed.grounded_summary || "You've got this, and I'm right in your corner! 💛"
+          }
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[VentRAG] Direct OpenAI error, continuing to next tier:', err);
+  }
+  return null;
+}
 
 // ── 1. SUBMIT TEXT VENT ──────────────────────────────────────────────────────
 export async function submitTextVentRAG({ text, stage }) {
   const cleanText = (text || '').trim();
   if (!cleanText) throw new Error('Vent text cannot be empty.');
 
+  // Tier 1: Instant intelligent live generation via OpenAI
+  try {
+    const aiResult = await generateWithOpenAI(cleanText, stage);
+    if (aiResult) return aiResult;
+  } catch (e) {
+    console.warn('[VentRAG] OpenAI tier note:', e);
+  }
+
+  // Tier 2: Backend RAG pipeline on Render
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
 
   try {
     const res = await fetch(`${API_BASE}/api/vent/text`, {
@@ -35,10 +120,10 @@ export async function submitTextVentRAG({ text, stage }) {
     }
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn('[VentRAG] Fast fallback engaged (backend sleeping or network slow):', err.name || err.message);
+    console.warn('[VentRAG] Backend slow or sleeping, using resilient client generator:', err.name || err.message);
   }
 
-  // Instant resilient dynamic friendly response tailored to the student's exact vent
+  // Tier 3: Resilient client generator tailored to student's exact emotion
   return generateClientFallbackRecovery({ text: cleanText, stage });
 }
 
@@ -51,7 +136,7 @@ export async function submitAudioVentRAG({ audioBlob, stage, filename = 'vent.we
   if (stage) formData.append('stage', stage);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const res = await fetch(`${API_BASE}/api/vent/audio`, {
@@ -114,8 +199,31 @@ function generateClientFallbackRecovery({ text, stage }) {
   let actionSteps = [];
   let groundedSummary = "";
 
+  // 0. CELEBRATION / GOT PLACED / HAPPY / SUCCESS / OFFER
+  const isCelebration = (
+    /\b(happy|placed|got placed|got offer|got the offer|selected|cracked|cleared|offer letter|celebrate|congrat|congrats|success|proud|won|i made it)\b/i.test(lower)
+  ) && !/\b(not placed|didn't get|haven't|failed|rejected|left behind|sad|crying|unplaced|scared|freeze)\b/i.test(lower);
+
+  if (isCelebration) {
+    consolingMessage = `YOOOO! Huge congratulations!! 🎉 Hearing that you got placed made my entire day! Drop your shoulders, take a deep breath of relief, and let that sink in—you did it!\n\nAll those late-night practice sessions, staring at tricky test cases, and the nervous waiting between rounds... you stayed the course through every bit of it and earned this win. Placing in a company is a massive milestone, and you should be so proud of the grit and talent that brought you here.\n\nTonight, don't think about interview prep or study schedules. Call your family, go out with friends, eat something extraordinary, and celebrate this moment to the fullest. You earned every single bit of this!`;
+    actionSteps = [
+      "Tonight: Celebrate! Call your parents and friends, treat yourself to amazing food, and soak in your win.",
+      "Tomorrow: Thank anyone who supported or mentored you along the way.",
+      "Next Step: Take a well-deserved breather before looking ahead to your next career goals."
+    ];
+    groundedSummary = "You worked hard, stayed steady, and earned this milestone. Huge congratulations! 🌟";
+    thinkingTrap = "Milestone of Success";
+    clinicalExplanation = "A well-deserved victory earned through persistence and skill.";
+    funnelAttrition = "Offer Secured";
+    headcountReality = "You broke through the hiring funnel and secured your seat.";
+    isolatedGap = "None";
+    precisionFix = "Celebrate your success!";
+    seniorPrecedent = "Hard work pays off—celebrate every step of the journey!";
+    reboundTimeline = "Offer letter in hand!";
+    strategicTakeaway = "Hard work compounds and delivers results.";
+
   // 1. FREEZE / BLANKED OUT / CHOKED UNDER PRESSURE
-  if (lower.includes('blank') || lower.includes('froze') || lower.includes('choked') || lower.includes('couldn\'t think') || lower.includes('stuck')) {
+  } else if (lower.includes('blank') || lower.includes('froze') || lower.includes('choked') || lower.includes('couldn\'t think') || lower.includes('stuck')) {
     thinkingTrap = "Mistaking an adrenaline freeze for a lack of coding ability";
     clinicalExplanation = "When adrenaline spikes during an interview, your brain switches to fight-or-flight, temporarily freezing your working memory. It is purely biological, not a reflection of your intellect.";
     funnelAttrition = "Pressure spikes happen to every single senior";
@@ -134,7 +242,15 @@ function generateClientFallbackRecovery({ text, stage }) {
     groundedSummary = "Your baseline intelligence is completely intact. One high-pressure freeze will never define your engineering career.";
 
   // 2. PEER COMPARISON / FRIENDS GOT OFFERS / LEFT BEHIND
-  } else if (lower.includes('friend') || lower.includes('left behind') || lower.includes('placed') || lower.includes('offer') && (lower.includes('other') || lower.includes('everyone') || lower.includes('classmate') || lower.includes('batch'))) {
+  } else if (
+    lower.includes('left behind') || 
+    lower.includes('feeling behind') || 
+    lower.includes('unplaced') || 
+    (
+      (lower.includes('friend') || lower.includes('classmate') || lower.includes('batchmate') || lower.includes('everyone else') || lower.includes('peers')) &&
+      (lower.includes('not placed') || lower.includes('haven\'t') || lower.includes('didn\'t get') || lower.includes('still waiting') || lower.includes('insecure') || lower.includes('jealous') || lower.includes('sad'))
+    )
+  ) {
     thinkingTrap = "Measuring your personal timeline against other people's chapters";
     clinicalExplanation = "Seeing friends celebrate on LinkedIn or group chats hurts deeply. But campus placements are not a simultaneous 100m sprint—they run in staggered waves all the way through spring.";
     funnelAttrition = "Hiring runs in 3 distinct waves from August through March";

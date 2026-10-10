@@ -60,6 +60,11 @@ export default function PlacementMoodRecoveryRAG() {
   const [vaultHistory, setVaultHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Real Interactive Chat State for Talking More
+  const [chatThread, setChatThread] = useState([]);
+  const [followUpText, setFollowUpText] = useState('');
+  const [isChatReplying, setIsChatReplying] = useState(false);
+
   // Load local vault on mount
   useEffect(() => {
     try {
@@ -155,6 +160,7 @@ export default function PlacementMoodRecoveryRAG() {
   const handleAudioSubmit = async (audioBlob) => {
     setIsLoading(true);
     setErrorMsg(null);
+    setChatThread([]);
     try {
       const response = await submitAudioVentRAG({
         audioBlob,
@@ -186,6 +192,7 @@ export default function PlacementMoodRecoveryRAG() {
     setIsLoading(true);
     setErrorMsg(null);
     setInputText('');
+    setChatThread([]);
 
     try {
       const response = await submitTextVentRAG({
@@ -206,6 +213,53 @@ export default function PlacementMoodRecoveryRAG() {
       setErrorMsg('Recovery analysis failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── INTERACTIVE FOLLOW-UP CHAT HANDLER ─────────────────────────────────────
+  const handleFollowUpSubmit = async () => {
+    const text = followUpText.trim();
+    if (!text || isChatReplying) return;
+
+    const userEntry = {
+      id: `user_${Date.now()}`,
+      sender: 'user',
+      text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setChatThread(prev => [...prev, userEntry]);
+    setFollowUpText('');
+    setIsChatReplying(true);
+
+    try {
+      const response = await submitTextVentRAG({
+        text,
+        stage: selectedStage
+      });
+
+      const card = response?.recovery_card;
+      const seniorReply = card?.consoling_message || card?.grounded_summary || cleanFriendlyChat(card?.cognitive_diagnosis?.clinical_explanation) || "I hear you, and whatever you are feeling right now is completely valid. Take a slow, gentle breath. I am right here with you.";
+
+      const seniorEntry = {
+        id: `senior_${Date.now()}`,
+        sender: 'senior',
+        text: seniorReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setChatThread(prev => [...prev, seniorEntry]);
+    } catch (err) {
+      console.error('Follow-up chat failed:', err);
+      const fallbackEntry = {
+        id: `senior_${Date.now()}`,
+        sender: 'senior',
+        text: "I am right here listening to you. Don't carry all this weight alone tonight—take it one small breath at a time, okay?",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatThread(prev => [...prev, fallbackEntry]);
+    } finally {
+      setIsChatReplying(false);
     }
   };
 
@@ -859,54 +913,150 @@ export default function PlacementMoodRecoveryRAG() {
                   </div>
                 </div>
 
-                {/* Follow-up Quick Chat Chips */}
-                <div>
+                {/* ── Follow-Up Interactive Chat Thread ── */}
+                {chatThread.map((chat) => (
+                  <div key={chat.id} style={{ marginBottom: '16px' }}>
+                    {chat.sender === 'user' ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{
+                          backgroundColor: 'var(--btn-sage)',
+                          color: '#FFFFFF',
+                          padding: '12px 18px',
+                          borderRadius: '16px 16px 4px 16px',
+                          maxWidth: '82%',
+                          fontSize: '14px',
+                          lineHeight: 1.55,
+                          fontFamily: 'var(--font-body)',
+                          boxShadow: '0 2px 6px rgba(82, 98, 87, 0.2)'
+                        }}>
+                          <div style={{ fontWeight: 600, fontSize: '11px', marginBottom: '3px', opacity: 0.85 }}>You</div>
+                          <div>{chat.text}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{
+                          backgroundColor: 'rgba(82, 98, 87, 0.05)',
+                          border: '1.5px solid rgba(82, 98, 87, 0.18)',
+                          borderRadius: '16px 16px 16px 4px',
+                          padding: '15px 20px',
+                          maxWidth: '88%',
+                          fontSize: '14px',
+                          lineHeight: 1.65,
+                          color: 'var(--main-heading)',
+                          fontFamily: 'var(--font-body)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '12px', color: 'var(--accent-terracotta)', marginBottom: '6px' }}>
+                            <Heart size={13} fill="var(--accent-terracotta)" />
+                            <span>Pivot</span>
+                          </div>
+                          <div>{cleanFriendlyChat(chat.text)}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Replying indicator */}
+                {isChatReplying && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(82, 98, 87, 0.06)',
+                    color: 'var(--btn-sage)',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    marginBottom: '16px',
+                    fontFamily: 'var(--font-body)'
+                  }}>
+                    <Sparkles size={14} />
+                    <span>Pivot is writing back to you... 💛</span>
+                  </div>
+                )}
+
+                {/* ── Real Continuous Chat Input Bar ── */}
+                <div style={{
+                  marginTop: '18px',
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid var(--border-color)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                }}>
                   <div style={{
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    marginBottom: '10px',
-                    fontFamily: 'var(--font-body)'
+                    color: 'var(--secondary-heading)',
+                    marginBottom: '8px',
+                    fontFamily: 'var(--font-body)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}>
-                    Want to talk more? Tap any of these:
+                    <MessageCircle size={14} color="var(--accent-terracotta)" />
+                    <span>Want to talk more? Message your senior friend directly:</span>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {[
-                      { label: "How do I stop comparing myself to placed friends? 💭", prompt: "I still feel insecure seeing my friends get placed. How do I stop comparing myself to them?" },
-                      { label: "Give me another senior boost 🌟", prompt: "Can you tell me another senior rebound story to keep my spirits up?" },
-                      { label: "What is 1 calm thing I can practice tomorrow? 💡", prompt: "What is just one calm, low-stress coding thing I should look at tomorrow?" },
-                      { label: "Thank you Pivot, I really needed this 💛", prompt: "Thank you for the comfort Pivot, I feel a lot lighter now." }
-                    ].map((followUp, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleTextSubmit(followUp.prompt)}
-                        disabled={isLoading || isRecording}
-                        style={{
-                          backgroundColor: 'rgba(82, 98, 87, 0.06)',
-                          color: 'var(--secondary-heading)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '16px',
-                          padding: '6px 13px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-body)',
-                          cursor: 'pointer',
-                          transition: 'all 0.18s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.12)';
-                          e.currentTarget.style.borderColor = 'var(--btn-sage)';
-                          e.currentTarget.style.color = 'var(--main-heading)';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.06)';
-                          e.currentTarget.style.borderColor = 'var(--border-color)';
-                          e.currentTarget.style.color = 'var(--secondary-heading)';
-                        }}
-                      >
-                        {followUp.label}
-                      </button>
-                    ))}
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={followUpText}
+                      onChange={(e) => setFollowUpText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleFollowUpSubmit();
+                      }}
+                      placeholder="Type anything... e.g. What if I get nervous again tomorrow?"
+                      disabled={isChatReplying}
+                      style={{
+                        flex: 1,
+                        padding: '11px 16px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-input)',
+                        outline: 'none',
+                        fontSize: '13.5px',
+                        fontFamily: 'var(--font-body)',
+                        color: 'var(--main-heading)',
+                        backgroundColor: 'var(--bg-input)',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--btn-sage)'}
+                      onBlur={(e) => e.target.style.borderColor = 'var(--border-input)'}
+                    />
+
+                    <button
+                      onClick={handleFollowUpSubmit}
+                      disabled={isChatReplying || !followUpText.trim()}
+                      style={{
+                        backgroundColor: followUpText.trim() && !isChatReplying ? 'var(--btn-sage)' : 'rgba(82, 98, 87, 0.35)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '11px 18px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-btn)',
+                        cursor: followUpText.trim() && !isChatReplying ? 'pointer' : 'default',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.18s ease',
+                        flexShrink: 0
+                      }}
+                    >
+                      <Send size={14} />
+                      <span>Send</span>
+                    </button>
                   </div>
                 </div>
 

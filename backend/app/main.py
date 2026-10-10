@@ -82,6 +82,22 @@ app.include_router(stress_router.router)    # Spatiotemporal & rPPG Stress API
 app.include_router(ws_interview.router)   # WebSocket at /ws/{session_id}
 app.include_router(ws_audio.router)       # Audio pipeline at /ws/audio/{session_id}
 
+# ── Health Check & Root Endpoints (Supports Render HEAD & GET checks) ─────────
+@app.api_route("/", methods=["GET", "HEAD"])
+async def root():
+    return {
+        "status": "healthy",
+        "service": "Neroprep AI Placement Platform",
+        "version": "2.0.0"
+    }
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health_check():
+    return {
+        "status": "ok",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # EXISTING ATS / Resume endpoints (preserved from v1)

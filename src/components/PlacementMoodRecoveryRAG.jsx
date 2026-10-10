@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { 
   submitTextVentRAG, 
-  submitAudioVentRAG, 
-  fetchVentStages 
+  submitAudioVentRAG 
 } from '../services/placementMoodRecoveryRAG';
 
 const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v2';
@@ -45,8 +44,7 @@ const formatFriendlyRound = (raw) => {
 
 export default function PlacementMoodRecoveryRAG() {
   const [inputText, setInputText] = useState('');
-  const [selectedStage, setSelectedStage] = useState('technical_round_2');
-  const [stages, setStages] = useState([]);
+  const [selectedStage] = useState('general');
   const [isLoading, setIsLoading] = useState(false);
   const [currentResult, setCurrentResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -62,20 +60,8 @@ export default function PlacementMoodRecoveryRAG() {
   const [vaultHistory, setVaultHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Quick Friendly Scenario Chips (Zero technical or cognitive terms)
-  const QUICK_SCENARIO_CHIPS = [
-    { label: "Froze on Round 2 Coding", prompt: "I got dropped in Round 2 today. Froze on a coding problem and felt really down." },
-    { label: "Didn't Pass 4 Online Tests", prompt: "Didn't clear 4 campus online tests this week. Hidden test cases timed out. I feel like giving up." },
-    { label: "Interviewer Seemed Distant", prompt: "The interviewer seemed distracted. I went completely blank on a tree question." },
-    { label: "Friends Got Offers, Left Behind", prompt: "My whole friend group got offers this week and I haven't gotten one yet. I feel left behind and scared." }
-  ];
-
-  // Load stages & local vault on mount
+  // Load local vault on mount
   useEffect(() => {
-    fetchVentStages().then(data => {
-      if (data && data.length) setStages(data);
-    });
-
     try {
       const stored = localStorage.getItem(LOCAL_VAULT_KEY);
       if (stored) {
@@ -301,38 +287,8 @@ export default function PlacementMoodRecoveryRAG() {
           </div>
         </div>
 
-        {/* Stage Selector & Vault History Toggle */}
+        {/* Vault History Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <select
-            value={selectedStage}
-            onChange={(e) => setSelectedStage(e.target.value)}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.18)',
-              color: '#FFFFFF',
-              border: '1px solid rgba(255, 255, 255, 0.35)',
-              borderRadius: '10px',
-              padding: '7px 12px',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              fontFamily: 'var(--font-btn)',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="technical_round_2" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Round 2 (Live Coding)
-            </option>
-            <option value="technical_round_1" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Round 1 (First Interview)
-            </option>
-            <option value="oa_screening" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Online Coding Test
-            </option>
-            <option value="final_round" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Final HR & Manager Round
-            </option>
-          </select>
-
           {vaultHistory.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -387,59 +343,7 @@ export default function PlacementMoodRecoveryRAG() {
       {/* ── 3. MAIN WORKSPACE ───────────────────────────────────────────────── */}
       <div style={{ padding: '24px' }}>
 
-        {/* Quick Scenario Chips */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{
-            fontSize: '11.5px',
-            fontWeight: 700,
-            color: 'var(--secondary-heading)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            marginBottom: '8px',
-            fontFamily: 'var(--font-body)'
-          }}>
-            Tap to share what happened today:
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {QUICK_SCENARIO_CHIPS.map((chip, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleTextSubmit(chip.prompt)}
-                disabled={isLoading || isRecording}
-                style={{
-                  backgroundColor: 'rgba(82, 98, 87, 0.06)',
-                  color: 'var(--secondary-heading)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '20px',
-                  padding: '7px 14px',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  fontFamily: 'var(--font-body)',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--btn-sage)';
-                  e.currentTarget.style.color = 'var(--main-heading)';
-                  e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.12)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.color = 'var(--secondary-heading)';
-                  e.currentTarget.style.backgroundColor = 'rgba(82, 98, 87, 0.06)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span>{chip.label}</span>
-                <ArrowUpRight size={13} color="var(--accent-terracotta)" />
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {/* ── 4. VOICE VENT RECORDER WITH LIVE MIC PULSE ─────────────────────── */}
         {isRecording && (
@@ -573,7 +477,7 @@ export default function PlacementMoodRecoveryRAG() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleTextSubmit();
               }}
-              placeholder={isRecording ? "Listening to your voice..." : "Tell Pivot what happened (e.g. Froze on DP in Round 2, feeling crushed)..."}
+              placeholder={isRecording ? "Listening to your voice with care..." : "Share what's on your mind... vent freely, no judgment here."}
               disabled={isLoading || isRecording}
               style={{
                 width: '100%',
@@ -835,7 +739,7 @@ export default function PlacementMoodRecoveryRAG() {
                     border: '1px solid rgba(82, 98, 87, 0.25)',
                     fontFamily: 'var(--font-btn)'
                   }}>
-                    {formatFriendlyRound(card.math_market_check?.stage)}
+                    Senior Heart-to-Heart 💛
                   </span>
                   <span style={{
                     fontSize: '11.5px',

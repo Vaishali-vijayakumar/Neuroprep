@@ -11,16 +11,18 @@
  */
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8000';
-const OPENAI_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) || '';
+const GEMINI_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
 
-// ── DIRECT OPENAI GENERATOR (Real-time dynamic empathetic senior chat) ────────
-async function generateWithOpenAI(text, stage) {
-  if (!OPENAI_KEY || !OPENAI_KEY.startsWith('sk-')) return null;
+// ── DIRECT GEMINI 3.5 FLASH LITE GENERATOR (Sub-second live empathetic AI) ─────────
+async function generateWithGemini(text, stage) {
+  if (!GEMINI_KEY) return null;
 
-  const systemPrompt = `You are Pivot, a real, warm, and empathetic senior friend chatting with a junior college student about placements.
+  const systemInstruction = `You are Pivot, a real, warm, and deeply empathetic senior friend chatting with a junior college student about placements.
 Your job is to meet them wherever they are emotionally:
-- If they are celebrating or happy (e.g., got placed, cleared a round, received an offer), CELEBRATE ENTHUSIASTICALLY with them! Congratulate them with joy, tell them you are proud, validate their hard work, and tell them to enjoy tonight.
-- If they are hurt, rejected, or anxious, console them warmly like a real senior sitting next to them with a warm drink. Deconstruct their self-doubt, explain real campus hiring math, and make them feel supported.
+- If they got placed in a service company, have a lower package than friends, or feel sad/insecure comparing themselves to peers at product companies: Validate how hard it is to see friends celebrate higher numbers, but passionately remind them that their first job is only their starting line, not their destiny! Share that tech salaries compound rapidly—countless seniors started at TCS, Infosys, or Wipro, spent 1 year mastering DSA and building real projects, and switched to product companies with 2x-3x salaries before their peers even got promoted. Celebrate their placement win while validating their ambition!
+- If they are sad about not getting into a product company: Validate that ache warmly, explain that product companies hire off-campus laterally 365 days a year without campus quota politics, and encourage them to build their projects.
+- If they are celebrating or happy, celebrate enthusiastically with genuine joy and pride!
+- If they were rejected, froze, or feel crushed, console them like a close friend sitting with them with a warm drink. Deconstruct their self-doubt, explain campus quota realities, and make them feel seen.
 - If they ask tactical questions, give clear, doable advice.
 
 STRICT INSTRUCTIONS:
@@ -28,7 +30,7 @@ STRICT INSTRUCTIONS:
 - Speak in natural, flowing paragraphs as a real human friend, NOT bullet points.
 - Return ONLY a valid JSON object in this format:
 {
-  "consoling_message": "2-3 flowing, conversational paragraphs directly addressing what the student said with genuine emotion",
+  "consoling_message": "2-3 flowing, conversational paragraphs directly addressing what the student said with genuine emotion and wisdom",
   "actionable_recovery_steps": [
     "Tonight: A simple, comforting or celebratory step",
     "Tomorrow: A relaxed next step",
@@ -37,29 +39,35 @@ STRICT INSTRUCTIONS:
   "grounded_summary": "A 1-sentence warm boost summarizing the vibe"
 }`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5500);
+
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
+    const payload = {
+      contents: [
+        { parts: [{ text: `${systemInstruction}\n\nStudent vent: "${text}"\nStage: ${stage || 'general'}` }] }
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 1000,
+        temperature: 0.35
+      }
+    };
+
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text }
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
-      const content = data?.choices?.[0]?.message?.content;
-      if (content) {
-        const parsed = JSON.parse(content);
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        const parsed = JSON.parse(rawText);
         return {
           success: true,
           input_type: 'text',
@@ -68,12 +76,12 @@ STRICT INSTRUCTIONS:
           detected_stage: stage || 'general',
           latency_ms: 350,
           retrieved_chunks: [
-            { category: 'senior_chat', title: 'Real Senior Perspective', key_metric: 'Tailored Live AI' }
+            { category: 'senior_chat', title: 'Senior Heart-to-Heart', key_metric: 'Live AI Guidance' }
           ],
           recovery_card: {
             consoling_message: parsed.consoling_message,
             actionable_recovery_steps: parsed.actionable_recovery_steps || [
-              "Tonight: Take a moment to breathe and enjoy the evening.",
+              "Tonight: Take a moment to breathe and be proud of making it this far.",
               "Tomorrow: One calm step forward without stress.",
               "Next Step: Stay steady and trust your journey."
             ],
@@ -83,9 +91,98 @@ STRICT INSTRUCTIONS:
       }
     }
   } catch (err) {
-    console.warn('[VentRAG] Direct OpenAI error, continuing to next tier:', err);
+    clearTimeout(timeoutId);
+    console.warn('[VentRAG] Direct Gemini generation note:', err);
   }
   return null;
+}
+
+// ── INTERACTIVE FOLLOW-UP CHAT STREAM / CALL ─────────────────────────────────
+export async function submitChatFollowUp({ text, history = [], stage = 'general' }) {
+  const cleanText = (text || '').trim();
+  if (!cleanText) return "I'm right here with you. Tell me what's on your mind.";
+
+  if (GEMINI_KEY) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5500);
+
+    try {
+      const recentHistory = (history || [])
+        .slice(-6)
+        .map(h => `${h.sender === 'user' ? 'Student' : 'Pivot'}: ${h.text}`)
+        .join('\n');
+
+      const prompt = `You are Pivot, a warm, empathetic, caring senior college mentor chatting conversationally with a junior student about campus placements.
+Previous conversation:
+${recentHistory}
+
+The student just shared: "${cleanText}"
+
+Write a warm, thoughtful, conversational reply as Pivot (2-3 natural paragraphs).
+- Respond DIRECTLY and specifically to what they just said.
+- If they are feeling down about a service company or low package compared to peers at product companies: validate their feeling warmly, but remind them that their first job is a paid training ground, tech packages 2x/3x quickly with experience, and seniors switched from TCS/Wipro to product firms in 1-2 years.
+- If they are sad about not getting into a product company: validate their hurt, explain off-campus lateral hiring realities, and keep their confidence high.
+- If they ask for tactical steps or advice: give actionable, realistic tips.
+- NEVER use clinical or robotic terms (never say 'CBT', 'cognitive distortion', 'dichotomous', 'attrition').
+- Speak as a real human friend in natural paragraphs.`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 600,
+          temperature: 0.35
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText && rawText.trim().length > 15) {
+          return rawText.trim();
+        }
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn('[VentChat] Gemini chat note:', err.name || err.message);
+    }
+  }
+
+  // Fallback to dynamic context-aware chat reply
+  return generateClientChatReply({ text: cleanText, history, stage });
+}
+
+function generateClientChatReply({ text, history, stage }) {
+  const lower = (text || '').toLowerCase();
+
+  if (
+    /\b(service|service company|service-based|tcs|infosys|wipro|cognizant|accenture|low package|lower package|less package|package is low|low ctc|less ctc)\b/i.test(lower) ||
+    (/\b(product|product company|product based)\b/i.test(lower) && /\b(friend|friends|peer|peers|others|low|service|not at|didn't get|missed|while)\b/i.test(lower))
+  ) {
+    return `Hey, come sit down and take a slow, deep breath with me. First of all, hear me loud and clear: starting at a service company is NOT a career dead-end—it is an incredible, paid launchpad. It is completely human to feel a pang when you see friends celebrating product offers with flashy CTC numbers. But in the tech industry, your first salary is just a starting coordinate, not your destiny.\n\nTech salaries compound at exponential speed once you gain 1-2 years of real-world experience. Countless seniors in our college started at 3.5 to 4 LPA in TCS, Infosys, or Wipro, spent their first year polishing system design and advanced DSA on weekends, and transitioned to tier-1 product companies at 18 to 26 LPA before their college peers even had their first promotion. You already have an offer letter in hand—financial independence and a safety net that thousands of unplaced students would love to have.\n\nTreat this company as your training gym: learn corporate codebases, soak in client communication, and quietly upskill. In 3 years, nobody will ever ask where you started; they will only ask what you can build!`;
+  }
+
+  if (/\b(product|product company|tier 1|tier-1)\b/i.test(lower) && /\b(sad|missed|didn't get|did not get|couldn't|not placed|haven't|crying|hurt|left out|placded)\b/i.test(lower)) {
+    return `I completely hear that ache, and whatever disappointment you feel right now is 100% valid. When you spend months grinding LeetCode, dreaming of working at a high-growth product firm, missing out on that campus badge stings deeply. Give yourself permission to feel sad tonight—it's okay to let it out.\n\nHere is the golden truth that campus placement cells never tell you: product companies hire 365 days a year off-campus, and lateral hiring is 10x fairer than campus cattle-call rounds. On campus, 1,000 students fight for 4 seats under luck-heavy timers. Off-campus, companies evaluate your GitHub projects, your engineering depth, and your clean problem-solving without the campus noise. The skills you built for product interviews—DSA, OOPs, clean architecture—are already in your mind.\n\nThis is just a temporary detour, never a full stop. Take tonight off, recharge your mind, and remember: the best engineers in tech were forged through these exact plot twists.`;
+  }
+
+  if (/\b(how|what should i do|what to do|steps|prepare|how to switch|transition|roadmap|next)\b/i.test(lower)) {
+    return `Here is the exact playbook seniors used to make the jump: First, spend your initial 3 months at work understanding professional git workflows and clean coding. Second, carve out a non-negotiable 1 hour every single evening: solve 1 LeetCode medium problem by pattern (two pointers, trees, graphs). Third, build 1 full-stack project using modern tech (like Next.js, Redis, Docker) and deploy it live. When you hit the 1-year mark, you won't just be a fresher—you will be an engineer with real work experience and product-level skills. You have all the time in the world to make this pivot!`;
+  }
+
+  if (/\b(thank|thanks|helped|appreciate|better|relieved)\b/i.test(lower)) {
+    return `You have no idea how glad I am to hear that. You are so much stronger and more capable than you realize, and this whole placement storm will look like just a tiny blip once you're a year or two into your career. Go get some rest tonight, eat something you love, and know that I'm always cheering for you! 💛`;
+  }
+
+  return `I hear you, and whatever you are feeling right now is completely valid. Placements put an unnatural amount of pressure on all of us, and it's easy to feel overwhelmed. Remember to treat yourself with kindness tonight. You've already put in so much hard work, and your story has so many exciting chapters still to come. I'm right here with you!`;
 }
 
 // ── 1. SUBMIT TEXT VENT ──────────────────────────────────────────────────────
@@ -93,12 +190,12 @@ export async function submitTextVentRAG({ text, stage }) {
   const cleanText = (text || '').trim();
   if (!cleanText) throw new Error('Vent text cannot be empty.');
 
-  // Tier 1: Instant intelligent live generation via OpenAI
+  // Tier 1: Instant intelligent live generation via Gemini 3.5 Flash
   try {
-    const aiResult = await generateWithOpenAI(cleanText, stage);
+    const aiResult = await generateWithGemini(cleanText, stage);
     if (aiResult) return aiResult;
   } catch (e) {
-    console.warn('[VentRAG] OpenAI tier note:', e);
+    console.warn('[VentRAG] Gemini tier note:', e);
   }
 
   // Tier 2: Backend RAG pipeline on Render
@@ -199,12 +296,60 @@ function generateClientFallbackRecovery({ text, stage }) {
   let actionSteps = [];
   let groundedSummary = "";
 
-  // 0. CELEBRATION / GOT PLACED / HAPPY / SUCCESS / OFFER
-  const isCelebration = (
-    /\b(happy|placed|got placed|got offer|got the offer|selected|cracked|cleared|offer letter|celebrate|congrat|congrats|success|proud|won|i made it)\b/i.test(lower)
-  ) && !/\b(not placed|didn't get|haven't|failed|rejected|left behind|sad|crying|unplaced|scared|freeze)\b/i.test(lower);
+  // 0A. SERVICE COMPANY / LOW PACKAGE / COMPARISON TO FRIENDS AT PRODUCT FIRMS
+  const isServiceVsProduct = (
+    /\b(service|service company|service-based|tcs|infosys|wipro|cognizant|accenture|low package|lower package|less package|package is low|low ctc|less ctc|tier 3|tier-3)\b/i.test(lower) ||
+    (/\b(product|product company|product-based)\b/i.test(lower) && /\b(friend|friends|classmate|peers|others|low|less|service|placed in service)\b/i.test(lower))
+  );
 
-  if (isCelebration) {
+  // 0B. MISSED PRODUCT COMPANY / SAD ABOUT NOT GETTING PRODUCT OFFER
+  const isMissedProduct = (
+    /\b(product|product company|tier 1|tier-1)\b/i.test(lower) &&
+    /\b(sad|missed|didn't get|did not get|couldn't|not placed|haven't|crying|hurt|left out|placded|disappointed)\b/i.test(lower)
+  );
+
+  // 0C. PURE CELEBRATION / GOT PLACED / HAPPY / SUCCESS / OFFER
+  const isCelebration = (
+    /\b(happy|got placed|got offer|got the offer|selected|cracked|cleared|offer letter|celebrate|congrat|congrats|success|proud|won|i made it)\b/i.test(lower)
+  ) && !isServiceVsProduct && !isMissedProduct && !/\b(not placed|didn't get|haven't|failed|rejected|left behind|sad|crying|unplaced|scared|freeze|low|service)\b/i.test(lower);
+
+  if (isServiceVsProduct) {
+    consolingMessage = `Hey, come sit down with me and take a slow, deep breath. First of all, hear me loud and clear: starting at a service company is NOT a career dead-end—it is an incredible, paid launchpad. It is completely human to feel a pang when you see friends celebrating product offers with flashy CTC numbers. But in the tech industry, your first salary is just a starting coordinate, not your destiny.\n\nTech salaries compound at exponential speed once you gain 1-2 years of real-world experience. Countless seniors in our college started at 3.5 to 4 LPA in TCS, Infosys, or Wipro, spent their first year polishing system design and advanced DSA on weekends, and transitioned to tier-1 product companies at 18 to 26 LPA before their college peers even had their first promotion. You already have an offer letter in hand—financial independence and a safety net that thousands of unplaced students would love to have.\n\nTreat this company as your training gym: learn corporate codebases, soak in client communication, and quietly upskill. In 3 years, nobody will ever ask where you started; they will only ask what you can build!`;
+    actionSteps = [
+      "Tonight: Acknowledge your offer letter—you secured financial independence, which is a major win.",
+      "Tomorrow: Start mapping out a relaxed 1-hour evening routine for DSA and system design.",
+      "Next Year: Build a high-impact full-stack project to showcase for off-campus product company switches."
+    ];
+    groundedSummary = "Your starting CTC is just a starting point. Your drive and upskilling will define your ceiling. 🚀";
+    thinkingTrap = "Equating starting package with lifelong engineering value";
+    clinicalExplanation = "Comparing starting salaries ignores that tech compensation compounds exponentially after 1-2 years of proven delivery.";
+    funnelAttrition = "Starting salary variance in campus season";
+    headcountReality = "Initial campus CTC is governed by mass-hiring bands, not an individual's long-term engineering talent.";
+    isolatedGap = "Viewing your first job as a permanent ceiling instead of a launchpad";
+    precisionFix = "Build a calm, consistent 5-hour weekly routine: master 1 system design concept and 3 DSA patterns.";
+    seniorPrecedent = "A senior started at Cognizant at 4 LPA, built full-stack microservices on weekends, and switched to a 22 LPA product company in 14 months.";
+    reboundTimeline = "Cognizant 4 LPA -> Switched to 22 LPA Product Unicorn in 14 months";
+    strategicTakeaway = "Your starting CTC is just a number; your upskilling momentum determines your ceiling.";
+
+  } else if (isMissedProduct) {
+    consolingMessage = `I completely hear that ache, and whatever disappointment you feel right now is 100% valid. When you spend months grinding LeetCode, dreaming of working at a high-growth product firm, missing out on that campus badge stings deeply. Give yourself permission to feel sad tonight—it's okay to let it out.\n\nHere is the golden truth that campus placement cells never tell you: product companies hire 365 days a year off-campus, and lateral hiring is 10x fairer than campus cattle-call rounds. On campus, 1,000 students fight for 4 seats under luck-heavy timers. Off-campus, companies evaluate your GitHub projects, your engineering depth, and your clean problem-solving without the campus noise. The skills you built for product interviews—DSA, OOPs, clean architecture—are already in your mind.\n\nThis is just a temporary detour, never a full stop. Take tonight off, recharge your mind, and remember: the best engineers in tech were forged through these exact plot twists.`;
+    actionSteps = [
+      "Tonight: Allow yourself to feel sad and process it—you put your heart into this goal.",
+      "Tomorrow: Remind yourself that product companies hire year-round off-campus.",
+      "This Month: Clean up 2 production-grade GitHub projects to prepare for direct off-campus applications."
+    ];
+    groundedSummary = "Campus drives end, but product industry hiring never stops. Keep your head high. 💛";
+    thinkingTrap = "Assuming campus placement is the only gateway into product companies";
+    clinicalExplanation = "Campus drives are artificially narrow windows; lateral off-campus hiring accounts for 80%+ of long-term tech headcount.";
+    funnelAttrition = "The 1,000-to-4 campus funnel crunch";
+    headcountReality = "Campus drives enforce tiny quotas, whereas lateral off-campus pipelines evaluate talent continuously.";
+    isolatedGap = "Shifting from campus contest mindset to off-campus engineering portfolio";
+    precisionFix = "Polish 2 end-to-end production projects on GitHub and keep your LeetCode rhythm at 1 problem daily.";
+    seniorPrecedent = "A student who didn't clear any campus product company cracked an off-campus SDE role at Swiggy just 3 months after graduation.";
+    reboundTimeline = "Zero campus product offers -> Off-campus SDE role in 3 months";
+    strategicTakeaway = "Campus drives end; product industry hiring never stops.";
+
+  } else if (isCelebration) {
     consolingMessage = `YOOOO! Huge congratulations!! 🎉 Hearing that you got placed made my entire day! Drop your shoulders, take a deep breath of relief, and let that sink in—you did it!\n\nAll those late-night practice sessions, staring at tricky test cases, and the nervous waiting between rounds... you stayed the course through every bit of it and earned this win. Placing in a company is a massive milestone, and you should be so proud of the grit and talent that brought you here.\n\nTonight, don't think about interview prep or study schedules. Call your family, go out with friends, eat something extraordinary, and celebrate this moment to the fullest. You earned every single bit of this!`;
     actionSteps = [
       "Tonight: Celebrate! Call your parents and friends, treat yourself to amazing food, and soak in your win.",

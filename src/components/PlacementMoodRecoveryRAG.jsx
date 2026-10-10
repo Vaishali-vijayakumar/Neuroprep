@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { 
   submitTextVentRAG, 
-  submitAudioVentRAG 
+  submitAudioVentRAG,
+  submitChatFollowUp
 } from '../services/placementMoodRecoveryRAG';
 
 const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v3';
@@ -78,13 +79,13 @@ export default function PlacementMoodRecoveryRAG() {
     }
   }, []);
 
-  // Safety timer: guarantees the spinner can never get stuck for more than 4.5s
+  // Safety timer: guarantees the spinner can never get stuck for more than 7.5s
   useEffect(() => {
     let timer;
     if (isLoading) {
       timer = setTimeout(() => {
         setIsLoading(false);
-      }, 4500);
+      }, 7500);
     }
     return () => clearTimeout(timer);
   }, [isLoading]);
@@ -230,18 +231,16 @@ export default function PlacementMoodRecoveryRAG() {
     setIsChatReplying(true);
 
     try {
-      const response = await submitTextVentRAG({
+      const seniorReply = await submitChatFollowUp({
         text,
+        history: chatThread,
         stage: selectedStage
       });
-
-      const card = response?.recovery_card;
-      const seniorReply = card?.consoling_message || card?.grounded_summary || cleanFriendlyChat(card?.cognitive_diagnosis?.clinical_explanation) || "I hear you, and whatever you are feeling right now is completely valid. Take a slow, gentle breath. I am right here with you.";
 
       const seniorEntry = {
         id: `senior_${Date.now()}`,
         sender: 'senior',
-        text: seniorReply,
+        text: cleanFriendlyChat(seniorReply),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 

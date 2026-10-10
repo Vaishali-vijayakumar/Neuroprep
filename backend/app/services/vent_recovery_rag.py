@@ -587,7 +587,7 @@ STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (neve
         except Exception as e:
             print(f"[LLM] Groq note: {e}")
 
-    # 2. Try Gemini with fast 2.5s thread timeout
+    # 2. Try Gemini 3.5 Flash Lite
     if _GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here":
         def _call_gemini():
             try:
@@ -596,21 +596,23 @@ STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (neve
                 client = genai.Client(api_key=_GEMINI_API_KEY)
                 cfg = types.GenerateContentConfig(
                     system_instruction=STRICT_SYSTEM_PROMPT,
-                    temperature=0.2,
+                    temperature=0.3,
+                    max_output_tokens=1000,
                     response_mime_type="application/json"
                 )
                 res = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.5-flash-lite",
                     contents=user_prompt,
                     config=cfg
                 )
                 return json.loads(res.text.strip())
             except Exception as e:
+                print(f"[LLM] Gemini call note: {e}")
                 return None
 
         try:
-            gemini_res = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=6.5)
-            if gemini_res and isinstance(gemini_res, dict) and "cognitive_diagnosis" in gemini_res:
+            gemini_res = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=10.0)
+            if gemini_res and isinstance(gemini_res, dict) and ("consoling_message" in gemini_res or "cognitive_diagnosis" in gemini_res):
                 return gemini_res
         except Exception as e:
             print(f"[LLM] Gemini timeout/error note: {e}")
@@ -619,9 +621,58 @@ STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (neve
     lower = (vent_text or "").lower()
     snippet = vent_text[:65] + "..." if len(vent_text) > 65 else vent_text
 
-    is_celebration = any(k in lower for k in ["happy", "got placed", "got offer", "got the offer", "selected", "cracked", "cleared", "offer letter", "celebrate", "congrat", "congrats", "success", "proud", "won"]) and not any(k in lower for k in ["not placed", "didn't get", "haven't", "failed", "rejected", "left behind", "sad", "crying", "unplaced"])
+    is_service_vs_product = (
+        any(k in lower for k in ["service", "service company", "service-based", "tcs", "infosys", "wipro", "cognizant", "accenture", "low package", "lower package", "less package", "low ctc", "less ctc", "tier 3", "tier-3"])
+        or ("product" in lower and any(k in lower for k in ["friend", "friends", "classmate", "others", "low", "less", "service", "placed in service"]))
+    )
+    is_missed_product = (
+        any(k in lower for k in ["product", "product company", "tier 1", "tier-1"])
+        and any(k in lower for k in ["sad", "missed", "didn't get", "did not get", "couldn't", "not placed", "haven't", "crying", "hurt", "left out", "placded"])
+    )
+    is_celebration = (
+        any(k in lower for k in ["happy", "got placed", "got offer", "got the offer", "selected", "cracked", "cleared", "offer letter", "celebrate", "congrat", "congrats", "success", "proud", "won"])
+        and not is_service_vs_product
+        and not is_missed_product
+        and not any(k in lower for k in ["not placed", "didn't get", "haven't", "failed", "rejected", "left behind", "sad", "crying", "unplaced", "low", "service"])
+    )
 
-    if is_celebration:
+    if is_service_vs_product:
+        consoling_msg = (
+            "Hey, come sit down with me and take a slow, deep breath. First of all, hear me loud and clear: "
+            "starting at a service company is NOT a career dead-end—it is an incredible, paid launchpad. "
+            "It is completely human to feel a pang when you see friends celebrating product offers with flashy CTC numbers. "
+            "But in the tech industry, your first salary is just a starting coordinate, not your destiny.\n\n"
+            "Tech salaries compound at exponential speed once you gain 1-2 years of real-world experience. "
+            "Countless seniors in our college started at 3.5 to 4 LPA in TCS, Infosys, or Wipro, spent their first year "
+            "polishing system design and advanced DSA on weekends, and transitioned to tier-1 product companies at 18 to 26 LPA "
+            "before their college peers even had their first promotion. You already have an offer letter in hand—financial independence "
+            "and a safety net that thousands of unplaced students would love to have.\n\n"
+            "Treat this company as your training gym: learn corporate codebases, soak in client communication, "
+            "and quietly upskill. In 3 years, nobody will ever ask where you started; they will only ask what you can build!"
+        )
+        gap = "Viewing your first job as a permanent ceiling instead of a launchpad"
+        fix = "Build a calm, consistent 5-hour weekly routine: master 1 system design concept and 3 DSA patterns."
+        story = "A senior started at Cognizant at 4 LPA, built full-stack microservices on weekends, and switched to a 22 LPA product company in 14 months."
+        timeline = "Cognizant 4 LPA -> Switched to 22 LPA Product Unicorn in 14 months"
+        takeaway = "Your starting CTC is just a number; your upskilling momentum determines your ceiling."
+    elif is_missed_product:
+        consoling_msg = (
+            "I completely hear that ache, and whatever disappointment you feel right now is 100% valid. "
+            "When you spend months grinding LeetCode, dreaming of working at a high-growth product firm, "
+            "missing out on that campus badge stings deeply. Give yourself permission to feel sad tonight—it's okay to let it out.\n\n"
+            "Here is the golden truth that campus placement cells never tell you: product companies hire 365 days a year off-campus, "
+            "and lateral hiring is 10x fairer than campus cattle-call rounds. On campus, 1,000 students fight for 4 seats under luck-heavy timers. "
+            "Off-campus, companies evaluate your GitHub projects, your engineering depth, and your clean problem-solving without the campus noise. "
+            "The skills you built for product interviews—DSA, OOPs, clean architecture—are already in your mind.\n\n"
+            "This is just a temporary detour, never a full stop. Take tonight off, recharge your mind, and remember: "
+            "the best engineers in tech were forged through these exact plot twists."
+        )
+        gap = "Assuming campus placement is the only gateway into product companies"
+        fix = "Polish 2 end-to-end production projects on GitHub and keep your LeetCode rhythm at 1 problem daily."
+        story = "A student who didn't clear any campus product company cracked an off-campus SDE role at Swiggy just 3 months after graduation."
+        timeline = "Zero campus product offers -> Off-campus SDE role in 3 months"
+        takeaway = "Campus drives end; product industry hiring never stops."
+    elif is_celebration:
         consoling_msg = f"YOOOO! Huge congratulations!! 🎉 Hearing that you got placed made my entire day! Drop your shoulders, take a deep breath of relief, and let that sink in—you did it!\n\nAll those late-night practice sessions, staring at tricky test cases, and the nervous waiting between rounds... you stayed the course through every bit of it and earned this win. Placing in a company is a massive milestone, and you should be so proud of the grit and talent that brought you here.\n\nTonight, don't think about interview prep or study schedules. Call your family, go out with friends, eat something extraordinary, and celebrate this moment to the fullest. You earned every single bit of this!"
         gap = "None"
         fix = "Celebrate your success to the fullest!"

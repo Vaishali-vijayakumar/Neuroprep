@@ -105,27 +105,55 @@ function generateClientFallbackRecovery({ text, stage }) {
     lower.includes('hr') || lower.includes('final') ? 'final_round' : 'technical_round_2'
   );
 
-  let thinkingTrap = 'All-or-Nothing Dichotomous Thinking & Catastrophizing';
-  let clinicalExplanation = 'Your mind is projecting an acute, 45-minute artificial stress evaluation onto your entire lifetime engineering aptitude.';
-  let isolatedGap = 'Clock-bound algorithmic derivation and space complexity management';
-  let precisionFix = 'Practice 10 timed variations of this exact pattern under a strict 20-minute countdown clock.';
-  let seniorPrecedent = 'A Batch 2023 senior froze on dynamic programming during Amazon Round 2, isolated DP state transitions for 12 days, and cleared Atlassian 3 weeks later.';
+  let thinkingTrap = "Feeling like you failed because of one tough round";
+  let clinicalExplanation = "Hey, take a slow deep breath. Getting stuck on a problem under a ticking clock does NOT mean you're a bad engineer. It just means the timer spiked your nerves today—that's completely human.";
+  let isolatedGap = "Getting flustered under time pressure on that specific pattern";
+  let precisionFix = "Tomorrow, spend 25 calm, timer-free minutes looking at that pattern with your favorite cup of tea or coffee. No test clock, no stress—just relaxed curiosity.";
+  let seniorPrecedent = "A 2023 senior completely froze on Dynamic Programming in Amazon Round 2, felt heartbroken, took the weekend off to reset, and landed Atlassian with 28 LPA just 3 weeks later.";
+  let funnelAttrition = "Why today was mostly about crowded room capacity";
+  let headcountReality = "In campus Round 2 drives, 24 talented candidates often compete for just 4 open budget seats. Over 80% of great students get turned down purely because the company hit room capacity, never because their coding wasn't good.";
+  let reboundTimeline = "3-week bounce-back to a dream product offer";
+  let strategicTakeaway = "They realized they didn't have to start from scratch—just brushed up on that one pattern and kept going.";
+  let actionSteps = [
+    "Tonight: Shut the laptop, mute college placement WhatsApp groups, and treat yourself to comfort food.",
+    "Tomorrow morning: Spend 25 calm, timer-free minutes sketching that one problem pattern without any pressure.",
+    "Next 48 Hours: Talk through a problem out loud with a supportive friend to get your natural confidence back."
+  ];
+  let groundedSummary = "Reaching this round already proves your technical fundamentals are strong. Be kind to yourself tonight—your placement journey has plenty of wonderful chapters ahead.";
 
   if (lower.includes('dp') || lower.includes('dynamic programming')) {
-    isolatedGap = 'Dynamic Programming state space formulation under live scrutiny';
-    precisionFix = 'Solve 8 1D & 2D memoization transitions without looking at editorial solutions for the first 15 minutes.';
+    isolatedGap = "Handling tricky DP state transitions while being watched";
+    precisionFix = "Sketch 3 or 4 state diagrams on paper first without writing code. Once the transition is clear in your head, the code writes itself.";
   } else if (lower.includes('oa') || lower.includes('timeout') || lower.includes('test case')) {
-    thinkingTrap = 'Personalization & Systemic Batch Over-Attribution';
-    clinicalExplanation = 'Automated online test platforms discard 92% of candidates due to platform time slices, never deep problem-solving skills.';
-    isolatedGap = 'Edge-case checklists (empty inputs, integer overflow with 64-bit bounds, recursion stack depths)';
-    precisionFix = 'Build a 5-point defensive coding template to verify before submitting any OA code.';
-    seniorPrecedent = 'A senior failed 6 consecutive campus OAs in August, patched their edge-case checklist, and cleared Goldman Sachs on attempt #7.';
+    thinkingTrap = "Blaming your intelligence for automated test platform cutoffs";
+    clinicalExplanation = "Automated test platforms reject 92% of students over hidden time-slice limits and platform glitches. It has zero bearing on your true engineering talent.";
+    funnelAttrition = "The 95% automated test numbers game";
+    headcountReality = "When 1,000+ students write an online test for 40 interview spots, the system cuts students off even for missing a single hidden test case. It's a pure numbers filter, not a measure of your worth.";
+    isolatedGap = "Corner cases like large numbers or empty inputs";
+    precisionFix = "Keep a 4-point sticky note beside your keyboard: check empty inputs, zero, 64-bit integer bounds, and array lengths before clicking submit.";
+    seniorPrecedent = "A senior failed 6 straight campus online tests in August, patched their quick edge-case checklist, and cleared Goldman Sachs on attempt #7.";
+    reboundTimeline = "Turned 6 rejections into a top FinTech offer";
+    strategicTakeaway = "Treat online tests like practice rounds until the numbers align in your favor.";
+    actionSteps = [
+      "Tonight: Take a walk and completely clear your head. Don't touch coding platforms tonight.",
+      "Tomorrow: Make a simple 4-point edge-case checklist and stick it on your desk.",
+      "Next Drive: Use your new checklist before pressing submit on any online test."
+    ];
   } else if (lower.includes('friends') || lower.includes('left behind') || lower.includes('placed')) {
-    thinkingTrap = 'Comparative Social Distortion';
-    clinicalExplanation = 'Observing peers secure offers triggers evolutionary scarcity anxiety. Hiring runs in multi-month marathon waves, not a single sprint.';
-    isolatedGap = 'Interview stamina and pacing across company hiring waves';
-    precisionFix = 'Establish a disciplined daily rhythm of 1 mock interview + 1 DSA pattern drill, ignoring peer gossip.';
-    seniorPrecedent = 'Candidate had 0 offers while 45% of classmates were placed in September; received 3 competing Tier-1 product offers in late January.';
+    thinkingTrap = "Comparing your timeline with friends who got offers early";
+    clinicalExplanation = "Seeing friends celebrate on LinkedIn or group chats hurts, and it's completely natural to feel left behind. But campus hiring isn't a 100-meter dash; it's a marathon with multiple waves right up to spring.";
+    funnelAttrition = "Hiring runs in multi-month waves from August to February";
+    headcountReality = "Over 50% of the best product offers come in Wave 2 (November through February) when specialized teams open up new headcount. You only need ONE offer, and it's coming.";
+    isolatedGap = "Pacing your emotional energy and ignoring hallway gossip";
+    precisionFix = "Focus only on your daily rhythm: 1 problem + 1 mock talk-through, and mute conversations that trigger anxiety.";
+    seniorPrecedent = "A candidate had 0 offers in September while 40% of classmates were placed; they stayed steady and landed 3 competing Tier-1 product offers in late January.";
+    reboundTimeline = "0 offers in Sept -> 3 top product offers in Jan";
+    strategicTakeaway = "Comparison steals your energy. Your offer is coming on its own timeline.";
+    actionSteps = [
+      "Tonight: Mute placement announcement groups for 24 hours to let your mind quiet down.",
+      "Tomorrow: Connect with 1 trusted peer who uplifts you, rather than discussing placement stats.",
+      "This Week: Stick to a steady, calm daily routine: solve just 1 problem daily with zero panic."
+    ];
   }
 
   return {
@@ -134,11 +162,11 @@ function generateClientFallbackRecovery({ text, stage }) {
     raw_transcript: text,
     sanitized_query: text.replace(/[0-9]{2,4}[A-Za-z]{2,5}[0-9]{3,6}/g, '[STUDENT_ID_REDACTED]'),
     detected_stage: detectedStage,
-    latency_ms: 240,
+    latency_ms: 180,
     retrieved_chunks: [
-      { category: 'cbt_framework', title: 'Clinical CBT Thought Reframe', key_metric: '0% correlation with 5-year success' },
-      { category: 'stage_attrition', title: 'Campus Funnel Quota Sieve', key_metric: '78%-83% headcount allocation cap' },
-      { category: 'alumni_precedent', title: 'Senior Rebound Trajectory', key_metric: 'Converted Tier-1 offer in 3 weeks' }
+      { category: 'cbt_framework', title: 'Empathetic Reframing', key_metric: '0% correlation with long-term engineering success' },
+      { category: 'stage_attrition', title: 'Real Hiring Headcount Limits', key_metric: 'Over 75% turned down purely by seat limits' },
+      { category: 'alumni_precedent', title: 'Senior Bounce-Back Story', key_metric: 'Landed top offer in 3 weeks' }
     ],
     recovery_card: {
       cognitive_diagnosis: {
@@ -147,8 +175,8 @@ function generateClientFallbackRecovery({ text, stage }) {
       },
       math_market_check: {
         stage: detectedStage.replace(/_/g, ' ').toUpperCase(),
-        funnel_attrition: '78% - 83% Round 2 drops are governed strictly by fixed headcount budget quotas.',
-        headcount_reality: 'In typical campus drives, 60 candidates enter Round 1, 24 reach Round 2, yet the hiring committee only holds 4 budget seats. Rejection is a quota constraint, not a metric of personal incompetence.'
+        funnel_attrition: funnelAttrition,
+        headcount_reality: headcountReality
       },
       skill_variable: {
         isolated_gap: isolatedGap,
@@ -156,15 +184,11 @@ function generateClientFallbackRecovery({ text, stage }) {
       },
       alumni_precedent: {
         senior_case: seniorPrecedent,
-        rebound_timeline: '3-week recovery to Tier-1 product clearance',
-        strategic_takeaway: 'Isolate the single failing parameter rather than questioning your baseline intelligence.'
+        rebound_timeline: reboundTimeline,
+        strategic_takeaway: strategicTakeaway
       },
-      actionable_recovery_steps: [
-        'Disconnect from campus WhatsApp placement groups for the next 18 hours to allow cortisol stabilization.',
-        'Conduct a 3-bullet post-mortem: pinpoint the exact minute where timer anxiety interrupted working memory.',
-        'Schedule a 45-minute focused drill on that isolated topic tomorrow with zero self-judgment.'
-      ],
-      grounded_summary: 'Reaching this round demonstrates top-decile engineering fundamentals. Calibrate this single execution variable and carry this experience into the next company drive.'
+      actionable_recovery_steps: actionSteps,
+      grounded_summary: groundedSummary
     }
   };
 }

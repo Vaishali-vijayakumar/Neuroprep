@@ -209,7 +209,7 @@ export default function PlacementMoodRecoveryRAG() {
       
       {/* ── 1. HEADER (Sage Theme & Fraunces Typography) ────────────────────── */}
       <div style={{
-        padding: '16px 24px',
+        padding: '18px 24px',
         backgroundColor: 'var(--btn-sage)',
         color: '#FFFFFF',
         display: 'flex',
@@ -220,8 +220,8 @@ export default function PlacementMoodRecoveryRAG() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            width: '42px',
-            height: '42px',
+            width: '44px',
+            height: '44px',
             borderRadius: '12px',
             backgroundColor: 'rgba(255, 255, 255, 0.18)',
             border: '1px solid rgba(255, 255, 255, 0.35)',
@@ -231,19 +231,19 @@ export default function PlacementMoodRecoveryRAG() {
             color: '#FFFFFF',
             flexShrink: 0
           }}>
-            <Brain size={22} />
+            <Sparkles size={22} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h3 style={{
                 margin: 0,
-                fontSize: '18px',
+                fontSize: '19px',
                 fontWeight: 600,
                 color: '#FFFFFF',
                 fontFamily: 'var(--font-heading)',
                 letterSpacing: '-0.015em'
               }}>
-                Placement Vent Recovery Engine
+                Pivot • Placement Recovery Companion
               </h3>
               <span style={{
                 fontSize: '11px',
@@ -256,16 +256,16 @@ export default function PlacementMoodRecoveryRAG() {
                 fontFamily: 'var(--font-btn)',
                 letterSpacing: '0.04em'
               }}>
-                QDRANT + BGE RAG
+                Friendly Senior Mentor
               </span>
             </div>
             <p style={{
               margin: '3px 0 0 0',
               fontSize: '12.5px',
-              color: 'rgba(255, 255, 255, 0.88)',
+              color: 'rgba(255, 255, 255, 0.92)',
               fontFamily: 'var(--font-body)'
             }}>
-              Clinical CBT Reasoning • Stage Attrition Funnel Math • Verified Alumni Rebound Precedents
+              A safe, caring space to vent interview setbacks, reset your mindset, and get doable tactical moves.
             </p>
           </div>
         </div>
@@ -321,13 +321,13 @@ export default function PlacementMoodRecoveryRAG() {
               }}
             >
               <Clock size={13} />
-              Vault Log ({vaultHistory.length})
+              Saved Vents ({vaultHistory.length})
             </button>
           )}
         </div>
       </div>
 
-      {/* ── 2. PII SECURITY NOTICE ──────────────────────────────────────────── */}
+      {/* ── 2. PRIVACY & COMFORT NOTICE ────────────────────────────────────── */}
       <div style={{
         padding: '10px 24px',
         backgroundColor: 'rgba(82, 98, 87, 0.07)',
@@ -344,12 +344,12 @@ export default function PlacementMoodRecoveryRAG() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ShieldCheck size={16} color="var(--btn-sage)" />
           <span>
-            <strong style={{ color: 'var(--main-heading)' }}>Regex PII Stripper:</strong> Names, roll numbers, CGPA, and recruiters are automatically scrubbed before AI reasoning.
+            <strong style={{ color: 'var(--main-heading)' }}>Strictly Private & Safe:</strong> Your vents stay on your device. Personal names, recruiters, and marks are automatically kept anonymous.
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--secondary-heading)' }}>
           <Activity size={13} color="var(--accent-terracotta)" />
-          <span style={{ fontWeight: 600 }}>Strictly On-Device Persistence (Total Privacy)</span>
+          <span style={{ fontWeight: 600 }}>Always in your corner 💛</span>
         </div>
       </div>
 
@@ -367,7 +367,7 @@ export default function PlacementMoodRecoveryRAG() {
             marginBottom: '8px',
             fontFamily: 'var(--font-body)'
           }}>
-            Quick Placement Vent Scenarios:
+            Tap to share what happened today:
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {QUICK_SCENARIO_CHIPS.map((chip, idx) => (
@@ -448,7 +448,7 @@ export default function PlacementMoodRecoveryRAG() {
               fontFamily: 'var(--font-heading)',
               marginBottom: '4px'
             }}>
-              Recording 30-Second Emotional Vent...
+              Listening to your voice vent (up to 30s)...
             </div>
             <div style={{
               fontSize: '13px',
@@ -495,7 +495,7 @@ export default function PlacementMoodRecoveryRAG() {
               }}
             >
               <MicOff size={16} />
-              Stop & Transcribe (&lt;400ms Whisper)
+              Done Speaking • Hear Senior Advice
             </button>
           </div>
         )}
@@ -542,7 +542,7 @@ export default function PlacementMoodRecoveryRAG() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleTextSubmit();
               }}
-              placeholder={isRecording ? "Listening to your voice..." : "Vent what happened in your interview (e.g. Dropped in Round 2 on DP)..."}
+              placeholder={isRecording ? "Listening to your voice..." : "Tell Pivot what happened (e.g. Froze on DP in Round 2, feeling crushed)..."}
               disabled={isLoading || isRecording}
               style={{
                 width: '100%',
@@ -607,7 +607,7 @@ export default function PlacementMoodRecoveryRAG() {
           </div>
         )}
 
-        {/* Loading State Spinner */}
+        {/* Loading State Spinner (Friendly Human Messaging) */}
         {isLoading && (
           <div style={{
             padding: '36px 20px',
@@ -633,10 +633,10 @@ export default function PlacementMoodRecoveryRAG() {
               fontFamily: 'var(--font-heading)',
               marginBottom: '6px'
             }}>
-              Vectorizing Vent with BGE & Querying Qdrant...
+              Listening carefully to your vent...
             </div>
             <div style={{ fontSize: '13px', color: 'var(--body-text)', fontFamily: 'var(--font-body)' }}>
-              Scrubbing PII • Applying Cross-Encoder Reranker • Generating Grounded Recovery Card
+              Gathering supportive advice, behind-the-scenes hiring context, and friendly tactical next moves...
             </div>
           </div>
         )}
@@ -660,7 +660,7 @@ export default function PlacementMoodRecoveryRAG() {
                 letterSpacing: '0.05em',
                 fontFamily: 'var(--font-body)'
               }}>
-                On-Device Vault Log ({vaultHistory.length} Sessions)
+                Saved Recovery Vents ({vaultHistory.length})
               </div>
               <button
                 onClick={clearLocalVault}
@@ -676,7 +676,7 @@ export default function PlacementMoodRecoveryRAG() {
                   gap: '4px'
                 }}
               >
-                <Trash2 size={13} /> Clear Vault
+                <Trash2 size={13} /> Clear Saved
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
@@ -710,7 +710,7 @@ export default function PlacementMoodRecoveryRAG() {
           </div>
         )}
 
-        {/* ── 7. ACTIONABLE RECOVERY CARD (Earthy Theme & Fraunces Typography) ── */}
+        {/* ── 7. FRIENDLY RECOVERY COMPANION CARDS ───────────────────────────── */}
         {currentResult && currentResult.recovery_card && !isLoading && (
           <div style={{
             borderRadius: '16px',
@@ -740,7 +740,7 @@ export default function PlacementMoodRecoveryRAG() {
                   letterSpacing: '0.06em',
                   fontFamily: 'var(--font-body)'
                 }}>
-                  Grounded Recovery Breakdown
+                  Friendly Senior Advice & Reset Guide
                 </div>
                 <div style={{
                   fontSize: '18px',
@@ -754,31 +754,29 @@ export default function PlacementMoodRecoveryRAG() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {currentResult.latency_ms && (
-                  <span style={{
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    padding: '3px 9px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(82, 98, 87, 0.12)',
-                    color: 'var(--btn-sage)',
-                    border: '1px solid rgba(82, 98, 87, 0.25)',
-                    fontFamily: 'var(--font-code)'
-                  }}>
-                    ⚡ {currentResult.latency_ms}ms
-                  </span>
-                )}
                 <span style={{
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  padding: '3px 9px',
+                  padding: '4px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(82, 98, 87, 0.12)',
+                  color: 'var(--btn-sage)',
+                  border: '1px solid rgba(82, 98, 87, 0.25)',
+                  fontFamily: 'var(--font-btn)'
+                }}>
+                  💛 Senior Companion Note
+                </span>
+                <span style={{
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  padding: '4px 10px',
                   borderRadius: '10px',
                   backgroundColor: 'rgba(154, 104, 84, 0.12)',
                   color: 'var(--accent-terracotta)',
                   border: '1px solid rgba(154, 104, 84, 0.25)',
                   fontFamily: 'var(--font-btn)'
                 }}>
-                  {currentResult.input_type === 'audio' ? 'Voice Vent (Whisper)' : 'Text Vent'}
+                  {currentResult.input_type === 'audio' ? 'Voice Note' : 'Chat Vent'}
                 </span>
               </div>
             </div>
@@ -794,15 +792,15 @@ export default function PlacementMoodRecoveryRAG() {
                 fontStyle: 'italic',
                 fontFamily: 'var(--font-body)'
               }}>
-                <strong style={{ color: 'var(--main-heading)', fontStyle: 'normal' }}>Sanitized Query: </strong>
+                <strong style={{ color: 'var(--main-heading)', fontStyle: 'normal' }}>What you shared: </strong>
                 "{currentResult.sanitized_query}"
               </div>
             )}
 
-            {/* 4 Pillars Grid */}
+            {/* 4 Pillars Grid (Friendly, Conversational & Deviating from Down Feelings) */}
             <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Pillar 1: Cognitive Diagnosis */}
+              {/* Pillar 1: Lifting Mindset */}
               <div style={{
                 padding: '16px 18px',
                 borderRadius: '12px',
@@ -813,14 +811,14 @@ export default function PlacementMoodRecoveryRAG() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <Brain size={16} color="var(--accent-terracotta)" />
                   <span style={{
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     color: 'var(--accent-terracotta)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     fontFamily: 'var(--font-body)'
                   }}>
-                    1. Cognitive Diagnosis (Thinking Trap)
+                    💖 What your mind is telling you right now
                   </span>
                 </div>
                 <div style={{
@@ -837,7 +835,7 @@ export default function PlacementMoodRecoveryRAG() {
                 </p>
               </div>
 
-              {/* Pillar 2: Hiring Math & Market Reality */}
+              {/* Pillar 2: Real Hiring Math (Deviating from Down Feelings) */}
               <div style={{
                 padding: '16px 18px',
                 borderRadius: '12px',
@@ -848,14 +846,14 @@ export default function PlacementMoodRecoveryRAG() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <TrendingUp size={16} color="var(--btn-sage)" />
                   <span style={{
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     color: 'var(--btn-sage)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     fontFamily: 'var(--font-body)'
                   }}>
-                    2. Hiring Math & Market Reality Check
+                    📊 Behind the scenes: Why today wasn't your fault
                   </span>
                 </div>
                 <div style={{
@@ -872,7 +870,7 @@ export default function PlacementMoodRecoveryRAG() {
                 </p>
               </div>
 
-              {/* Pillar 3: Isolated Skill Variable */}
+              {/* Pillar 3: One Small Detail to Tweak */}
               <div style={{
                 padding: '16px 18px',
                 borderRadius: '12px',
@@ -883,14 +881,14 @@ export default function PlacementMoodRecoveryRAG() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <Target size={16} color="var(--secondary-olive)" />
                   <span style={{
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     color: 'var(--secondary-olive)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     fontFamily: 'var(--font-body)'
                   }}>
-                    3. Isolated Skill Variable (The Isolated Topic to Patch)
+                    💡 One small detail to tweak (and you've got this!)
                   </span>
                 </div>
                 <div style={{
@@ -907,7 +905,7 @@ export default function PlacementMoodRecoveryRAG() {
                 </p>
               </div>
 
-              {/* Pillar 4: Alumni Precedent */}
+              {/* Pillar 4: Verified Senior Rebound Precedent */}
               <div style={{
                 padding: '16px 18px',
                 borderRadius: '12px',
@@ -918,14 +916,14 @@ export default function PlacementMoodRecoveryRAG() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <CheckCircle2 size={16} color="var(--accent-terracotta)" />
                   <span style={{
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     color: 'var(--accent-terracotta)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     fontFamily: 'var(--font-body)'
                   }}>
-                    4. Verified Senior Rebound Precedent
+                    🌟 A real senior's bounce-back story
                   </span>
                 </div>
                 <div style={{
@@ -951,21 +949,21 @@ export default function PlacementMoodRecoveryRAG() {
                   ⏱️ {currentResult.recovery_card.alumni_precedent.rebound_timeline}
                 </div>
                 <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  <strong style={{ color: 'var(--main-heading)' }}>Strategic Takeaway: </strong>
+                  <strong style={{ color: 'var(--main-heading)' }}>Takeaway: </strong>
                   {currentResult.recovery_card.alumni_precedent.strategic_takeaway}
                 </p>
               </div>
 
-              {/* Tactical Next Moves Checklist */}
+              {/* Tactical Next Moves Checklist (Friendly & Calm) */}
               {currentResult.recovery_card.actionable_recovery_steps?.length > 0 && (
                 <div style={{
-                  padding: '16px 20px',
+                  padding: '18px 20px',
                   borderRadius: '12px',
                   backgroundColor: 'rgba(82, 98, 87, 0.05)',
                   border: '1px dashed var(--border-color)'
                 }}>
                   <div style={{
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     fontWeight: 800,
                     color: 'var(--secondary-heading)',
                     textTransform: 'uppercase',
@@ -973,17 +971,17 @@ export default function PlacementMoodRecoveryRAG() {
                     marginBottom: '10px',
                     fontFamily: 'var(--font-body)'
                   }}>
-                    Tactical Next Moves (24h - 72h Recovery Plan):
+                    🎯 Friendly Next Moves (Tonight & Tomorrow):
                   </div>
                   <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--main-heading)', fontSize: '13.5px', lineHeight: 1.6 }}>
                     {currentResult.recovery_card.actionable_recovery_steps.map((step, idx) => (
-                      <li key={idx} style={{ marginBottom: '6px' }}>{step}</li>
+                      <li key={idx} style={{ marginBottom: '8px' }}>{step}</li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {/* Grounded Perspective Closing */}
+              {/* Warm Senior Encouragement Closing */}
               <div style={{
                 padding: '14px 20px',
                 borderRadius: '12px',

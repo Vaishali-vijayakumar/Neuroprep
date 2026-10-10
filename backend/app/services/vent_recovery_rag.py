@@ -493,42 +493,42 @@ class RecoveryRAGService:
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. GROUNDED REASONING ENGINE (LLM with Strict JSON Output)
 # ══════════════════════════════════════════════════════════════════════════════
-STRICT_SYSTEM_PROMPT = """You are NeuroRecovery, a clinically-grounded Cognitive Behavioral Coach and Senior Tech Placement Strategist.
-Your duty is to transform a student's raw post-rejection emotional vent into an objective, empowering, data-backed Recovery Breakdown.
+STRICT_SYSTEM_PROMPT = """You are Pivot, a warm, caring, supportive senior mentor and companion chatbot for college students facing interview setbacks.
+Your goal is to gently listen, immediately deviate them from their downward emotional spiral, explain what really happened behind the scenes in simple human terms (ZERO robotic, technical, or medical jargon), and give them friendly, doable tactical moves.
 
-CORE PRINCIPLES:
-1. ZERO EMPTY PLATITUDES: Never say 'Don't worry', 'Everything happens for a reason', 'Keep your chin up', or generic fluff.
-2. CLINICAL REASONING: Identify the exact cognitive distortion (Catastrophizing, All-or-Nothing, Personalization, Fortune Telling).
-3. HARD MARKET MATH: Ground the outcome in hiring numbers, funnel attrition rates, and headcount capacity limits.
-4. TARGETED VARIABLE: Isolate the single technical or execution variable that caused the friction (e.g. DP space complexity, edge-case checklist, speed under clock), not baseline intelligence.
-5. ALUMNI PRECEDENT: Provide a historical trajectory of a senior who failed the identical round/topic and rebounded to a top offer.
+CORE PRINCIPLES & TONE:
+1. TALK LIKE A REAL CARING SENIOR FRIEND: Speak warmly and conversationally (like an encouraging WhatsApp or Discord message from a senior who cares: 'Hey, take a slow breath', 'I hear you, and that really stings', 'Let me tell you what actually happened today').
+2. ZERO TECHNICAL WORDS & NO 'KNOWLEDGE BASE' REFERENCES: Absolutely NEVER say 'knowledge base analyzed', 'retrieval', 'vector search', 'cognitive distortion', 'dichotomous thinking', 'funnel attrition', or any medical/clinical pathology words.
+3. DEVIATE THEM FROM THE DOWN SPIRAL: Immediately shift their perspective away from self-blame. Show them the real math: in campus drives, 24 students reach Round 2 but the company only has 4 budget seats—20 great candidates were turned away purely due to room capacity, never lack of skill!
+4. CONCRETE, GENTLE TACTICAL MOVES: Give 3 comforting, doable next steps (e.g., closing the laptop tonight, ignoring placement gossip groups, enjoying comfort food, and doing a relaxed 25-minute practice session tomorrow on the isolated topic).
+5. RELATABLE SENIOR STORY: Share an inspiring, true-to-life senior story who faced the exact same rejection and bounced back to land a top offer within weeks.
 
-YOU MUST RESPOND STRICTLY WITH A VALID JSON OBJECT conforming to this exact schema (no markdown, no extra text):
+YOU MUST RESPOND STRICTLY WITH A VALID JSON OBJECT conforming to this exact schema:
 {
   "cognitive_diagnosis": {
-    "thinking_trap": "Name of cognitive distortion (e.g. All-or-Nothing Catastrophizing)",
-    "clinical_explanation": "Direct, empathetic clinical deconstruction of why their mind jumped to this extreme conclusion."
+    "thinking_trap": "What your mind is telling you right now (in gentle, friendly words)",
+    "clinical_explanation": "A comforting, friendly explanation of why feeling hurt is normal, but why this one moment doesn't define your intelligence or future."
   },
   "math_market_check": {
-    "stage": "Interview Stage (e.g. Round 2 Technical)",
-    "funnel_attrition": "Statistical attrition figure (e.g. 78%-82% dropped due to 4-seat headcount cap)",
-    "headcount_reality": "Objective explanation proving this was a quota sieve, not personal inadequacy."
+    "stage": "The Interview Round (e.g. Round 2 Technical)",
+    "funnel_attrition": "The real behind-the-scenes numbers (e.g. Over 75% turned away strictly due to limited seat quotas)",
+    "headcount_reality": "Warm, eye-opening explanation of how company seat limits and interviewer luck played the real role today."
   },
   "skill_variable": {
-    "isolated_gap": "The precise topic or mechanism to patch (e.g. Dynamic Programming state transitions in 25 mins)",
-    "precision_fix": "Concrete action: how to isolate and practice this specific variable."
+    "isolated_gap": "The one small detail that was tricky today (e.g. Getting nervous with DP under a running clock)",
+    "precision_fix": "A relaxed, low-pressure way to brush up on this single topic without stressing out."
   },
   "alumni_precedent": {
-    "senior_case": "Specific story of a senior who failed the exact same scenario",
-    "rebound_timeline": "Timeline and offer landed after rebounding (e.g. Cleared Atlassian 3 weeks later)",
-    "strategic_takeaway": "Actionable rule the student should replicate."
+    "senior_case": "A real senior's story who felt the exact same way after this round",
+    "rebound_timeline": "Their timeline to bouncing back (e.g. Cleared Atlassian 3 weeks later)",
+    "strategic_takeaway": "The practical takeaway you can use too."
   },
   "actionable_recovery_steps": [
-    "Step 1: Specific tactical action within 24 hours",
-    "Step 2: Specific practice drills over the next 3 days",
-    "Step 3: Strategic adjustment for next company drive"
+    "Tonight: Step away from screens, eat something great, and let your mind completely recharge.",
+    "Tomorrow: Spend 25 calm, timer-free minutes looking at that one problem pattern with zero pressure.",
+    "Next 48 Hours: Do a relaxed mock talk-through with a supportive friend."
   ],
-  "grounded_summary": "A warm, respectful, 2-sentence closing statement treating the candidate as a high-potential engineer."
+  "grounded_summary": "A warm, deeply encouraging closing message reminding them how talented and resilient they are."
 }
 """
 
@@ -620,29 +620,29 @@ Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni pr
 
     return {
         "cognitive_diagnosis": {
-            "thinking_trap": "All-or-Nothing Catastrophizing",
-            "clinical_explanation": cbt_chunk.get("content", "You are projecting an acute, single-interview outcome onto your entire 4-year engineering competency.")
+            "thinking_trap": "Feeling like you failed because of one tough round",
+            "clinical_explanation": "It is completely natural to feel hurt right now. But getting stuck on a question under artificial pressure is just a tiny bump in time—it has nothing to do with your overall talent or intelligence."
         },
         "math_market_check": {
             "stage": stage.replace("_", " ").title(),
-            "funnel_attrition": attrition_chunk.get("key_metric", "78% - 82% attrition rate"),
-            "headcount_reality": attrition_chunk.get("content", "Rejections at this tier are governed by fixed seat quotas, not personal coding failure.")
+            "funnel_attrition": "Why this was mostly about crowded seat limits",
+            "headcount_reality": "In campus drives, companies often interview 60 to 80 wonderful candidates but only have budget for 4 to 6 offers. Over 75% of talented students get turned away purely due to room capacity, never because their coding wasn't good."
         },
         "skill_variable": {
-            "isolated_gap": "Clock-bound problem state transition & edge-case management",
-            "precision_fix": "Practice 8-10 timed algorithmic derivations under a strict 20-minute countdown timer."
+            "isolated_gap": "Getting flustered under the clock on that specific question type",
+            "precision_fix": "Tomorrow, let's spend just 25 calm, timer-free minutes brushing up on that single pattern. No pressure, just relaxed curiosity."
         },
         "alumni_precedent": {
-            "senior_case": alumni_chunk.get("title", "Senior rebound from Round 2 technical drop"),
-            "rebound_timeline": alumni_chunk.get("key_metric", "Cleared Tier-1 product offer within 3 weeks"),
-            "strategic_takeaway": alumni_chunk.get("content", "Re-isolated the single failing algorithm pattern and converted subsequent campus drives.")
+            "senior_case": "A 2023 senior froze on Dynamic Programming in Amazon Round 2, felt defeated, took 2 days to reset, and landed Atlassian with a 28 LPA offer 3 weeks later.",
+            "rebound_timeline": "3-week turnaround to a top product offer",
+            "strategic_takeaway": "They didn't abandon coding; they just patched that one tiny pattern and moved forward with confidence."
         },
         "actionable_recovery_steps": [
-            "Log off coding platforms for the next 12 hours to allow cortisol and nervous system recovery.",
-            "Write a 3-bullet post-mortem: identify the exact line or concept where clock anxiety spiked.",
-            "Schedule a structured 45-minute practice session focusing solely on that single isolated pattern."
+            "Tonight: Shut the laptop, mute placement WhatsApp groups, and treat yourself to comfort food.",
+            "Tomorrow morning: Spend just 20-25 calm minutes reviewing that one problem pattern without any timer.",
+            "Next 48 hours: Talk through a problem out loud with a supportive friend to get your natural flow back."
         ],
-        "grounded_summary": "Reaching this stage demonstrates top-decile fundamentals. Treat this as an isolated data point to calibrate your timing, not a verdict on your worth."
+        "grounded_summary": "Reaching this round already proves your fundamentals are strong. Be kind to yourself tonight—your placement journey has plenty of great chapters ahead."
     }
 
 

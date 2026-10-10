@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mic, MicOff, Send, ShieldCheck, Sparkles, RefreshCw, 
-  Brain, TrendingUp, Target, CheckCircle2, AlertCircle, 
+  Heart, TrendingUp, Target, CheckCircle2, AlertCircle, 
   Clock, Trash2, ChevronRight, Activity, ArrowUpRight
 } from 'lucide-react';
 import { 
@@ -11,6 +11,36 @@ import {
 } from '../services/placementMoodRecoveryRAG';
 
 const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v1';
+
+// Scrub any accidental technical or clinical terms into friendly, caring words
+const cleanFriendlyChat = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/clinical cbt rule:?/gi, '')
+    .replace(/cbt thought reframe:?/gi, '')
+    .replace(/all-or-nothing dichotomous thinking/gi, 'feeling like it is all or nothing')
+    .replace(/catastrophizing/gi, 'worrying about the worst-case scenario')
+    .replace(/cognitive distortion/gi, 'heavy worries')
+    .replace(/cognitive diagnosis/gi, 'how you are feeling right now')
+    .replace(/funnel attrition/gi, 'limited open seats')
+    .replace(/stage attrition/gi, 'seat limits')
+    .replace(/clinical explanation/gi, 'caring explanation')
+    .replace(/technical incompetence/gi, 'a temporary slip under pressure')
+    .replace(/psychological pathology/gi, 'interview stress')
+    .replace(/round 2 technical/gi, 'Round 2')
+    .replace(/round 1 technical/gi, 'Round 1')
+    .trim();
+};
+
+const formatFriendlyRound = (raw) => {
+  if (!raw) return 'Interview Round';
+  const lower = raw.toLowerCase();
+  if (lower.includes('round_2') || lower.includes('round 2') || lower.includes('r2')) return 'Round 2 (Live Coding)';
+  if (lower.includes('round_1') || lower.includes('round 1') || lower.includes('r1')) return 'Round 1 (First Interview)';
+  if (lower.includes('oa') || lower.includes('assessment')) return 'Online Coding Test';
+  if (lower.includes('final') || lower.includes('hr')) return 'Final HR & Manager Round';
+  return raw.replace(/_/g, ' ');
+};
 
 export default function PlacementMoodRecoveryRAG() {
   const [inputText, setInputText] = useState('');
@@ -31,12 +61,12 @@ export default function PlacementMoodRecoveryRAG() {
   const [vaultHistory, setVaultHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Quick Scenario Chips
+  // Quick Friendly Scenario Chips (Zero technical or cognitive terms)
   const QUICK_SCENARIO_CHIPS = [
-    { label: "Round 2 Technical DP Freeze", prompt: "I got dropped in Round 2 Technical today. Froze on Dynamic Programming state transition and felt humiliated." },
-    { label: "Failed 4 Online Assessments", prompt: "Failed 4 campus online assessments this week. Hidden test cases timed out. I feel like quitting." },
-    { label: "Uninterested Interviewer Blankout", prompt: "The interviewer seemed distracted. I went completely blank on a binary tree BFS traversal." },
-    { label: "Friends Placed, Left Behind", prompt: "My whole friend group got placed this week and I have zero offers. I feel left behind and terrified." }
+    { label: "Froze on Round 2 Coding", prompt: "I got dropped in Round 2 today. Froze on a coding problem and felt really down." },
+    { label: "Didn't Pass 4 Online Tests", prompt: "Didn't clear 4 campus online tests this week. Hidden test cases timed out. I feel like giving up." },
+    { label: "Interviewer Seemed Distant", prompt: "The interviewer seemed distracted. I went completely blank on a tree question." },
+    { label: "Friends Got Offers, Left Behind", prompt: "My whole friend group got offers this week and I haven't gotten one yet. I feel left behind and scared." }
   ];
 
   // Load stages & local vault on mount
@@ -289,16 +319,16 @@ export default function PlacementMoodRecoveryRAG() {
             }}
           >
             <option value="technical_round_2" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Round 2 Technical (Live Coding)
+              Round 2 (Live Coding)
             </option>
             <option value="technical_round_1" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Round 1 Technical (Screening)
+              Round 1 (First Interview)
             </option>
             <option value="oa_screening" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Online Assessment (OA)
+              Online Coding Test
             </option>
             <option value="final_round" style={{ color: '#34343A', backgroundColor: '#FCF9F6' }}>
-              Final / Managerial Round
+              Final HR & Manager Round
             </option>
           </select>
 
@@ -749,7 +779,7 @@ export default function PlacementMoodRecoveryRAG() {
                   fontFamily: 'var(--font-heading)',
                   marginTop: '2px'
                 }}>
-                  {currentResult.recovery_card.math_market_check.stage}
+                  {formatFriendlyRound(currentResult.recovery_card.math_market_check.stage)}
                 </div>
               </div>
 
@@ -793,7 +823,7 @@ export default function PlacementMoodRecoveryRAG() {
                 fontFamily: 'var(--font-body)'
               }}>
                 <strong style={{ color: 'var(--main-heading)', fontStyle: 'normal' }}>What you shared: </strong>
-                "{currentResult.sanitized_query}"
+                "{cleanFriendlyChat(currentResult.sanitized_query)}"
               </div>
             )}
 
@@ -809,7 +839,7 @@ export default function PlacementMoodRecoveryRAG() {
                 borderLeft: '4px solid var(--accent-terracotta)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <Brain size={16} color="var(--accent-terracotta)" />
+                  <Heart size={16} color="var(--accent-terracotta)" />
                   <span style={{
                     fontSize: '12px',
                     fontWeight: 800,
@@ -828,10 +858,10 @@ export default function PlacementMoodRecoveryRAG() {
                   fontFamily: 'var(--font-heading)',
                   marginBottom: '6px'
                 }}>
-                  {currentResult.recovery_card.cognitive_diagnosis.thinking_trap}
+                  {cleanFriendlyChat(currentResult.recovery_card.cognitive_diagnosis.thinking_trap)}
                 </div>
                 <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {currentResult.recovery_card.cognitive_diagnosis.clinical_explanation}
+                  {cleanFriendlyChat(currentResult.recovery_card.cognitive_diagnosis.clinical_explanation)}
                 </p>
               </div>
 
@@ -863,10 +893,10 @@ export default function PlacementMoodRecoveryRAG() {
                   fontFamily: 'var(--font-heading)',
                   marginBottom: '6px'
                 }}>
-                  {currentResult.recovery_card.math_market_check.funnel_attrition}
+                  {cleanFriendlyChat(currentResult.recovery_card.math_market_check.funnel_attrition)}
                 </div>
                 <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {currentResult.recovery_card.math_market_check.headcount_reality}
+                  {cleanFriendlyChat(currentResult.recovery_card.math_market_check.headcount_reality)}
                 </p>
               </div>
 
@@ -898,10 +928,10 @@ export default function PlacementMoodRecoveryRAG() {
                   fontFamily: 'var(--font-heading)',
                   marginBottom: '6px'
                 }}>
-                  {currentResult.recovery_card.skill_variable.isolated_gap}
+                  {cleanFriendlyChat(currentResult.recovery_card.skill_variable.isolated_gap)}
                 </div>
                 <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
-                  {currentResult.recovery_card.skill_variable.precision_fix}
+                  {cleanFriendlyChat(currentResult.recovery_card.skill_variable.precision_fix)}
                 </p>
               </div>
 
@@ -933,7 +963,7 @@ export default function PlacementMoodRecoveryRAG() {
                   fontFamily: 'var(--font-heading)',
                   marginBottom: '4px'
                 }}>
-                  {currentResult.recovery_card.alumni_precedent.senior_case}
+                  {cleanFriendlyChat(currentResult.recovery_card.alumni_precedent.senior_case)}
                 </div>
                 <div style={{
                   display: 'inline-block',
@@ -950,7 +980,7 @@ export default function PlacementMoodRecoveryRAG() {
                 </div>
                 <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--body-text)' }}>
                   <strong style={{ color: 'var(--main-heading)' }}>Takeaway: </strong>
-                  {currentResult.recovery_card.alumni_precedent.strategic_takeaway}
+                  {cleanFriendlyChat(currentResult.recovery_card.alumni_precedent.strategic_takeaway)}
                 </p>
               </div>
 
@@ -975,7 +1005,7 @@ export default function PlacementMoodRecoveryRAG() {
                   </div>
                   <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--main-heading)', fontSize: '13.5px', lineHeight: 1.6 }}>
                     {currentResult.recovery_card.actionable_recovery_steps.map((step, idx) => (
-                      <li key={idx} style={{ marginBottom: '8px' }}>{step}</li>
+                      <li key={idx} style={{ marginBottom: '8px' }}>{cleanFriendlyChat(step)}</li>
                     ))}
                   </ul>
                 </div>
@@ -1000,7 +1030,7 @@ export default function PlacementMoodRecoveryRAG() {
                   lineHeight: 1.5,
                   fontFamily: 'var(--font-body)'
                 }}>
-                  {currentResult.recovery_card.grounded_summary}
+                  {cleanFriendlyChat(currentResult.recovery_card.grounded_summary)}
                 </p>
               </div>
 

@@ -89,10 +89,10 @@ export async function fetchVentStages() {
   }
 
   return [
-    { id: 'technical_round_2', label: 'Round 2 Technical (Live Coding)', typical_attrition: '78% - 83%' },
-    { id: 'technical_round_1', label: 'Round 1 Technical (Screening)', typical_attrition: '60% - 68%' },
-    { id: 'oa_screening', label: 'Online Assessment (OA)', typical_attrition: '90% - 95%' },
-    { id: 'final_round', label: 'Final / Managerial / HR Round', typical_attrition: '50% - 70%' }
+    { id: 'technical_round_2', label: 'Round 2 (Live Coding)', typical_attrition: 'Over 75% turned away by seat limits' },
+    { id: 'technical_round_1', label: 'Round 1 (First Interview)', typical_attrition: 'Over 60% turned away by limited slots' },
+    { id: 'oa_screening', label: 'Online Coding Test', typical_attrition: '90%+ filtered by automatic timers' },
+    { id: 'final_round', label: 'Final HR & Manager Round', typical_attrition: 'Limited final team slots' }
   ];
 }
 

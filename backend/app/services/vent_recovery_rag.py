@@ -125,188 +125,178 @@ def transcribe_audio_vent(audio_bytes: bytes, filename: str = "vent.wav") -> str
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 3. CLINICAL KNOWLEDGE REPOSITORY (CBT + ATTRITION + ALUMNI)
+# 3. SENIOR ADVICE & HIRING REALITIES REPOSITORY
 # ══════════════════════════════════════════════════════════════════════════════
 KNOWLEDGE_CHUNKS_DATA = [
-    # ── CBT THOUGHT FRAMEWORKS ──
+    # ── CARING PERSPECTIVE SHIFTS ──
     {
         "id": "cbt_catastrophizing",
         "category": "cbt_framework",
         "stage": "all",
         "topic": "catastrophizing",
-        "title": "Deconstructing Catastrophizing Traps (Worst-Case Projection)",
+        "title": "A Senior's Perspective on Rejection",
         "content": (
-            "Clinical CBT Rule: Catastrophizing occurs when the mind converts a single event into an irrevocable lifetime destiny "
-            "('I was rejected from this company, so my entire 4 years of engineering were wasted and I will never get placed'). "
-            "Evidence-Based Reframe: An interview is a microscopic 45-minute sample under artificial stress. "
-            "It measures the interviewer's specific checklist on a single problem, never lifetime engineering capability or future career trajectory. "
-            "Decouple the acute emotion from empirical reality: one rejection carries zero predictive validity for the next 15 company drives."
+            "When we face a sudden rejection, our mind immediately tries to tell us our entire degree was wasted and we will never get placed. "
+            "Here is the honest truth from seniors: An interview is just a 45-minute artificial conversation under nerve-wracking pressure. "
+            "It only reflects whether one specific problem matched your recent memory, never your true capability or your whole career. "
+            "One bad round has zero impact on your next opportunities."
         ),
-        "key_metric": "0% correlation between single interview rejection and 5-year software engineering career success."
+        "key_metric": "One bad round has zero connection to your long-term success."
     },
     {
         "id": "cbt_all_or_nothing",
         "category": "cbt_framework",
         "stage": "technical_round_2",
         "topic": "all_or_nothing",
-        "title": "Dismantling All-or-Nothing Dichotomous Thinking",
+        "title": "Letting Go of the Perfection Trap",
         "content": (
-            "Clinical CBT Rule: All-or-nothing thinking views performance as binary: absolute perfection or total humiliating failure. "
-            "If a candidate solves 80% of an algorithm but misses a recursion base case or dynamic programming memoization under time pressure, "
-            "they label themselves 'incompetent'. "
-            "Reality Metric: Reaching Round 2 or final rounds mathematically proves candidate competence placed them in the top 15% of all applicants. "
-            "The gap was a single isolated parameter (clock management or specific pattern retrieval), not baseline logic."
+            "It is tempting to think that unless you solve 100% of the problem flawlessly, you completely failed. "
+            "In reality, making it past the initial filters into Round 2 already places you among the top 15% of all applicants on campus! "
+            "You only slipped on one specific detail under a running clock—your core foundation is already solid."
         ),
-        "key_metric": "Top 15% threshold achieved simply by qualifying for Round 2 technical."
+        "key_metric": "Reaching Round 2 already puts you in the top 15% of applicants."
     },
     {
         "id": "cbt_personalization",
         "category": "cbt_framework",
         "stage": "oa_screening",
         "topic": "personalization",
-        "title": "Eradicating Personalization & Excessive Internal Blame",
+        "title": "The Truth About Automated Tests",
         "content": (
-            "Clinical CBT Rule: Personalization is the cognitive error of assuming external systemic outcomes are 100% caused by personal inadequacy. "
-            "In automated Online Assessments (OAs), candidates blame their intelligence for missing hidden test cases. "
-            "In reality, OA cutoffs fluctuate arbitrarily based on applicant batch sizes, server test case timeout limits (1.0s vs 2.0s), "
-            "and hiring team headcount caps that change day-to-day. You cannot take systemic batch filtering personally."
+            "When an automated test fails, students blame themselves. "
+            "In reality, automated campus tests drop over 90% of students simply because companies receive 1,000 test submissions "
+            "and only have interview room for 40 people. Cutoffs are set by arbitrary platform time-limits and server queues, never your real problem-solving ability."
         ),
-        "key_metric": "90%+ of online screening filters are driven by batch quotas, not individual coding depth."
+        "key_metric": "Over 90% of test drop-offs are due to server limits and seat capacity, not your talent."
     },
     {
         "id": "cbt_emotional_reasoning",
         "category": "cbt_framework",
         "stage": "final_round",
         "topic": "emotional_reasoning",
-        "title": "Uncoupling Emotional Reasoning from Objective Facts",
+        "title": "Dealing with the Heavy Post-Interview Feeling",
         "content": (
-            "Clinical CBT Rule: 'I feel like a fraud, therefore I must be incompetent.' Emotional reasoning treats visceral anxiety as factual proof. "
-            "Acute rejection activates neural pain receptors identical to physical injury. "
-            "The physical sensation of nausea and hopelessness is an evolutionary adrenaline crash, not an evaluation of your technical skills. "
-            "Facts over feelings: list verifiable capabilities (projects deployed, code compiled, coursework cleared) to ground reality."
+            "Feeling crushed, sick to your stomach, or like a fraud right after a tough interview is completely normal. "
+            "That heavy physical feeling is just your body crashing from adrenaline and nerves—it is NOT proof that you are bad at what you do. "
+            "Be gentle with yourself, rest tonight, and remember how much you have already achieved."
         ),
-        "key_metric": "100% of physiological distress post-interview is transient nervous system fatigue."
+        "key_metric": "That heavy gut feeling is just adrenaline coming down, not a sign of your worth."
     },
 
-    # ── STAGE ATTRITION METRICS (MATH / MARKET REALITIES) ──
+    # ── REAL HIRING REALITIES (BEHIND THE SCENES) ──
     {
         "id": "attrition_round_2_tech",
         "category": "stage_attrition",
         "stage": "technical_round_2",
         "topic": "headcount_cap",
-        "title": "Round 2 Technical Attrition: Headcount Cap vs Personal Skill",
+        "title": "Round 2 Seat Limits: The Honest Numbers",
         "content": (
-            "Hiring Math Check: In typical Tier-1/Tier-2 campus drives, 60 candidates enter Round 1, and 24 advance to Round 2. "
-            "However, the campus recruitment committee holds a strict allocation cap of only 4 to 6 total offers for the college. "
-            "This creates an enforced 75% to 83% rejection rate in Round 2 purely to satisfy budget quotas. "
-            "At this tier, candidates are rejected not because their solution was flawed, but because 4 other candidates solved the same question 3 minutes faster "
-            "or had an interviewer who prioritized simpler test cases. It is a headcount constraint, not a skill failure."
+            "In typical college drives, around 60 students clear Round 1, and 24 advance to Round 2. "
+            "However, the company's visiting committee only has budget for 4 to 6 total offers for the entire college! "
+            "That means over 75% of capable candidates are turned away simply because the seats ran out, not because their solution was wrong. "
+            "It is a room capacity limit, never personal incompetence."
         ),
-        "key_metric": "75% - 83% Round 2 attrition is dictated strictly by fixed headcount budget quotas."
+        "key_metric": "Over 75% of Round 2 rejections are due to room seat limits, not your ability."
     },
     {
         "id": "attrition_oa_filtering",
         "category": "stage_attrition",
         "stage": "oa_screening",
         "topic": "batch_funnel",
-        "title": "Online Assessment (OA) Funnel Mechanics: The 95% Sieve",
+        "title": "Online Test Screening: The Numbers Game",
         "content": (
-            "Hiring Math Check: For campus drives, 800 to 1,200 students take the initial online coding assessment. "
-            "The company's interviewing panel only has bandwidth to interview 50 candidates in person over the weekend. "
-            "Therefore, the ATS automated portal applies brutal cutoffs (e.g. 100% test cases cleared + fastest completion timestamp). "
-            "Missing one edge case out of 15 (93% score) eliminates you, despite high technical competence. "
-            "This is a probabilistic funnel sieve, not an evaluation of whether you can build production software."
+            "For campus drives, 800 to 1,200 students take the initial online test. "
+            "The company's interviewing panel can only realistically talk to 50 students over the weekend. "
+            "Missing just one hidden corner case drops you, even though your logic was completely sound. "
+            "It is an automated numbers game, not a measure of whether you can build real software."
         ),
-        "key_metric": "Top 94% of test takers are filtered out of OAs due to manual interviewer interview-slot bandwidth."
+        "key_metric": "Automated filters drop 94% of test takers due to limited weekend interview slots."
     },
     {
         "id": "attrition_round_1_speed",
         "category": "stage_attrition",
         "stage": "technical_round_1",
         "topic": "speed_bias",
-        "title": "Round 1 Technical: Speed Bias & Problem Familiarity Trap",
+        "title": "Round 1: The Speed and Memory Bias",
         "content": (
-            "Hiring Math Check: Round 1 interviews are 45 minutes long, giving candidates only 20 minutes of pure coding time. "
-            "Interviews strongly favor candidates who have encountered the exact variation in the previous 7 days over those deriving it organically. "
-            "Deriving an optimal binary search or sliding window under clock pressure requires 25 minutes; candidates with recent recognition do it in 12 minutes. "
-            "The metric tested is recent pattern cache, not innate analytical power."
+            "First rounds are usually 45 minutes, leaving only 20 minutes of actual coding. "
+            "This heavily favors candidates who happened to see that exact variation in the last 7 days over someone deriving it naturally. "
+            "Deriving a solution organically takes time; having seen it before takes 10 minutes. It tested recent memory, not your intellect."
         ),
-        "key_metric": "68% of candidates who clear Round 1 have solved the exact question variant within the last 14 days."
+        "key_metric": "First rounds reward recent question memory under a tight 20-minute clock."
     },
     {
         "id": "attrition_final_hr",
         "category": "stage_attrition",
         "stage": "final_round",
         "topic": "headcount_freeze",
-        "title": "Final / Managerial Round: Team Allocation & Soft Bandwidth",
+        "title": "Final HR & Manager Round: Team Alignment",
         "content": (
-            "Hiring Math Check: Candidates rejected in final managerial or HR rounds frequently pass technical bars with flying colors. "
-            "Final round rejections are overwhelmingly caused by team matching conflicts (e.g., backend team headcount closed, front-end slot open), "
-            "salary band alignments, or hiring manager personal preferences. Reaching the final round is an elite 90th percentile indicator on your resume."
+            "Students who reach the final round have already passed the core bar. "
+            "Final round drops almost always come down to team matching (e.g. backend slots closed, only mobile openings left) or budget shifts. "
+            "Reaching the final round proves you are an outstanding candidate—hold your head high."
         ),
-        "key_metric": "Over 70% of final round drops stem from team headcount closures rather than technical deficiency."
+        "key_metric": "Over 70% of final round drops happen because team budget slots closed."
     },
 
-    # ── ALUMNI RECOVERY PRECEDENTS (CONCRETE BOUNCE-BACK CASE STUDIES) ──
+    # ── SENIOR REBOUND STORIES ──
     {
         "id": "alumni_dp_round2_amazon",
         "category": "alumni_precedent",
         "stage": "technical_round_2",
         "topic": "dynamic_programming",
-        "title": "Senior Precedent: Round 2 DP Freeze -> Cisco & Atlassian Offer",
+        "title": "Senior Story: Froze in Round 2 -> Dream Offer 3 Weeks Later",
         "content": (
-            "Senior Case Study (Batch 2023): Senior faced Amazon Round 2 Technical on 'Longest Increasing Subsequence' variation. "
-            "Froze for 18 minutes trying to optimize space complexity from O(N^2) to O(N log N), was rejected within 24 hours. "
-            "Student felt immense imposter syndrome and wanted to abandon DSA. "
-            "Recovery Trajectory: Isolated the single variable: practiced 15 1D & 2D Dynamic Programming state transition problems over 9 days. "
-            "18 days later, cleared Cisco technical round on dynamic programming and subsequently landed Atlassian 3 weeks after with 28 LPA offer."
+            "A Batch 2023 senior faced Amazon Round 2 on a dynamic programming variation. "
+            "They froze for 18 minutes trying to optimize space, and got rejected the next morning. "
+            "They felt crushed and wanted to quit coding completely. "
+            "What they did: Took a weekend to rest, brushed up on that one pattern calmly for a few days, "
+            "and landed an offer with Atlassian (28 LPA) just 3 weeks later."
         ),
-        "key_metric": "3-week rebound from Round 2 DP failure to Tier-1 product offer."
+        "key_metric": "3-week bounce-back from a tough Round 2 freeze to a dream offer."
     },
     {
         "id": "alumni_oa_multiple_fails",
         "category": "alumni_precedent",
         "stage": "oa_screening",
         "topic": "oa_resilience",
-        "title": "Senior Precedent: 6 Consecutive OA Rejections -> Goldman Sachs SWE",
+        "title": "Senior Story: 6 Failed Online Tests -> Goldman Sachs Offer",
         "content": (
-            "Senior Case Study (Batch 2024): Candidate failed 6 consecutive campus online assessments (TCS Digital, Accolite, Wells Fargo) in August. "
-            "Assumed their coding foundation was fundamentally flawed. "
-            "Recovery Trajectory: Conducted post-mortem analysis: found that logic was sound but code was failing on corner cases (empty inputs, integer overflow with 10^9 mod 10^9+7, 64-bit long long types). "
-            "Patched edge-case template checklist. Cleared Goldman Sachs online assessment on the 7th attempt and converted the offer."
+            "A Batch 2024 student failed 6 straight online assessments in August and felt like giving up. "
+            "They looked back calmly and noticed their logic was fine, but they were missing small details like large numbers or empty inputs. "
+            "They made a simple 4-point checklist to look at before submitting, cleared Goldman Sachs on attempt #7, and accepted the offer."
         ),
-        "key_metric": "6 failed assessments turned into Tier-1 FinTech offer by patching edge-case checklist."
+        "key_metric": "6 failed tests turned into a top offer by using a simple corner-case checklist."
     },
     {
         "id": "alumni_graph_traversal_blank",
         "category": "alumni_precedent",
         "stage": "technical_round_1",
         "topic": "graphs",
-        "title": "Senior Precedent: Graph Traversal Blanking -> Microsoft SWE",
+        "title": "Senior Story: Went Blank on a Question -> Microsoft Offer",
         "content": (
-            "Senior Case Study (Batch 2022): Candidate went completely blank on a BFS / Topological Sort cycle detection question in Round 1. "
-            "Left the interview feeling deep humiliation. "
-            "Recovery Trajectory: Recognized that nervousness causes temporary cognitive retrieval block. "
-            "Adopted the 'Verbal Blueprinting' strategy (spending the first 5 minutes sketching Kahn's algorithm in pseudocode before writing line 1). "
-            "Cleared 4 successive rounds at Microsoft two months later."
+            "A student went completely blank on a tree traversal question in their first interview. "
+            "They left feeling embarrassed. They realized nervousness temporarily blocked their memory. "
+            "Next time, they spent the first 3 minutes casually talking through their thoughts on paper before typing. "
+            "They cleared all rounds at Microsoft two months later."
         ),
-        "key_metric": "Verbal Blueprinting eliminated freeze response across 4 subsequent interviews."
+        "key_metric": "Talking out loud calmly eliminated freezing in future interviews."
     },
     {
         "id": "alumni_late_season_wave",
         "category": "alumni_precedent",
         "stage": "all",
         "topic": "late_waves",
-        "title": "Senior Precedent: October Slump to January Product Offers",
+        "title": "Senior Story: Zero Offers in Fall -> 3 Great Offers in Spring",
         "content": (
-            "Senior Case Study (Batch 2024): 45% of batch had offers in September; candidate had 0 offers by October 30th and spiraled into depression. "
-            "Stayed consistent with 1 daily mock interview and clean Git commit log. "
-            "Between December and February, off-campus hiring and second-wave campus drives opened up. "
-            "Received 3 competing offers in January (Swiggy, Salesforce partner, InMobi) with higher compensation than the early August offers."
+            "Almost half the class had offers in September; one student had zero offers by November and felt left behind. "
+            "They stayed calm, kept practicing one problem a day, and ignored group chat panic. "
+            "Between December and February, second-wave campus drives opened, and they received 3 top product offers in January."
         ),
-        "key_metric": "54% of top tier compensation packages are signed in Wave 2 (Nov - Feb)."
+        "key_metric": "Over 50% of great offers come in the second wave (November through February)."
     }
 ]
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -532,16 +522,28 @@ YOU MUST RESPOND STRICTLY WITH A VALID JSON OBJECT conforming to this exact sche
 }
 """
 
+def format_friendly_stage(stage_raw: str) -> str:
+    s = (stage_raw or "").lower()
+    if "round_2" in s or "round 2" in s:
+        return "Round 2 (Live Coding)"
+    if "round_1" in s or "round 1" in s:
+        return "Round 1 (First Interview)"
+    if "oa" in s or "assessment" in s:
+        return "Online Coding Test"
+    if "final" in s or "hr" in s:
+        return "Final HR & Manager Round"
+    return stage_raw.replace("_", " ").title()
+
 async def execute_grounded_reasoning(
     vent_text: str,
     retrieved_chunks: List[Dict[str, Any]],
     stage: str
 ) -> Dict[str, Any]:
     """Sends vent + retrieved authoritative chunks to Groq Llama 3.3 70B or Gemini 1.5 Flash."""
+    friendly_round = format_friendly_stage(stage)
 
     chunks_context = "\n\n".join([
-        f"[{c.get('category', '').upper()} - {c.get('title', '')}]\n"
-        f"Metric: {c.get('key_metric', 'N/A')}\n"
+        f"[{c.get('title', '')}]\n"
         f"Context: {c.get('content', '')}"
         for c in retrieved_chunks
     ])
@@ -549,13 +551,14 @@ async def execute_grounded_reasoning(
     user_prompt = f"""STUDENT VENT (Sanitized):
 "{vent_text}"
 
-DETECTED INTERVIEW STAGE:
-{stage}
+INTERVIEW ROUND:
+{friendly_round}
 
-RETRIEVED AUTHORITATIVE CONTEXT PIECES:
+STORIES & ADVICE FROM SENIORS:
 {chunks_context}
 
-Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni precedents. Return ONLY the strict JSON object."""
+Respond as Pivot, a warm and caring senior friend chatting with a fellow student.
+STRICT INSTRUCTION: Do NOT use ANY technical, cognitive, or clinical terms (never say 'CBT', 'cognitive', 'technical', 'diagnosis', 'dichotomous', 'attrition', 'knowledge base'). Use only friendly, conversational words. Immediately lift them out of their down feeling with real perspective and give gentle tactical moves. Return ONLY the strict JSON object."""
 
     # 1. Try Groq (Llama 3.3 70B) with fast 3.0s timeout
     if _GROQ_API_KEY and _GROQ_API_KEY != "your_groq_api_key_here":
@@ -624,8 +627,8 @@ Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni pr
             "clinical_explanation": "It is completely natural to feel hurt right now. But getting stuck on a question under artificial pressure is just a tiny bump in time—it has nothing to do with your overall talent or intelligence."
         },
         "math_market_check": {
-            "stage": stage.replace("_", " ").title(),
-            "funnel_attrition": "Why this was mostly about crowded seat limits",
+            "stage": friendly_round,
+            "funnel_attrition": "Why this was mostly about crowded room capacity",
             "headcount_reality": "In campus drives, companies often interview 60 to 80 wonderful candidates but only have budget for 4 to 6 offers. Over 75% of talented students get turned away purely due to room capacity, never because their coding wasn't good."
         },
         "skill_variable": {

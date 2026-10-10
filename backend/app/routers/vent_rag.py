@@ -112,27 +112,27 @@ async def get_interview_stages():
         "stages": [
             {
                 "id": "technical_round_2",
-                "label": "Round 2 Technical (Live Coding)",
-                "description": "Deep algorithmic questions (DP, Graphs, Trees) with live clock constraints.",
-                "typical_attrition": "78% - 83% (governed by quota limits)"
+                "label": "Round 2 (Live Coding)",
+                "description": "Live coding problems with a running clock.",
+                "typical_attrition": "Over 75% turned away due to room capacity"
             },
             {
                 "id": "technical_round_1",
-                "label": "Round 1 Technical (Screening)",
-                "description": "Fundamental DSA and problem familiarity screening.",
-                "typical_attrition": "60% - 68% (recent pattern recognition bias)"
+                "label": "Round 1 (First Interview)",
+                "description": "First problem-solving chat with an engineer.",
+                "typical_attrition": "Over 60% turned away due to limited slots"
             },
             {
                 "id": "oa_screening",
-                "label": "Online Assessment (OA)",
-                "description": "Automated coding portal with hidden test cases and fast timer.",
-                "typical_attrition": "90% - 95% (batch volume sieve)"
+                "label": "Online Coding Test",
+                "description": "College coding test with hidden tests and automated timers.",
+                "typical_attrition": "Over 90% filtered out by automated cutoffs"
             },
             {
                 "id": "final_round",
-                "label": "Final / Managerial / HR Round",
-                "description": "System design, behavioral alignment, and team headcount slot allocation.",
-                "typical_attrition": "50% - 70% (team budget closures)"
+                "label": "Final HR & Manager Round",
+                "description": "Final conversation with engineering manager or HR.",
+                "typical_attrition": "Offers depend on team budget openings"
             }
         ]
     }

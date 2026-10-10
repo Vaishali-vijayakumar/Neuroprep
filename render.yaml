@@ -19,3 +19,9 @@ services:
         value: "15"
       - key: SESSION_TIMEOUT_MINUTES
         value: "90"
+      - key: RENDER
+        value: "true"
+      - key: WHISPER_MODEL
+        value: "tiny"
+      - key: EMBEDDING_MODEL_NAME
+        value: "BAAI/bge-small-en-v1.5"

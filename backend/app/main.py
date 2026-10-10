@@ -26,6 +26,7 @@ from app.routers import ws_interview
 from app.routers import ws_audio          # Hybrid audio pipeline WebSocket
 from app.routers import chat as chat_router
 from app.routers import rag as rag_router
+from app.routers import vent_rag as vent_router  # Voice & Text Recovery RAG Engine
 from app.routers import admin as admin_router        # Protected Admin RBAC Router
 
 # ── Environment & Production Debug Settings ────────────────────────────────────
@@ -75,6 +76,7 @@ app.include_router(code_router.router,     prefix="/api/code")
 app.include_router(dsa_router.router,      prefix="/api/dsa")   # Live DSA compiler
 app.include_router(chat_router.router,     prefix="/api/chat")  # Emotional Placement Mentor
 app.include_router(rag_router.router,      prefix="/api/rag")   # Hybrid YouTube Video RAG Engine
+app.include_router(vent_router.router,     prefix="/api/vent")  # Voice & Text Recovery RAG Engine
 app.include_router(admin_router.router,    prefix="/api/admin") # Protected Admin RBAC Router
 app.include_router(stress_router.router)    # Spatiotemporal & rPPG Stress API
 app.include_router(ws_interview.router)   # WebSocket at /ws/{session_id}

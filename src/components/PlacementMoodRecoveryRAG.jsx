@@ -10,7 +10,7 @@ import {
   submitAudioVentRAG 
 } from '../services/placementMoodRecoveryRAG';
 
-const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v2';
+const LOCAL_VAULT_KEY = 'neuroprep_recovery_vault_v3';
 
 // Scrub any accidental technical or clinical terms into friendly, caring words
 const cleanFriendlyChat = (text) => {
@@ -72,9 +72,6 @@ export default function PlacementMoodRecoveryRAG() {
       if (stored) {
         const parsed = JSON.parse(stored);
         setVaultHistory(parsed);
-        if (parsed.length > 0 && !currentResult) {
-          setCurrentResult(parsed[0]);
-        }
       }
     } catch (e) {
       console.warn('Failed to load local vault:', e);
@@ -696,6 +693,52 @@ export default function PlacementMoodRecoveryRAG() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── Welcome State when student hasn't vented yet ── */}
+        {!currentResult && !isLoading && (
+          <div style={{
+            padding: '36px 24px',
+            textAlign: 'center',
+            borderRadius: '16px',
+            backgroundColor: 'rgba(82, 98, 87, 0.04)',
+            border: '1.5px dashed rgba(82, 98, 87, 0.22)',
+            marginBottom: '10px'
+          }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-terracotta)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 12px auto',
+              boxShadow: '0 4px 12px rgba(154, 104, 84, 0.25)'
+            }}>
+              <Heart size={20} fill="#FFFFFF" />
+            </div>
+            <h4 style={{
+              margin: '0 0 8px 0',
+              fontSize: '17.5px',
+              fontWeight: 700,
+              color: 'var(--main-heading)',
+              fontFamily: 'var(--font-heading)'
+            }}>
+              Hey! I'm Pivot, your senior friend 💛
+            </h4>
+            <p style={{
+              margin: '0 auto',
+              maxWidth: '540px',
+              fontSize: '13.5px',
+              lineHeight: 1.65,
+              color: 'var(--body-text)',
+              fontFamily: 'var(--font-body)'
+            }}>
+              Whether today's interview didn't go as planned, you froze under pressure, or you just feel the heavy weight of placements—this is your private corner. Share whatever is on your mind using the box or 30-second mic above, and let's talk through it together.
+            </p>
           </div>
         )}
 

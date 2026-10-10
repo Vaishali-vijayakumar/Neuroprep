@@ -59,6 +59,17 @@ export default function PlacementMoodRecoveryRAG() {
     }
   }, []);
 
+  // Safety timer: guarantees the spinner can never get stuck for more than 4.5s
+  useEffect(() => {
+    let timer;
+    if (isLoading) {
+      timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
+    }
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
   // Save to local on-device vault
   const saveToLocalVault = (result) => {
     try {

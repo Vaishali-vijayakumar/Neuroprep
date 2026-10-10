@@ -17,22 +17,28 @@ export async function submitTextVentRAG({ text, stage }) {
   const cleanText = (text || '').trim();
   if (!cleanText) throw new Error('Vent text cannot be empty.');
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
+
   try {
     const res = await fetch(`${API_BASE}/api/vent/text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, stage: stage || undefined })
+      body: JSON.stringify({ text: cleanText, stage: stage || undefined }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
       return data;
     }
   } catch (err) {
-    console.warn('[VentRAG] Backend unreachable, utilizing client-side clinical fallback:', err);
+    clearTimeout(timeoutId);
+    console.warn('[VentRAG] Fast fallback engaged (backend sleeping or network slow):', err.name || err.message);
   }
 
-  // Graceful client-side fallback
+  // Instant resilient clinical fallback (resolves in <50ms, never gets stuck)
   return generateClientFallbackRecovery({ text: cleanText, stage });
 }
 
@@ -44,18 +50,24 @@ export async function submitAudioVentRAG({ audioBlob, stage, filename = 'vent.we
   formData.append('audio', audioBlob, filename);
   if (stage) formData.append('stage', stage);
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
   try {
     const res = await fetch(`${API_BASE}/api/vent/audio`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
       return data;
     }
   } catch (err) {
-    console.warn('[VentRAG] Audio API unreachable, falling back to client engine:', err);
+    clearTimeout(timeoutId);
+    console.warn('[VentRAG] Audio fallback engaged:', err.name || err.message);
   }
 
   return generateClientFallbackRecovery({

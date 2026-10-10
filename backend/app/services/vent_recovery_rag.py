@@ -557,11 +557,11 @@ RETRIEVED AUTHORITATIVE CONTEXT PIECES:
 
 Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni precedents. Return ONLY the strict JSON object."""
 
-    # 1. Try Groq (Llama 3.3 70B) for sub-second TTFT if key is present
+    # 1. Try Groq (Llama 3.3 70B) with fast 3.0s timeout
     if _GROQ_API_KEY and _GROQ_API_KEY != "your_groq_api_key_here":
         try:
             import httpx
-            async with httpx.AsyncClient(timeout=12.0) as client:
+            async with httpx.AsyncClient(timeout=3.0) as client:
                 res = await client.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={
@@ -583,11 +583,11 @@ Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni pr
                     parsed = json.loads(raw_json)
                     return parsed
         except Exception as e:
-            print(f"[LLM] Groq Llama 3.3 error: {e}")
+            print(f"[LLM] Groq note: {e}")
 
-    # 2. Try Gemini (gemini-3.8-flash, gemini-2.5-flash, gemini-1.5-flash)
+    # 2. Try Gemini with fast 2.5s thread timeout
     if _GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here":
-        for model_name in ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+        def _call_gemini():
             try:
                 from google import genai
                 from google.genai import types
@@ -598,45 +598,22 @@ Analyze this vent using the retrieved CBT frameworks, hiring math, and alumni pr
                     response_mime_type="application/json"
                 )
                 res = client.models.generate_content(
-                    model=model_name,
+                    model="gemini-2.5-flash",
                     contents=user_prompt,
                     config=cfg
                 )
-                parsed = json.loads(res.text.strip())
-                return parsed
+                return json.loads(res.text.strip())
             except Exception as e:
-                print(f"[LLM] Gemini {model_name} error: {e}")
-                continue
+                return None
 
-    # 3. Try OpenAI (GPT-4o-mini)
-    if _OPENAI_API_KEY and _OPENAI_API_KEY != "your_openai_api_key_here":
         try:
-            import httpx
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                res = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {_OPENAI_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "gpt-4o-mini",
-                        "messages": [
-                            {"role": "system", "content": STRICT_SYSTEM_PROMPT},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        "temperature": 0.2,
-                        "response_format": {"type": "json_object"}
-                    }
-                )
-                if res.status_code == 200:
-                    raw_json = res.json()["choices"][0]["message"]["content"]
-                    parsed = json.loads(raw_json)
-                    return parsed
+            gemini_res = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=2.5)
+            if gemini_res and isinstance(gemini_res, dict) and "cognitive_diagnosis" in gemini_res:
+                return gemini_res
         except Exception as e:
-            print(f"[LLM] OpenAI error: {e}")
+            print(f"[LLM] Gemini timeout/error note: {e}")
 
-    # 3. Deterministic Grounded Fallback
+    # 3. Deterministic Grounded Fallback (Instant, Zero Latency)
     cbt_chunk = next((c for c in retrieved_chunks if c.get("category") == "cbt_framework"), retrieved_chunks[0])
     attrition_chunk = next((c for c in retrieved_chunks if c.get("category") == "stage_attrition"), retrieved_chunks[-1])
     alumni_chunk = next((c for c in retrieved_chunks if c.get("category") == "alumni_precedent"), retrieved_chunks[-1])

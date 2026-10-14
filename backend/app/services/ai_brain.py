@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env"))
 _API_KEY = os.getenv("GEMINI_API_KEY", "")
 _GEMINI_AVAILABLE = bool(_API_KEY and _API_KEY != "your_gemini_api_key_here")
 
-MODEL_NAME = "gemini-3.5-flash"   # Fast, high instruction following, active model
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")   # Active, fast, reliable model
 
 
 def _get_client():

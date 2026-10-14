@@ -24,7 +24,7 @@ def _get_client():
 def _get_config(system_instruction: str = None, max_output_tokens: int = 800, response_mime_type: str = None):
     try:
         from google.genai import types
-        cfg = {"max_output_tokens": max_output_tokens, "thinking_config": types.ThinkingConfig(thinking_budget=0)}
+        cfg = {"max_output_tokens": max_output_tokens}
         if system_instruction:
             cfg["system_instruction"] = system_instruction
         if response_mime_type:

@@ -1074,43 +1074,42 @@ export default function Dashboard({
 
       {/* 7. POST-INTERVIEW REALITY CHECK & REBOUND ENGINE (RAG) */}
       <section style={{ marginBottom: '36px' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(82, 98, 87, 0.08) 0%, rgba(154, 104, 84, 0.08) 100%)',
-          border: '1px solid #D8D2CE',
-          borderRadius: '16px',
-          padding: '20px 24px',
+        <div className="saas-card-spec" style={{
+          padding: '24px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px'
+          gap: '24px',
+          flexWrap: 'wrap'
         }}>
           <div>
-            <h3 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontFamily: 'var(--font-heading, serif)', color: 'var(--dark-heading, #34343A)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span className="pill-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={12} color="var(--accent-terracotta)" /> Placement Rebound & Recovery
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--main-heading)', margin: 0, letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
               Need to talk about a placement round or rejection?
-            </h3>
-            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--body-text, #66666B)' }}>
+            </h2>
+            <p style={{ fontSize: '0.94rem', color: 'var(--body-text)', margin: '6px 0 0 0', lineHeight: 1.6, fontFamily: 'var(--font-body)' }}>
               Pivot is ready for open conversational venting—no questionnaires, just grounded perspective and actionable next steps.
             </p>
           </div>
-          <button
-            onClick={() => setActiveTab && setActiveTab('pivot')}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--btn-sage, #526257)',
-              color: '#F7F3EE',
-              border: 'none',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: 'var(--shadow-3d-btn)'
+          <button 
+            onClick={() => setActiveTab && setActiveTab('pivot')} 
+            className="btn-primary-spec" 
+            style={{ 
+              padding: '12px 24px', 
+              fontSize: '0.92rem', 
+              fontWeight: 600,
+              borderRadius: '12px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              cursor: 'pointer'
             }}
           >
-            <Sparkles size={16} /> Open Pivot Chat
+            <Sparkles size={16} style={{ color: 'var(--btn-text)' }} />
+            <span style={{ color: 'var(--btn-text)' }}>Open Pivot Chat</span>
           </button>
         </div>
       </section>

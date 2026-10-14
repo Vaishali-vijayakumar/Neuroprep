@@ -30,16 +30,6 @@ export default function MessageBubble({ message }) {
         ))}
       </div>
 
-      {/* Grounded Next Action Card */}
-      {message.nextAction && (
-        <div className="pivot-action-box">
-          <div className="pivot-action-title">
-            <CheckCircle size={16} className="pivot-action-icon" />
-            <span>One small controllable next step</span>
-          </div>
-          <p className="pivot-action-content">{message.nextAction}</p>
-        </div>
-      )}
 
       {/* Grounded Evidence Sources */}
       {message.evidence && message.evidence.length > 0 && (

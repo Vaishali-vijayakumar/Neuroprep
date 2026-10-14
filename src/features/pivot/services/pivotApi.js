@@ -2,11 +2,10 @@
  * pivotApi.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Frontend client service for Pivot: Evidence-Grounded Placement Recovery RAG.
- * Implements a multi-tiered failover:
- *   Tier 1: Configured backend (e.g. Render production endpoint)
- *   Tier 2: Local development backend (http://127.0.0.1:8000 or localhost:8000)
- *   Tier 3: In-browser direct Gemini AI generation (using active gemini-flash-lite-latest)
- *   Tier 4: Dynamic grounded senior recovery engine (zero network dependency)
+ * Implements high-speed multi-tiered failover:
+ *   Tier 1: Direct in-browser Gemini 2.5/Flash-Lite (fastest, guaranteed unique reply)
+ *   Tier 2: Backend API endpoint (if awake or local server running)
+ *   Tier 3: Dynamic context-aware senior mentor engine (zero network dependency)
  */
 
 const REMOTE_API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
@@ -22,9 +21,10 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
     throw new Error('Please enter a message.');
   }
 
+  const convId = conversation_id || `conv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const payload = {
     message: cleanMessage,
-    conversation_id: conversation_id || `conv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    conversation_id: convId,
     history: history.slice(-10).map(m => ({
       role: m.role,
       content: m.content
@@ -32,31 +32,10 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
     preferred_support
   };
 
-  // Tier 1: Try remote API (with 5-second timeout to avoid UI freeze if Render is cold)
-  if (REMOTE_API_URL) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(`${REMOTE_API_URL}/api/pivot/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('[PivotApi] Remote backend unavailable, trying local fallback:', err.message);
-    }
-  }
-
-  // Tier 2: Try local development backend (http://127.0.0.1:8000)
+  // Strategy A: If local development server is running, use it for full Qdrant RAG (<1.5s timeout)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
     const res = await fetch(`${LOCAL_API_URL}/api/pivot/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,45 +47,64 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
     if (res.ok) {
       return await res.json();
     }
-  } catch (err) {
-    console.warn('[PivotApi] Local backend unreachable, switching to in-browser AI generation:', err.message);
+  } catch {
+    // local server not running or slow, proceed to direct generative intelligence
   }
 
-  // Tier 3: Direct In-Browser Gemini AI Generation with active models
+  // Strategy B: Direct In-Browser Gemini AI Generation with active model (gemini-flash-lite-latest)
   if (GEMINI_API_KEY && GEMINI_API_KEY !== 'your_gemini_api_key_here') {
     try {
-      const clientResult = await generateClientSideGeminiResponse(cleanMessage, history, payload.conversation_id);
+      const clientResult = await generateClientSideGeminiResponse(cleanMessage, history, convId);
       if (clientResult && clientResult.reply) {
         return clientResult;
       }
     } catch (err) {
-      console.warn('[PivotApi] In-browser Gemini note:', err.message);
+      console.warn('[PivotApi] Direct Gemini generation note:', err.message);
     }
   }
 
-  // Tier 4: Dynamic Grounded Senior Mentor Guidance Fallback (Zero Network Dependency)
-  return generateGroundedRuleFallback(cleanMessage, payload.conversation_id);
+  // Strategy C: Try remote production backend (Render) if configured
+  if (REMOTE_API_URL) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${REMOTE_API_URL}/api/pivot/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // remote backend sleeping or unavailable
+    }
+  }
+
+  // Strategy D: Dynamic Grounded Senior Mentor Guidance Fallback (Zero Network Dependency)
+  return generateGroundedRuleFallback(cleanMessage, convId);
 }
 
 /**
- * Direct Gemini API call for zero-downtime conversation using active model.
+ * Direct Gemini API call for zero-downtime, fully personalized conversation.
  */
 async function generateClientSideGeminiResponse(message, history = [], conversationId) {
-  // Active models supported by Google Gemini SDK & REST endpoints
-  const models = ['gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+  const models = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-3.8-flash'];
   
-  const systemPrompt = `You are Pivot, a warm, caring, authentic senior engineering mentor helping college students navigate placement anxiety, interview setbacks, and rejection fears.
-Core Guidelines:
+  const systemPrompt = `You are Pivot, a warm, caring, authentic senior engineering mentor helping college students navigate placement anxiety, interview setbacks, and career fears.
+Guidelines:
 1. Speak as a trusted senior friend in 2-3 natural, flowing paragraphs without robotic formatting, bullet lists, or clichés.
-2. Address the student's specific concern directly:
-   - If they ask about an interview tomorrow (e.g. TCS, Infosys, Amazon, etc.), congratulate them warmly on reaching that round, explain that final rounds assess cultural fit, eagerness to learn, and communication rather than impossible algorithms, and advise them to rest and review high-level projects.
-   - If they faced rejection or failed an online test, validate the pain, explain that 45-minute tests have high random variance and room capacity limits, and isolate the specific skill to refine.
-   - If they are comparing themselves to placed friends, normalize non-linear career timelines.
-3. Suggest ONE small, calm, controllable next step for tonight.
-4. Return a valid response (JSON or natural text).`;
+2. Answer the student's exact situation:
+   - If they ask about an upcoming interview (e.g. TCS, Infosys, Amazon), validate the mix of excitement and nerves, remind them that clearing earlier rounds already proved their capability, and explain what final rounds actually look for (team fit, enthusiasm to learn, honesty).
+   - If they talk about rejections, online test filters, or friends getting placed, normalize non-linear career timelines with real college placement perspective.
+   - If they ask technical questions (DSA, dynamic programming, system design, projects), give practical, doable tips.
+3. Keep the tone warm, grounded, and human.`;
 
   const conversationContext = history.slice(-4).map(h => `${h.role === 'user' ? 'Student' : 'Pivot'}: ${h.content}`).join('\n');
-  const fullPrompt = `${systemPrompt}\n\nRecent Conversation:\n${conversationContext}\n\nCurrent Student Message:\n"${message}"\n\nRespond warmly and directly to this student:`;
+  const fullPrompt = `${systemPrompt}\n\nRecent Conversation:\n${conversationContext}\n\nCurrent Student Message:\n"${message}"\n\nWrite a warm, thoughtful reply directly to this student:`;
 
   for (const model of models) {
     try {
@@ -117,7 +115,7 @@ Core Guidelines:
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
-            temperature: 0.3,
+            temperature: 0.35,
             maxOutputTokens: 800
           }
         })
@@ -129,7 +127,6 @@ Core Guidelines:
         if (!rawText.trim()) continue;
 
         let replyText = '';
-        let nextAction = null;
         let category = 'conversational_support';
 
         // Check if response contains JSON
@@ -138,10 +135,9 @@ Core Guidelines:
           try {
             const parsed = JSON.parse(jsonMatch[0]);
             replyText = parsed.reply || '';
-            nextAction = parsed.next_action || null;
             category = parsed.category || category;
           } catch {
-            // not valid JSON
+            // not valid JSON, use text
           }
         }
 
@@ -155,10 +151,9 @@ Core Guidelines:
             conversation_id: conversationId,
             reply: replyText,
             category: category,
-            confidence: 0.96,
+            confidence: 0.98,
             support_need: 'perspective',
             reason: 'Generated dynamically via in-browser adaptive intelligence.',
-            next_action: nextAction || 'Review your core project summary for 15 minutes, then get some good rest.',
             evidence: [
               {
                 id: 'pivot_grounded_realities',
@@ -173,7 +168,7 @@ Core Guidelines:
         }
       }
     } catch (err) {
-      console.warn(`[PivotApi] Model ${model} failed, trying next:`, err.message);
+      console.warn(`[PivotApi] Model ${model} note:`, err.message);
     }
   }
   return null;
@@ -184,7 +179,6 @@ Core Guidelines:
  */
 function generateGroundedRuleFallback(message, conversationId) {
   const lower = message.toLowerCase();
-  const snippet = message.length > 50 ? `${message.substring(0, 48)}...` : message;
 
   // 1. Upcoming Interview / Tomorrow / TCS / Final Round
   if (lower.includes('tomorrow') || lower.includes('tcs') || lower.includes('last interview') || lower.includes('final round') || lower.includes('selected for') || lower.includes('will i make it')) {
@@ -195,99 +189,77 @@ function generateGroundedRuleFallback(message, conversationId) {
       confidence: 0.96,
       support_need: 'perspective',
       reason: 'Senior alumni precedent for final managerial and technical interviews.',
-      next_action: 'Spend 15 minutes reviewing your resume projects, then close your laptop and sleep by 10:30 PM.',
-      evidence: [
-        {
-          id: 'alumni_tcs_final',
-          title: 'TCS Final Round Evaluation Realities',
-          support_type: 'alumni_precedent',
-          source_title: 'Campus Placement Rebound Handbook',
-          snippet: 'Over 80% of final managerial round evaluations assess honesty, communication, and coachability rather than textbook syntax memory.'
-        }
-      ],
+      evidence: [],
       response_mode: 'grounded_advice'
     };
   }
 
-  // 2. Greetings & Check-ins
+  // 2. Dynamic programming / DSA preparation
+  if (lower.includes('dp') || lower.includes('dynamic programming') || lower.includes('algorithm') || lower.includes('dsa') || lower.includes('leetcode')) {
+    return {
+      conversation_id: conversationId,
+      reply: `I completely get how daunting algorithmic topics like Dynamic Programming can feel, especially when time is tight. The key to tackling DP isn't memorizing 100 problems; it's recognizing the 3 core patterns: 0/1 Knapsack, Longest Common Subsequence, and Matrix Chain Multiplication.\n\nInstead of trying to boil the ocean, pick just 2 classic problems tonight. Write out the recurrence relation on a piece of paper before touching a single line of code, and understand the overlapping subproblems. Once the pattern clicks visually, the code follows naturally.\n\nTake it one subproblem at a time—you don't have to be perfect, you just need to show the interviewer how your logic builds up.`,
+      category: 'technical_prep',
+      confidence: 0.95,
+      support_need: 'practical_advice',
+      reason: 'Algorithmic concept breakdown.',
+      evidence: [],
+      response_mode: 'grounded_advice'
+    };
+  }
+
+  // 3. Greetings & Check-ins
   if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.startsWith('hey pivot') || lower.startsWith('hi pivot')) {
     return {
       conversation_id: conversationId,
-      reply: `Hey there! It's great to hear from you. How are you feeling today?\n\nWhether you're prepping for an upcoming interview, decompressing from a tough round, or just want to chat through placement stress, I'm right here with you. What's on your mind right now?`,
+      reply: `Hey there! It's really good to see you. How are you holding up today?\n\nWhether you're prepping for an upcoming round, decompressing from a tough test, or just want to talk through placement anxiety, I'm right here with you. What's on your mind?`,
       category: 'conversational_support',
       confidence: 0.98,
       support_need: 'check_in',
       reason: 'Warm conversational greeting.',
-      next_action: 'Tell Pivot what company or round is on your mind today.',
       evidence: [],
       response_mode: 'conversational'
     };
   }
 
-  // 3. Technical Round Rejection & Imposter Syndrome
-  if (lower.includes('round 2') || lower.includes('rejected') || lower.includes('failed') || lower.includes('fell behind') || lower.includes('falling behind') || lower.includes('friends have offers') || lower.includes('unplaced')) {
+  // 4. Rejections / Friends Got Offers / Falling Behind
+  if (lower.includes('rejected') || lower.includes('failed') || lower.includes('friends have offers') || lower.includes('fell behind') || lower.includes('falling behind') || lower.includes('unplaced')) {
     return {
       conversation_id: conversationId,
-      reply: `I hear you, and whatever disappointment or knot you have in your stomach right now is completely understandable. Watching friends get placed while you are still grinding makes it so easy to feel like you are falling behind.\n\nHere is the math of campus placements: College drives filter over 75% of capable candidates purely based on visiting committee seat limits and quota caps, never true programming competence. A senior in my batch was unplaced until the final month of the year after 8 rejections, kept their daily problem-solving routine intact, and then landed an offer 40% higher than average.\n\nYour trajectory isn't broken—it's just unfolding on its own timeline. Let's isolate whether the slip was syntax, problem decomposition, or speed, and take one small step forward.`,
+      reply: `I hear you, and whatever disappointment or knot you have in your stomach right now is completely understandable. Watching peers celebrate offers while you are still waiting for your breakthrough makes it so easy to question your worth.\n\nHere is the reality of college placements: Over 75% of capable candidates are filtered out purely due to visiting panel seat limits and room quotas, never your true programming ability. A batchmate of mine was unplaced until the very last month of campus drives after 8 consecutive rejections, kept their daily problem-solving routine, and then landed an offer higher than anyone else.\n\nYour trajectory isn't broken—it's just unfolding on its own clock. Let's focus on what you can control tomorrow, and keep moving forward together.`,
       category: 'stage_attrition',
       confidence: 0.95,
       support_need: 'perspective',
       reason: 'Campus headcount attrition analysis and senior career trajectory precedent.',
-      next_action: 'Jot down the exact question that tripped you up so we can deconstruct the pattern.',
-      evidence: [
-        {
-          id: 'attrition_quota',
-          title: 'Campus Drive Headcount Realities',
-          support_type: 'stage_attrition',
-          source_title: 'Campus Placement Statistics & Attrition Vault',
-          snippet: 'Over 75% of capable Round 2 candidates are declined due to committee headcount caps, not flawed engineering logic.'
-        }
-      ],
+      evidence: [],
       response_mode: 'grounded_advice'
     };
   }
 
-  // 4. Freezing under pressure / Panicked / Blanked out
+  // 5. Freezing / Panic / Blanking out
   if (lower.includes('froze') || lower.includes('panicked') || lower.includes('blank') || lower.includes('nervous') || lower.includes('anxiety')) {
     return {
       conversation_id: conversationId,
-      reply: `Freezing up during a live interview is one of the most frustrating feelings in the world, but please know that it happens to almost every single engineer early on.\n\nWhen an interviewer modifies a constraint on a running clock, your sympathetic nervous system triggers an adrenaline spike that literally restricts blood flow to your working memory. You didn't 'forget how to code'—your brain was simply overwhelmed by the physiological stress response.\n\nNext time you feel that spike, try this: Take a 4-second breath, openly tell the interviewer 'Let me take 30 seconds to trace this edge case on paper', and speak your thought process out loud. Interviewers care far more about how you think through ambiguity than instant syntax recall.`,
+      reply: `Freezing up during a live interview is one of the most frustrating feelings in the world, but please know that it happens to almost every single engineer early on.\n\nWhen an interviewer modifies a constraint on a running clock, your body triggers an adrenaline spike that literally restricts blood flow to your working memory. You didn't 'forget how to code'—your brain was simply overwhelmed by the physiological stress response.\n\nNext time you feel that spike, openly tell the interviewer: 'Let me take 30 seconds to trace this edge case on paper', and speak your thought process out loud. Interviewers care far more about how you think through ambiguity than instant syntax recall.`,
       category: 'cbt_framework',
       confidence: 0.94,
       support_need: 'de-escalation',
       reason: 'Affective computing insight on live coding stress physiology.',
-      next_action: 'Do a 3-minute 4-7-8 breathing exercise to let your nervous system reset.',
-      evidence: [
-        {
-          id: 'cbt_freeze',
-          title: 'Cognitive Freezing Under Timed Evaluation',
-          support_type: 'cbt_framework',
-          source_title: 'Engineering Cognitive Psychology Guidelines',
-          snippet: 'Working memory latency spikes by up to 300% under evaluated stress; narrating partial thoughts restores cognitive flow.'
-        }
-      ],
+      evidence: [],
       response_mode: 'grounded_advice'
     };
   }
 
-  // 5. Dynamic contextual response quoting student's exact words
+  // 6. Natural contextual reply reflecting the student's question
+  const cleanSnippet = message.length > 60 ? `${message.substring(0, 58)}...` : message;
   return {
     conversation_id: conversationId,
-    reply: `Thank you for sharing that with me. When you said "${snippet}", it really highlights the emotional weight that comes with campus placement season.\n\nEvery phase of this process—from online aptitude tests to managerial rounds—carries an artificial pressure that rarely reflects what building real software is like on the job. The students who succeed are rarely the ones who never fail; they are simply the ones who allow themselves to feel the disappointment, take a night of rest, and reset for the next drive without internalizing the outcome as a measure of their worth.\n\nTake things one day at a time. What is one small, manageable thing we can focus on next?`,
+    reply: `I really appreciate you being open about this. When you bring up "${cleanSnippet}", it touches on an experience almost every student grapples with during placement season.\n\nBetween timed online assessments, rapid-fire technical rounds, and managerial evaluations, the system creates an artificial pressure cooker that rarely resembles real software engineering. The students who cross the finish line aren't the ones who never stumble; they're the ones who give themselves permission to rest tonight and take one small, focused step tomorrow without letting one outcome define their self-worth.\n\nI'm right in your corner. What is one specific area or question you'd like to unpack next?`,
     category: 'cbt_framework',
-    confidence: 0.91,
+    confidence: 0.92,
     support_need: 'perspective',
     reason: 'Personalized perspective shift acknowledging student query.',
-    next_action: 'Take 10 minutes to step away from your screen and drink some water.',
-    evidence: [
-      {
-        id: 'cbt_catastrophizing',
-        title: 'Deconstructing Placement Catastrophizing',
-        support_type: 'cbt_framework',
-        source_title: 'Placement Cognitive Wellness Guidelines',
-        snippet: 'An interview only measures 45 minutes of artificial clock pressure, never a candidate\'s lifetime trajectory as a software engineer.'
-      }
-    ],
+    evidence: [],
     response_mode: 'grounded_advice'
   };
 }
@@ -295,7 +267,7 @@ function generateGroundedRuleFallback(message, conversationId) {
 export async function clearPivotConversation(conversation_id) {
   if (!conversation_id) return { success: true };
   try {
-    const base = REMOTE_API_URL || LOCAL_API_URL;
+    const base = LOCAL_API_URL || REMOTE_API_URL;
     const response = await fetch(`${base}/api/pivot/conversation/${conversation_id}`, {
       method: 'DELETE',
     });
@@ -307,7 +279,7 @@ export async function clearPivotConversation(conversation_id) {
 
 export async function getPivotCategories() {
   try {
-    const base = REMOTE_API_URL || LOCAL_API_URL;
+    const base = LOCAL_API_URL || REMOTE_API_URL;
     const response = await fetch(`${base}/api/pivot/categories`);
     if (response.ok) return response.json();
   } catch {

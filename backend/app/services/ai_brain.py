@@ -4,6 +4,7 @@ Uses the new google-genai SDK (replaces deprecated google-generativeai).
 Model: gemini-1.5-flash (higher free-tier quota than gemini-2.0-flash)
 """
 import os
+import re
 import json
 from dotenv import load_dotenv
 
@@ -20,18 +21,54 @@ def _get_client():
     return genai.Client(api_key=_API_KEY)
 
 
-def _get_config(system_instruction: str = None, max_output_tokens: int = 800):
+def _get_config(system_instruction: str = None, max_output_tokens: int = 800, response_mime_type: str = None):
     try:
         from google.genai import types
         cfg = {"max_output_tokens": max_output_tokens, "thinking_config": types.ThinkingConfig(thinking_budget=0)}
         if system_instruction:
             cfg["system_instruction"] = system_instruction
+        if response_mime_type:
+            cfg["response_mime_type"] = response_mime_type
         return types.GenerateContentConfig(**cfg)
     except Exception:
         cfg = {"max_output_tokens": max_output_tokens}
         if system_instruction:
             cfg["system_instruction"] = system_instruction
+        if response_mime_type:
+            cfg["response_mime_type"] = response_mime_type
         return cfg
+
+
+def _clean_and_parse_json(raw_text: str) -> dict:
+    """Robust extractor that handles direct JSON, markdown fences, and regex extraction."""
+    if not raw_text:
+        raise ValueError("Empty model output")
+    text = raw_text.strip()
+    
+    # 1. Direct JSON parse
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+        
+    # 2. Markdown code fences ```json ... ```
+    if "```" in text:
+        parts = text.split("```")
+        for part in parts:
+            p = part.strip()
+            if p.startswith("json"):
+                p = p[4:].strip()
+            try:
+                return json.loads(p)
+            except Exception:
+                continue
+                
+    # 3. Outermost { ... } regex
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+
+    raise ValueError("Valid JSON payload not found in model output")
 
 
 PERSONALITY_PROMPTS = {
@@ -903,23 +940,28 @@ async def generate_report(session_data: dict) -> dict:
         telem   = session_data.get("telemetry", [])
 
         # ── Pre-compute everything in Python — no Gemini tokens wasted on numbers ──
-        def avg(key, default=70):
-            vals = [r.get(key) for r in rubrics if isinstance(r, dict) and r.get(key) is not None]
+        def safe_avg(key: str, default: int = 70) -> int:
+            vals = [r.get(key) for r in rubrics if isinstance(r, dict) and isinstance(r.get(key), (int, float))]
             return int(sum(vals) / len(vals)) if vals else default
 
-        def telem_avg(key):
-            vals = [t.get(key) for t in telem if t.get(key) is not None]
+        def telem_avg(key: str):
+            vals = [t.get(key) for t in telem if isinstance(t, dict) and isinstance(t.get(key), (int, float))]
             return int(sum(vals) / len(vals)) if vals else None
 
         real_eye_contact = telem_avg("eye_contact")
         real_stress      = telem_avg("stress") or telem_avg("stress_score")
-        real_hr          = telem_avg("hr_bpm")
-        real_hrv         = telem_avg("hrv_ms")
         real_blink       = telem_avg("blink_rate")
         avg_stress       = real_stress if real_stress is not None else 0
 
+        # Heart rate & HRV with outlier clamping (50–180 bpm) and NaN/0 rejection
+        hr_vals = [t.get("hr_bpm") for t in telem if isinstance(t, dict) and isinstance(t.get("hr_bpm"), (int, float)) and 50 <= t.get("hr_bpm") <= 180]
+        real_hr = int(sum(hr_vals) / len(hr_vals)) if hr_vals else None
+
+        hrv_vals = [t.get("hrv_ms") for t in telem if isinstance(t, dict) and isinstance(t.get("hrv_ms"), (int, float)) and 10 <= t.get("hrv_ms") <= 200]
+        real_hrv = int(sum(hrv_vals) / len(hrv_vals)) if hrv_vals else None
+
         # Peak stress calculation
-        stress_vals = [t.get("stress") or t.get("stress_score") for t in telem if (t.get("stress") or t.get("stress_score")) is not None]
+        stress_vals = [t.get("stress") or t.get("stress_score") for t in telem if isinstance(t, dict) and (t.get("stress") or t.get("stress_score")) is not None]
         peak_stress = max(stress_vals) if stress_vals else avg_stress
 
         # Eye gaze stability label
@@ -933,17 +975,17 @@ async def generate_report(session_data: dict) -> dict:
             eye_gaze_label = "Frequent Gaze Deviation"
 
         # Head pose stability
-        poses = [t.get("head_pose", "forward") for t in telem if t.get("head_pose")]
+        poses = [t.get("head_pose", "forward") for t in telem if isinstance(t, dict) and t.get("head_pose")]
         forward_ratio = (poses.count("forward") / len(poses)) if poses else 1.0
         head_pose_stability = "Stable Forward Focus" if forward_ratio >= 0.8 else "Moderate Movement"
 
         # Reading / Proctor & Phone Detection flags
-        phone_incidents = sum(1 for t in telem if t.get("phone_detected") or t.get("phoneReadingDetected") or t.get("phone_object_visible"))
-        proctor_flags = sum(1 for t in telem if t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly") or t.get("phone_object_visible"))
+        phone_incidents = sum(1 for t in telem if isinstance(t, dict) and (t.get("phone_detected") or t.get("phoneReadingDetected") or t.get("phone_object_visible")))
+        proctor_flags = sum(1 for t in telem if isinstance(t, dict) and (t.get("phone_detected") or t.get("reading_detected") or t.get("anomaly") or t.get("phone_object_visible")))
         distraction_score = min(100, phone_incidents * 25)
         integrity_verdict = "CLEAN" if phone_incidents == 0 else ("ADVISORY" if phone_incidents <= 2 else "FLAGGED")
 
-        wpm_vals = [t.get("wpm") for t in telem if t.get("wpm") and t["wpm"] > 0]
+        wpm_vals = [t.get("wpm") for t in telem if isinstance(t, dict) and isinstance(t.get("wpm"), (int, float)) and t["wpm"] > 0]
         avg_wpm  = int(sum(wpm_vals) / len(wpm_vals)) if wpm_vals else None
         if avg_wpm is None:   speaking_speed = "Not measured"
         elif avg_wpm > 175:   speaking_speed = f"Fast ({avg_wpm} WPM)"
@@ -951,21 +993,25 @@ async def generate_report(session_data: dict) -> dict:
         else:                 speaking_speed = f"Good ({avg_wpm} WPM)"
 
         # Fillers & pauses
-        filler_counts = [t.get("filler_count", 0) for t in telem if t.get("filler_count") is not None]
+        filler_counts = [t.get("filler_count", 0) for t in telem if isinstance(t, dict) and t.get("filler_count") is not None]
         total_fillers = sum(filler_counts) if filler_counts else 0
 
-        silence_durations = [t.get("silence_duration_ms", 0) for t in telem if t.get("silence_duration_ms")]
+        silence_durations = [t.get("silence_duration_ms", 0) for t in telem if isinstance(t, dict) and t.get("silence_duration_ms")]
         total_silence_sec = round(sum(silence_durations) / 1000, 1)
 
-        tech  = avg("technical_accuracy")
-        comm  = avg("communication")
-        gram  = avg("grammar")
-        conf  = avg("confidence")
-        prob  = avg("problem_solving", 0) or avg("overall")
-        crit  = avg("critical_thinking", 0) or avg("overall")
-        lead  = avg("leadership_ownership", 0) or avg("star_depth")
-        time_ = avg("time_management", 0) or avg("overall")
-        over  = avg("overall", int((tech + comm + gram + conf) / 4))
+        tech  = safe_avg("technical_accuracy")
+        comm  = safe_avg("communication")
+        gram  = safe_avg("grammar")
+        conf  = safe_avg("confidence")
+        prob  = safe_avg("problem_solving", 0) or safe_avg("overall")
+        crit  = safe_avg("critical_thinking", 0) or safe_avg("overall")
+        lead  = safe_avg("leadership_ownership", 0) or safe_avg("star_depth")
+        time_ = safe_avg("time_management", 0) or safe_avg("overall")
+
+        # Weighted calculation with fallback
+        weighted_overall = int((tech * 0.35) + (prob * 0.25) + (comm * 0.20) + (conf * 0.10) + (gram * 0.10))
+        over  = safe_avg("overall", weighted_overall)
+
         grade = ("A+" if over >= 92 else "A"  if over >= 85 else
                  "B+" if over >= 78 else "B"  if over >= 70 else
                  "C"  if over >= 60 else "D")
@@ -1000,11 +1046,14 @@ async def generate_report(session_data: dict) -> dict:
 
         # ── Ask Gemini for text narrative + ideal answers (~750 tokens) ──
         narrative_prompt = (
-            f"Interview: {config.get('trackName','General')} | Role: {config.get('role','Engineer')}\n"
-            f"Score:{over}/100 Grade:{grade} Stress:{avg_stress}/100 "
-            f"Eye Contact:{real_eye_contact or 'N/A'}% Speed:{speaking_speed}\n"
-            f"Q&A summary:\n{qa_text}\n\n"
-            "Return ONLY compact JSON (no markdown, no extra text):\n"
+            f"Interview Track: {config.get('trackName','General')} | Target Role: {config.get('role','Engineer')}\n"
+            f"Overall Score: {over}/100 | Grade: {grade} | Average Stress: {avg_stress}/100\n"
+            f"Eye Contact: {real_eye_contact or 'N/A'}% | Speaking Speed: {speaking_speed}\n"
+            f"Total Questions Answered: {len(q_pairs)}\n"
+            f"Transcript & Rubric Digest:\n{qa_text}\n\n"
+            f"IMPORTANT: You must provide exactly {len(q_pairs)} items in 'ideal_answers' "
+            f"matching the questions in sequential order.\n\n"
+            "Return ONLY valid JSON (no markdown fences, no extra preamble):\n"
             '{"strengths":["s1","s2","s3"],'
             '"weak_areas":["w1","w2"],'
             '"behavioral_observation":"2 sentences max covering body language, gaze, pacing, stress",'
@@ -1019,35 +1068,31 @@ async def generate_report(session_data: dict) -> dict:
         response = client.models.generate_content(
             model=MODEL_NAME,
             contents=narrative_prompt,
-            config=_get_config(max_output_tokens=1000),
+            config=_get_config(max_output_tokens=1000, response_mime_type="application/json"),
         )
-        text = response.text.strip()
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"): text = text[4:]
-        narr = json.loads(text.strip())
+        narr = _clean_and_parse_json(response.text)
 
         ideals = narr.get("ideal_answers", [])
-        question_reviews = [
-            {
+        question_reviews = []
+        for i, p in enumerate(q_pairs):
+            ideal = ideals[i] if (ideals and i < len(ideals) and ideals[i]) else (
+                "A strong answer states the core concept clearly, "
+                "supports it with a real example or STAR structure, and provides measurable outcomes."
+            )
+            question_reviews.append({
                 "question_number":  i + 1,
-                "question":         p["q"],
-                "user_answer":      p["a"],
-                "verdict":          p["verdict"],
-                "is_correct":       p["is_correct"],
-                "what_was_right":   p["what_was_right"],
-                "what_was_missing": p["what_was_missing"],
-                "ideal_answer":     ideals[i] if i < len(ideals) else (
-                    "A strong answer states the core concept clearly, "
-                    "supports it with a real example or STAR structure, and provides measurable outcomes."
-                ),
-                "score":            p["score"],
-                "key_takeaway":     p["fb"] or "Strengthen with specific examples, ownership actions, and metrics.",
-                "strengths":        p["str"] or ["Relevant answer"],
-                "improvements":     p["imp"] or ["Add more depth and measurable outcomes"],
-            }
-            for i, p in enumerate(q_pairs)
-        ]
+                "question":         p.get("q", ""),
+                "user_answer":      p.get("a", ""),
+                "verdict":          p.get("verdict", "Needs Review"),
+                "is_correct":       p.get("is_correct", False),
+                "what_was_right":   p.get("what_was_right", "Addressed key points of the prompt."),
+                "what_was_missing": p.get("what_was_missing", "Could improve depth and specific results."),
+                "ideal_answer":     ideal,
+                "score":            p.get("score", over),
+                "key_takeaway":     p.get("fb", "") or "Strengthen with specific examples, ownership actions, and metrics.",
+                "strengths":        p.get("str") or ["Relevant answer"],
+                "improvements":     p.get("imp") or ["Add more depth and measurable outcomes"],
+            })
 
         # ── Assemble final multi-modal report ──
         return {

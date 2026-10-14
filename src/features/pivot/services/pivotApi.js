@@ -32,23 +32,27 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
     preferred_support
   };
 
-  // Strategy A: If local development server is running, use it for full Qdrant RAG (<1.5s timeout)
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1800);
-    const res = await fetch(`${LOCAL_API_URL}/api/pivot/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
+  // Strategy A: Connect to local RAG backend or Vite proxy (/api/pivot/chat, 127.0.0.1:8000, localhost:8000)
+  const localEndpoints = ['/api/pivot/chat', 'http://127.0.0.1:8000/api/pivot/chat', 'http://localhost:8000/api/pivot/chat'];
+  for (const endpoint of localEndpoints) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-    if (res.ok) {
-      return await res.json();
+      if (res.ok) {
+        console.log('[PivotApi] Connected to local RAG backend:', endpoint);
+        return await res.json();
+      }
+    } catch {
+      // try next candidate
     }
-  } catch {
-    // local server not running or slow, proceed to direct generative intelligence
   }
 
   // Strategy B: Direct In-Browser Gemini AI Generation with active model (gemini-flash-lite-latest)

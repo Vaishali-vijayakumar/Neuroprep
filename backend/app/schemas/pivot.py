@@ -33,9 +33,7 @@ class PivotChatRequest(BaseModel):
         default_factory=list,
         max_length=20
     )
-    preferred_support: Optional[Literal[
-        "listen", "reassure", "give_advice", "make_a_plan"
-    ]] = None
+    preferred_support: Optional[str] = None
 
 class EvidenceReference(BaseModel):
     id: str

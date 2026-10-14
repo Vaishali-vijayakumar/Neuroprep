@@ -89,14 +89,17 @@ app.include_router(ws_audio.router)       # Audio pipeline at /ws/audio/{session
 async def root():
     return {
         "status": "healthy",
-        "service": "Neroprep AI Placement Platform",
+        "service": "Neuroprep AI Placement Platform",
         "version": "2.0.0"
     }
 
 @app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health_check():
     return {
-        "status": "ok",
+        "status": "healthy",
+        "service": "Neuroprep AI Platform",
+        "version": "2.0.0",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
@@ -151,24 +154,6 @@ class SessionStartResponse(BaseModel):
     ats_insights: AtsInsights
 
 
-@app.get("/")
-def root():
-    return {
-        "service": "Neuroprep AI Platform",
-        "status": "running",
-        "version": "2.0.0",
-        "health": "/api/health"
-    }
-
-
-@app.get("/api/health")
-def health_check():
-    return {
-        "status":  "healthy",
-        "service": "Neroprep AI Platform",
-        "version": "2.0.0",
-        "modules": ["ATS Resume Analysis", "AI Mock Interview Engine", "Gemini 2.0 Brain", "WebSocket"]
-    }
 
 
 @app.post("/api/v1/session/start-from-resume", response_model=SessionStartResponse)

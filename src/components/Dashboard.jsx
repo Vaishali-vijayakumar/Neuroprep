@@ -1075,6 +1075,46 @@ export default function Dashboard({
 
       {/* 7. POST-INTERVIEW REALITY CHECK & REBOUND ENGINE (RAG) */}
       <section style={{ marginBottom: '36px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(82, 98, 87, 0.08) 0%, rgba(154, 104, 84, 0.08) 100%)',
+          border: '1px solid #D8D2CE',
+          borderRadius: '16px',
+          padding: '20px 24px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <h3 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontFamily: 'var(--font-heading, serif)', color: 'var(--dark-heading, #34343A)' }}>
+              Need to talk about a placement round or rejection?
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--body-text, #66666B)' }}>
+              Pivot is ready for open conversational venting—no questionnaires, just grounded perspective and actionable next steps.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab && setActiveTab('pivot')}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--btn-sage, #526257)',
+              color: '#F7F3EE',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: 'var(--shadow-3d-btn)'
+            }}
+          >
+            <Sparkles size={16} /> Open Pivot Chat
+          </button>
+        </div>
         <PlacementMoodRecoveryRAG />
       </section>
 

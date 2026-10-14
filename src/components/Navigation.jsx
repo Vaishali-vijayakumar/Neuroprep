@@ -77,6 +77,27 @@ export default function Navigation({ activeTab = 'dashboard', setActiveTab, user
             </div>
 
             <button 
+              onClick={() => setActiveTab('pivot')}
+              title="Chat with Pivot"
+              style={{
+                padding: '7px 14px',
+                borderRadius: '8px',
+                border: '1px solid ' + (activeTab === 'pivot' ? '#526257' : '#D8D2CE'),
+                backgroundColor: activeTab === 'pivot' ? '#526257' : '#FCF9F6',
+                color: activeTab === 'pivot' ? '#F7F3EE' : '#4F5056',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Sparkles size={14} style={{ color: activeTab === 'pivot' ? '#F7F3EE' : '#9A6854' }} /> Pivot Support
+            </button>
+
+            <button 
               onClick={onGoHome}
               title="Return Home"
               style={{

@@ -18,6 +18,7 @@ import Reports from './components/Reports';
 import PlacementRoadmap from './components/PlacementRoadmap';
 import PuzzlesAndSheets from './components/PuzzlesAndSheets';
 import PlacementResourceRAG from './components/PlacementResourceRAG';
+import PivotChat from './features/pivot/components/PivotChat';
 import { DISTORTIONS } from './services/aiEngine';
 import { dbService, supabase } from './services/db';
 import { recordActivity } from './services/gamificationService';
@@ -603,6 +604,10 @@ export default function App() {
             aptitudeState={aptitudeState}
             setActiveTab={setActiveTab}
           />
+        )}
+
+        {activeTab === 'pivot' && (
+          <PivotChat onNavigateBack={() => setActiveTab('dashboard')} />
         )}
       </main>
 

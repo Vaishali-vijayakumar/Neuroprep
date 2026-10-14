@@ -442,7 +442,6 @@ export default function ThoughtJournal({
       }}>
         {[
           { id: 'write', label: 'Write Daily Diary' },
-          { id: 'chat', label: 'NeuroCoach AI Companion' },
           { id: 'history', label: `Journal History (${journalEntries.length})` },
           { id: 'garden', label: 'Achievement Garden' },
           { id: 'hope', label: 'Hope Jar' },
@@ -823,9 +822,9 @@ export default function ThoughtJournal({
       )}
 
       {/* ──────────────────────────────────────────────
-          TAB 2: CONVERSATIONAL AI COMPANION (CHATBOT)
+          TAB 2: CONVERSATIONAL AI COMPANION (CHATBOT - REMOVED)
           ────────────────────────────────────────────── */}
-      {currentTab === 'chat' && (
+      {false && currentTab === 'chat' && (
         <div style={{
           ...card3DStyle,
           padding: '26px',

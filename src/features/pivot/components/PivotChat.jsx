@@ -4,7 +4,6 @@ import { sendPivotMessage, clearPivotConversation } from '../services/pivotApi';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import SupportSuggestions from './SupportSuggestions';
-import RecoveryCard from './RecoveryCard';
 import '../styles/pivot.css';
 
 export default function PivotChat({ onNavigateBack = null }) {
@@ -245,17 +244,6 @@ export default function PivotChat({ onNavigateBack = null }) {
           <span>Memory is session-scoped.</span>
         </div>
       </div>
-
-      {/* Recovery Card (if active next action is present) */}
-      {lastSupportInfo.nextAction && (
-        <div style={{ marginTop: '20px' }}>
-          <RecoveryCard
-            category={lastSupportInfo.category}
-            nextAction={lastSupportInfo.nextAction}
-            supportNeed={lastSupportInfo.supportNeed}
-          />
-        </div>
-      )}
     </div>
   );
 }

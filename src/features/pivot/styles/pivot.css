@@ -135,9 +135,19 @@
 .pivot-message.user {
   align-self: flex-end;
   background: var(--btn-sage, #526257);
-  color: #F7F3EE;
+  color: #FFFFFF !important;
   border-bottom-right-radius: 4px;
   box-shadow: 0 4px 14px rgba(82, 98, 87, 0.2);
+}
+
+.pivot-message.user .pivot-paragraph,
+.pivot-message.user p,
+.pivot-message.user span {
+  color: #FFFFFF !important;
+}
+
+.pivot-message.user .pivot-sender-name {
+  color: #E2E8E4 !important;
 }
 
 .pivot-message.assistant {

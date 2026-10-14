@@ -3,7 +3,6 @@ import { calculatePlacementReadiness, getAdaptiveInterviewSettings } from '../se
 import { dbService } from '../services/db';
 import PlacementFlashGauntlet from './PlacementFlashGauntlet';
 import PlacementResourceRAG from './PlacementResourceRAG';
-import PlacementMoodRecoveryRAG from './PlacementMoodRecoveryRAG';
 import { Check, TrendingUp, TrendingDown, Plane, CheckCircle2, Circle, Flame, Sparkles, ArrowRight, Target, Clock, ShieldCheck, Plus, Trash2, X } from 'lucide-react';
 import { getGamificationData, recordActivity } from '../services/gamificationService';
 
@@ -1080,7 +1079,6 @@ export default function Dashboard({
           border: '1px solid #D8D2CE',
           borderRadius: '16px',
           padding: '20px 24px',
-          marginBottom: '20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -1115,7 +1113,6 @@ export default function Dashboard({
             <Sparkles size={16} /> Open Pivot Chat
           </button>
         </div>
-        <PlacementMoodRecoveryRAG />
       </section>
 
     </div>

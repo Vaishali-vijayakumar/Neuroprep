@@ -105,39 +105,48 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
       liveItems.push(item);
     };
 
+    const clientController = new AbortController();
+    const clientTimeout = setTimeout(() => clientController.abort(), 3500);
+
+    const safeFetchJson = (url, options = {}) =>
+      fetch(url, { ...options, signal: clientController.signal })
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+
     // ── Fire all 5 APIs in parallel ──────────────────────────────────────────
     const [hnRes, wikiRes, devtoRes, githubRes, stackRes] = await Promise.allSettled([
 
       // 1. HackerNews Algolia — real tech articles from all over the web
-      fetch(
+      safeFetchJson(
         `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(cleanQ)}&hitsPerPage=18&tags=story`,
         { mode: 'cors' }
-      ).then(r => r.json()),
+      ),
 
       // 2. Wikipedia OpenSearch — real encyclopedia articles
-      fetch(
+      safeFetchJson(
         `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(cleanQ)}&limit=5&namespace=0&format=json&origin=*`,
         { mode: 'cors' }
-      ).then(r => r.json()),
+      ),
 
       // 3. Dev.to — real developer tutorials & guides
-      fetch(
+      safeFetchJson(
         `https://dev.to/api/articles?q=${encodeURIComponent(cleanQ)}&per_page=10&state=rising`,
         { mode: 'cors' }
-      ).then(r => r.json()),
+      ),
 
       // 4. GitHub Search API — real repositories (no auth needed for public search)
-      fetch(
+      safeFetchJson(
         `https://api.github.com/search/repositories?q=${encodeURIComponent(cleanQ)}&sort=stars&order=desc&per_page=8`,
         { mode: 'cors', headers: { 'Accept': 'application/vnd.github.v3+json' } }
-      ).then(r => r.json()),
+      ),
 
       // 5. Stack Exchange API — real StackOverflow answers
-      fetch(
+      safeFetchJson(
         `https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=relevance&q=${encodeURIComponent(cleanQ)}&site=stackoverflow&pagesize=8&filter=withbody`,
         { mode: 'cors' }
-      ).then(r => r.json()),
+      ),
     ]);
+    clearTimeout(clientTimeout);
 
     // ── 1. Parse Wikipedia ────────────────────────────────────────────────────
     if (wikiRes.status === 'fulfilled' && Array.isArray(wikiRes.value) && wikiRes.value[3]) {
@@ -379,15 +388,23 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
     suggestDebounceTimer.current = setTimeout(async () => {
       try {
         const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        const endpoints = [
-          ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : []),
-          `/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
-          ...(isLocal ? [`http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`, `http://localhost:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : [])
-        ];
+        const endpoints = isLocal
+          ? [
+              `http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
+              `/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
+              ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : [])
+            ]
+          : [
+              ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : []),
+              `/api/rag/suggest?q=${encodeURIComponent(query.trim())}`
+            ];
         let found = false;
         for (const ep of endpoints) {
           try {
-            const res = await fetch(ep);
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 1200);
+            const res = await fetch(ep, { signal: controller.signal });
+            clearTimeout(tid);
             if (res.ok) {
               const data = await res.json();
               if (data.suggestions && data.suggestions.length > 0) {
@@ -437,19 +454,24 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
 
     let finalData = null;
 
-    // 1. Try Python FastAPI backend endpoint (which runs multi-backend DuckDuckGo live engine)
+    // 1. Try Python FastAPI backend endpoint (prioritizing local if running)
     try {
       const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const endpoints = [
-        ...(API_BASE ? [`${API_BASE}/api/rag/search-web`] : []),
-        '/api/rag/search-web',
-        ...(isLocal ? ['http://127.0.0.1:8000/api/rag/search-web', 'http://localhost:8000/api/rag/search-web'] : [])
-      ];
+      const endpoints = isLocal
+        ? [
+            'http://127.0.0.1:8000/api/rag/search-web',
+            '/api/rag/search-web',
+            ...(API_BASE ? [`${API_BASE}/api/rag/search-web`] : [])
+          ]
+        : [
+            ...(API_BASE ? [`${API_BASE}/api/rag/search-web`] : []),
+            '/api/rag/search-web'
+          ];
 
       for (const endpoint of endpoints) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 18000);
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
 
           const res = await fetch(endpoint, {
             method: 'POST',

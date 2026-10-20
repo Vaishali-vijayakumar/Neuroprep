@@ -272,6 +272,40 @@ def fetch_wikipedia_documents(query: str, limit: int = 2) -> List[Dict[str, Any]
     return items
 
 
+def fetch_wikipedia_web_articles(query: str, limit: int = 4) -> List[Dict[str, Any]]:
+    """
+    Fetches real encyclopedic articles from Wikipedia with direct web URLs (not search URLs).
+    """
+    items = []
+    try:
+        headers = {"User-Agent": "NeuroprepPlacement/2.0 (placement@neuroprep.ai)"}
+        encoded_q = urllib.parse.quote(query)
+        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={encoded_q}&format=json"
+        with httpx.Client(timeout=2.5, headers=headers) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                data = resp.json().get("query", {}).get("search", [])
+                for item in data[:limit]:
+                    title = item.get("title", "").strip()
+                    if not title:
+                        continue
+                    wiki_slug = title.replace(" ", "_")
+                    page_url = f"https://en.wikipedia.org/wiki/{wiki_slug}"
+                    snippet = re.sub(r'<[^>]+>', '', item.get("snippet", "")).strip()
+                    if is_safe_and_educational(title, page_url, snippet):
+                        items.append({
+                            "title": f"{title} — Wikipedia",
+                            "url": page_url,
+                            "domain": "en.wikipedia.org",
+                            "doc_type": "Official Reference Documentation",
+                            "snippet": snippet or f"Comprehensive technical reference covering {title}.",
+                            "is_pdf": False
+                        })
+    except Exception as e:
+        logger.warning(f"Wikipedia web search error: {e}")
+    return items
+
+
 def fetch_hn_open_web_documents(query: str, limit: int = 4) -> List[Dict[str, Any]]:
     """
     Fetches real technical articles, engineering writeups, and documentation from across the open web via HackerNews Algolia index.
@@ -364,7 +398,7 @@ def fetch_ddg_html_results(query: str, limit: int = 15) -> List[Dict[str, Any]]:
 
     resp = None
     try:
-        with httpx.Client(timeout=7.0, headers=headers, follow_redirects=True) as client:
+        with httpx.Client(timeout=2.0, headers=headers, follow_redirects=True) as client:
             resp = client.post("https://html.duckduckgo.com/html/", data={"q": query})
     except Exception as e:
         logger.warning(f"DDG HTML POST failed: {e}")
@@ -372,7 +406,7 @@ def fetch_ddg_html_results(query: str, limit: int = 15) -> List[Dict[str, Any]]:
     if not resp or resp.status_code != 200 or len(resp.text) < 1000:
         try:
             encoded_q = urllib.parse.quote(query)
-            with httpx.Client(timeout=7.0, headers=headers, follow_redirects=True) as client:
+            with httpx.Client(timeout=2.0, headers=headers, follow_redirects=True) as client:
                 resp = client.get(f"https://html.duckduckgo.com/html/?q={encoded_q}")
         except Exception as e:
             logger.warning(f"DDG HTML GET failed: {e}")
@@ -541,50 +575,70 @@ class WebSearchEngine:
 
         # ── Step 3: DuckDuckGo Search (DDGS Library fallback) ─────────────────
         if len(results) < top_k and DDGS is not None:
-            for b in ["lite", "html", "api"]:
-
-                if len(results) >= top_k:
-                    break
-                try:
-                    with DDGS() as ddgs:
-                        raw_items = list(ddgs.text(augmented_query, backend=b, max_results=top_k + 6))
-                        for item in raw_items:
-                            href = item.get("href") or item.get("url") or ""
-                            title = (item.get("title") or "").strip()
-                            body = (item.get("body") or item.get("snippet") or "").strip()
-                            if not href or not title:
-                                continue
-                            if not is_safe_and_educational(title, href, body):
-                                continue
-                            domain = _clean_domain(href)
-                            is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
-                            if file_format.lower() == "pdf":
-                                is_pdf = True
-                            doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else _classify_web_doc_type(title, href, body)
-                            clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
-                            is_academic = is_trusted_academic(href)
-                            add_result({
-                                "id": f"ddg-{len(results)+1}",
-                                "title": clean_title or title,
-                                "url": href,
-                                "domain": domain,
-                                "breadcrumb": _clean_breadcrumb(href),
-                                "website": domain.capitalize(),
-                                "doc_type": doc_type,
-                                "file_type": "PDF" if is_pdf else "Website",
-                                "is_pdf": is_pdf,
-                                "filter_tag": filter_category,
-                                "quality_score": 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2),
-                                "verified": True,
-                                "is_academic": is_academic,
-                                "description": body or f"Web result for {clean_q}.",
-                                "preview_content": body[:220] if body else "",
-                            })
+            try:
+                with DDGS(timeout=2.0) as ddgs:
+                    raw_items = list(ddgs.text(augmented_query, backend="lite", max_results=top_k + 4))
+                    for item in raw_items:
+                        href = item.get("href") or item.get("url") or ""
+                        title = (item.get("title") or "").strip()
+                        body = (item.get("body") or item.get("snippet") or "").strip()
+                        if not href or not title:
+                            continue
+                        if not is_safe_and_educational(title, href, body):
+                            continue
+                        domain = _clean_domain(href)
+                        is_pdf = href.lower().endswith(".pdf") or ".pdf" in href.lower()
+                        if file_format.lower() == "pdf":
+                            is_pdf = True
+                        doc_type = _classify_pdf_doc_type(title, href, body) if is_pdf else _classify_web_doc_type(title, href, body)
+                        clean_title = re.sub(r'^(PDF|\[PDF\]|\(PDF\))\s*[-–:]?\s*', '', title, flags=re.IGNORECASE).strip()
+                        is_academic = is_trusted_academic(href)
+                        add_result({
+                            "id": f"ddg-{len(results)+1}",
+                            "title": clean_title or title,
+                            "url": href,
+                            "domain": domain,
+                            "breadcrumb": _clean_breadcrumb(href),
+                            "website": domain.capitalize(),
+                            "doc_type": doc_type,
+                            "file_type": "PDF" if is_pdf else "Website",
+                            "is_pdf": is_pdf,
+                            "filter_tag": filter_category,
+                            "quality_score": 4.96 if is_academic else round(4.82 + (len(results) % 3) * 0.05, 2),
+                            "verified": True,
+                            "is_academic": is_academic,
+                            "description": body or f"Web result for {clean_q}.",
+                            "preview_content": body[:220] if body else "",
+                        })
                         if len(results) >= top_k:
                             break
-                except Exception as e:
-                    logger.warning(f"DDGS backend {b} failed: {e}")
-                    continue
+            except Exception as e:
+                logger.warning(f"DDGS search step failed: {e}")
+
+        # ── Step 3b: Wikipedia Direct Articles (Guaranteed direct technical documentation) ──
+        if len(results) < top_k:
+            try:
+                wiki_web_docs = fetch_wikipedia_web_articles(clean_q, limit=4)
+                for doc in wiki_web_docs:
+                    add_result({
+                        "id": f"wiki-{len(results)+1}",
+                        "title": doc["title"],
+                        "url": doc["url"],
+                        "domain": doc["domain"],
+                        "breadcrumb": f"en.wikipedia.org › wiki › {clean_q.replace(' ', '_')}",
+                        "website": "Wikipedia",
+                        "doc_type": doc.get("doc_type", "Reference Documentation"),
+                        "file_type": "Website",
+                        "is_pdf": False,
+                        "filter_tag": filter_category,
+                        "quality_score": 4.97,
+                        "verified": True,
+                        "is_academic": True,
+                        "description": doc.get("snippet", ""),
+                        "preview_content": doc.get("snippet", "")[:220],
+                    })
+            except Exception as e:
+                logger.warning(f"Wikipedia web articles step failed: {e}")
 
         # ── Step 4: HackerNews Algolia (engineering articles across the web) ──
         if len(results) < top_k:

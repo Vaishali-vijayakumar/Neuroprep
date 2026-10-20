@@ -122,9 +122,9 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         { mode: 'cors' }
       ),
 
-      // 2. Wikipedia OpenSearch — real encyclopedia articles
+      // 2. Wikipedia Direct Article Search — real encyclopedia pages
       safeFetchJson(
-        `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(cleanQ)}&limit=5&namespace=0&format=json&origin=*`,
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQ)}&utf8=&format=json&origin=*`,
         { mode: 'cors' }
       ),
 
@@ -148,28 +148,51 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
     ]);
     clearTimeout(clientTimeout);
 
-    // ── 1. Parse Wikipedia ────────────────────────────────────────────────────
-    if (wikiRes.status === 'fulfilled' && Array.isArray(wikiRes.value) && wikiRes.value[3]) {
-      const titles   = wikiRes.value[1] || [];
-      const snippets = wikiRes.value[2] || [];
-      const urls     = wikiRes.value[3] || [];
-      titles.forEach((t, i) => {
-        if (!urls[i]) return;
-        addLiveItem({
-          id: `wiki-${i}`,
-          title: `${t} — Wikipedia`,
-          url: urls[i],
-          domain: 'en.wikipedia.org',
-          breadcrumb: `en.wikipedia.org › wiki › ${t.replace(/\s+/g, '_')}`,
-          website: 'Wikipedia',
-          category: 'Docs',
-          doc_type: 'Reference Documentation',
-          snippet: snippets[i] || `Comprehensive definition, history, and technical overview of ${t}.`,
-          date: 'Open Encyclopedia',
-          author: 'Wikipedia Contributors',
-          priority: 1,
+    // ── 1. Parse Wikipedia (Direct encyclopedic articles) ─────────────────────
+    if (wikiRes.status === 'fulfilled' && wikiRes.value) {
+      const searchItems = wikiRes.value?.query?.search;
+      if (Array.isArray(searchItems) && searchItems.length > 0) {
+        searchItems.forEach((item, i) => {
+          if (!item.title) return;
+          const slug = item.title.replace(/\s+/g, '_');
+          const cleanSnippet = (item.snippet || '').replace(/<[^>]+>/g, '').trim();
+          addLiveItem({
+            id: `wiki-${i}`,
+            title: `${item.title} — Wikipedia`,
+            url: `https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}`,
+            domain: 'en.wikipedia.org',
+            breadcrumb: `en.wikipedia.org › wiki › ${slug}`,
+            website: 'Wikipedia',
+            category: 'Docs',
+            doc_type: 'Official Reference Documentation',
+            snippet: cleanSnippet || `Comprehensive definition, history, and technical overview of ${item.title}.`,
+            date: 'Open Encyclopedia',
+            author: 'Wikipedia Contributors',
+            priority: 1,
+          });
         });
-      });
+      } else if (Array.isArray(wikiRes.value) && wikiRes.value[3]) {
+        const titles   = wikiRes.value[1] || [];
+        const snippets = wikiRes.value[2] || [];
+        const urls     = wikiRes.value[3] || [];
+        titles.forEach((t, i) => {
+          if (!urls[i]) return;
+          addLiveItem({
+            id: `wiki-${i}`,
+            title: `${t} — Wikipedia`,
+            url: urls[i],
+            domain: 'en.wikipedia.org',
+            breadcrumb: `en.wikipedia.org › wiki › ${t.replace(/\s+/g, '_')}`,
+            website: 'Wikipedia',
+            category: 'Docs',
+            doc_type: 'Reference Documentation',
+            snippet: snippets[i] || `Comprehensive definition, history, and technical overview of ${t}.`,
+            date: 'Open Encyclopedia',
+            author: 'Wikipedia Contributors',
+            priority: 1,
+          });
+        });
+      }
     }
 
     // ── 2. Parse HackerNews (real articles from across the web) ──────────────
@@ -263,67 +286,6 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
         });
       });
     }
-
-    // ── 6. Add verified educational portal results for the query ─────────────
-    addLiveItem({
-      id: `gfg-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      title: `${cleanQ} Tutorial, Code & Solutions — GeeksforGeeks`,
-      url: `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(cleanQ)}`,
-      domain: 'geeksforgeeks.org',
-      breadcrumb: `geeksforgeeks.org › search › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      website: 'GeeksforGeeks',
-      category: 'Tutorials',
-      doc_type: 'Tutorial & Code Solutions',
-      snippet: `In-depth tutorial, algorithm implementations, time-space complexities, and interview problem sets for ${cleanQ}.`,
-      date: 'Verified Placement Resource',
-      author: 'GeeksforGeeks Technical Authors',
-      priority: 1,
-    });
-
-    addLiveItem({
-      id: `mdn-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      title: `${cleanQ} Documentation & Web Reference — MDN Web Docs`,
-      url: `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(cleanQ)}`,
-      domain: 'developer.mozilla.org',
-      breadcrumb: `developer.mozilla.org › en-US › docs › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      website: 'MDN Web Docs',
-      category: 'Docs',
-      doc_type: 'Official Documentation',
-      snippet: `Authoritative developer reference, architectural standards, syntax, and live browser examples covering ${cleanQ}.`,
-      date: 'Web Standard',
-      author: 'MDN Web Docs Contributors',
-      priority: 1,
-    });
-
-    addLiveItem({
-      id: `lc-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      title: `${cleanQ} Practice Problems & Interview Questions — LeetCode`,
-      url: `https://leetcode.com/problemset/all/?search=${encodeURIComponent(cleanQ)}`,
-      domain: 'leetcode.com',
-      breadcrumb: `leetcode.com › problemset › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      website: 'LeetCode',
-      category: 'Interview',
-      doc_type: 'Interview Practice Portal',
-      snippet: `Curated coding problems, company-tagged interview questions, and discussion solutions on ${cleanQ}.`,
-      date: 'Interview Prep',
-      author: 'LeetCode Community',
-      priority: 2,
-    });
-
-    addLiveItem({
-      id: `w3-${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      title: `${cleanQ} Reference & Interactive Examples — W3Schools`,
-      url: `https://www.w3schools.com/tags/ref_search.asp?q=${encodeURIComponent(cleanQ)}`,
-      domain: 'w3schools.com',
-      breadcrumb: `w3schools.com › tutorials › ${cleanQ.toLowerCase().replace(/\s+/g, '-')}`,
-      website: 'W3Schools',
-      category: 'Tutorials',
-      doc_type: 'Quick Reference & Exercises',
-      snippet: `Step-by-step beginner friendly explanation, syntax cheat-sheets, and interactive sandbox exercises for ${cleanQ}.`,
-      date: 'Educational Portal',
-      author: 'W3Schools',
-      priority: 2,
-    });
 
     // Sort by priority (lower = better), then keep top 30
     liveItems.sort((a, b) => (a.priority || 5) - (b.priority || 5));

@@ -124,10 +124,11 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     let vList = [];
     let searchDuration = 0.45;
 
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     const endpoints = [
+      ...(API_BASE ? [`${API_BASE}/api/rag/search-video`] : []),
       '/api/rag/search-video',
-      'http://127.0.0.1:8000/api/rag/search-video',
-      ...(API_BASE && API_BASE !== 'http://localhost:8000' && API_BASE !== 'http://127.0.0.1:8000' ? [`${API_BASE}/api/rag/search-video`] : [])
+      ...(isLocal ? ['http://127.0.0.1:8000/api/rag/search-video', 'http://localhost:8000/api/rag/search-video'] : [])
     ];
 
     for (const endpoint of endpoints) {
@@ -192,10 +193,11 @@ export default function PlacementResourceRAG({ setActiveTab }) {
     let libBooks = [];
     let docs = [];
 
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     const endpoints = [
+      ...(API_BASE ? [`${API_BASE}/api/rag/search-pdf`] : []),
       '/api/rag/search-pdf',
-      'http://127.0.0.1:8000/api/rag/search-pdf',
-      ...(API_BASE && API_BASE !== 'http://localhost:8000' && API_BASE !== 'http://127.0.0.1:8000' ? [`${API_BASE}/api/rag/search-pdf`] : [])
+      ...(isLocal ? ['http://127.0.0.1:8000/api/rag/search-pdf', 'http://localhost:8000/api/rag/search-pdf'] : [])
     ];
 
     for (const endpoint of endpoints) {

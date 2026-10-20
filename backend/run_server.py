@@ -34,7 +34,10 @@ if __name__ == "__main__":
         print(f"  [OK] Gemini API key configured ({key[:8]}...)")
     print()
 
-    port = int(os.getenv("PORT", 8000))
+    try:
+        port = int(str(os.getenv("PORT", "8000")).strip())
+    except (ValueError, TypeError):
+        port = 8000
     host = "0.0.0.0" if os.getenv("RENDER") or os.getenv("PORT") else "127.0.0.1"
     uvicorn.run(
         "app.main:app",

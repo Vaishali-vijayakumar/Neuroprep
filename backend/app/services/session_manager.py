@@ -1,3 +1,4 @@
+import os
 import json
 import time
 from datetime import datetime
@@ -7,21 +8,37 @@ from typing import Dict, Any, Optional
 # Global cache configs
 SESSION_TTL_SECONDS = 14400  # 4 hours
 
-# Setup Redis connection with quick timeout checks
+# Setup Redis connection only if explicit REDIS_URL or REDIS_HOST is configured
 redis_client = None
-try:
-    redis_client = redis.Redis(
-        host="localhost",
-        port=6379,
-        db=0,
-        socket_connect_timeout=2,
-        decode_responses=True
-    )
-    # Test connection
-    redis_client.ping()
-    print("[Session Manager] Successfully connected to Redis.")
-except Exception:
-    print("[Session Manager] Redis server offline. Falling back to local In-Memory TTL Session Store.")
+redis_url = os.getenv("REDIS_URL", "").strip()
+redis_host = os.getenv("REDIS_HOST", "").strip()
+
+if redis_url or redis_host:
+    try:
+        if redis_url:
+            redis_client = redis.Redis.from_url(
+                redis_url,
+                socket_connect_timeout=1,
+                socket_timeout=1,
+                decode_responses=True
+            )
+        else:
+            redis_client = redis.Redis(
+                host=redis_host,
+                port=int(os.getenv("REDIS_PORT", 6379)),
+                db=int(os.getenv("REDIS_DB", 0)),
+                password=os.getenv("REDIS_PASSWORD", None),
+                socket_connect_timeout=1,
+                socket_timeout=1,
+                decode_responses=True
+            )
+        redis_client.ping()
+        print("[Session Manager] Successfully connected to Redis.")
+    except Exception as e:
+        print(f"[Session Manager] Redis connection note ({e}). Falling back to local In-Memory TTL Session Store.")
+        redis_client = None
+else:
+    print("[Session Manager] Using local In-Memory TTL Session Store.")
     redis_client = None
 
 # Thread-safe in-memory store fallback

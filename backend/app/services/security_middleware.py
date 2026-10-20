@@ -30,7 +30,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # Allow WebSocket handshakes and internal health checks through without rate limiting
-        if request.url.path.startswith("/ws") or request.url.path == "/api/health":
+        if request.url.path.startswith("/ws") or request.url.path in ("/health", "/api/health", "/"):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "127.0.0.1"

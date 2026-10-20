@@ -378,10 +378,11 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
     }
     suggestDebounceTimer.current = setTimeout(async () => {
       try {
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         const endpoints = [
-          '/api/rag/suggest?q=${encodeURIComponent(query.trim())}',
           ...(API_BASE ? [`${API_BASE}/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : []),
-          `http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`
+          `/api/rag/suggest?q=${encodeURIComponent(query.trim())}`,
+          ...(isLocal ? [`http://127.0.0.1:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`, `http://localhost:8000/api/rag/suggest?q=${encodeURIComponent(query.trim())}`] : [])
         ];
         let found = false;
         for (const ep of endpoints) {
@@ -438,10 +439,11 @@ export default function WebPrep({ onBackToHub, onSwitchToVideo, onSwitchToPdf })
 
     // 1. Try Python FastAPI backend endpoint (which runs multi-backend DuckDuckGo live engine)
     try {
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
       const endpoints = [
-        '/api/rag/search-web',
         ...(API_BASE ? [`${API_BASE}/api/rag/search-web`] : []),
-        'http://127.0.0.1:8000/api/rag/search-web'
+        '/api/rag/search-web',
+        ...(isLocal ? ['http://127.0.0.1:8000/api/rag/search-web', 'http://localhost:8000/api/rag/search-web'] : [])
       ];
 
       for (const endpoint of endpoints) {

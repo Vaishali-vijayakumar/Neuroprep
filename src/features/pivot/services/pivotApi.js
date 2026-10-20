@@ -32,12 +32,18 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
     preferred_support
   };
 
-  // Strategy A: Connect to local RAG backend or Vite proxy (/api/pivot/chat, 127.0.0.1:8000, localhost:8000)
-  const localEndpoints = ['/api/pivot/chat', 'http://127.0.0.1:8000/api/pivot/chat', 'http://localhost:8000/api/pivot/chat'];
-  for (const endpoint of localEndpoints) {
+  // Strategy A: Connect to Render backend, Vite proxy, or local server
+  const endpoints = [];
+  if (REMOTE_API_URL) endpoints.push(`${REMOTE_API_URL}/api/pivot/chat`);
+  endpoints.push('/api/pivot/chat');
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    endpoints.push('http://127.0.0.1:8000/api/pivot/chat', 'http://localhost:8000/api/pivot/chat');
+  }
+
+  for (const endpoint of endpoints) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +53,7 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
       clearTimeout(timeoutId);
 
       if (res.ok) {
-        console.log('[PivotApi] Connected to local RAG backend:', endpoint);
+        console.log('[PivotApi] Connected to RAG backend:', endpoint);
         return await res.json();
       }
     } catch {
@@ -271,7 +277,8 @@ function generateGroundedRuleFallback(message, conversationId) {
 export async function clearPivotConversation(conversation_id) {
   if (!conversation_id) return { success: true };
   try {
-    const base = LOCAL_API_URL || REMOTE_API_URL;
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const base = isLocal ? (LOCAL_API_URL || REMOTE_API_URL) : (REMOTE_API_URL || LOCAL_API_URL || '');
     const response = await fetch(`${base}/api/pivot/conversation/${conversation_id}`, {
       method: 'DELETE',
     });
@@ -283,7 +290,8 @@ export async function clearPivotConversation(conversation_id) {
 
 export async function getPivotCategories() {
   try {
-    const base = LOCAL_API_URL || REMOTE_API_URL;
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const base = isLocal ? (LOCAL_API_URL || REMOTE_API_URL) : (REMOTE_API_URL || LOCAL_API_URL || '');
     const response = await fetch(`${base}/api/pivot/categories`);
     if (response.ok) return response.json();
   } catch {

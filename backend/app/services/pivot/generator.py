@@ -12,27 +12,34 @@ import json
 import asyncio
 from typing import List, Dict, Any, Optional
 import httpx
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../../.env"))
+load_dotenv(os.path.join(os.getcwd(), ".env"))
+load_dotenv(os.path.join(os.getcwd(), "backend", ".env"))
 
 from app.schemas.pivot import ChatMessage
 
 _GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 _GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-SYSTEM_PROMPT = """You are Pivot, a supportive placement-recovery companion for college students.
+SYSTEM_PROMPT = """You are Pivot, an empathetic, authentic placement mentor and supportive companion for college students.
 
 CORE GUIDELINES:
-1. Acknowledge the student's stated experience without exaggeration or dramatic clinical pity.
-2. DO NOT diagnose mental health conditions or claim to know their true emotional state with certainty.
-3. USE RETRIEVED MATERIAL when relevant. DO NOT invent statistics, hiring policies, alumni success stories, or sources. If the evidence is insufficient, say so honestly.
-4. SEPARATE KNOWN FACTS FROM GUESSES. Never claim to know why a company rejected a student unless reliable evidence establishes it.
-5. RESPECT PREFERENCE: If a student asks just to vent, listen and reflect without forcing unwanted study plans or advice.
-6. PRACTICAL ACTION: When offering help, offer ONE small, realistic, 10-15 minute next step (like practicing constraint variation, doing the RESET-17 review, or taking a rest) and ask if they'd like to try it.
-7. NATURAL CONVERSATION: Write 2 to 3 natural paragraphs. Avoid robotic bulleted checklists unless specifically helpful.
+1. Always tailor your response directly to what the student actually said. Never force a rejection or anxiety narrative onto good news or general questions.
+2. CELEBRATIONS & OFFERS: If the student shares good news, landed an offer, got placed (e.g. at Google, Microsoft, TCS, etc.), cleared an interview round, or feels happy: CELEBRATE WITH THEM! Congratulate them warmly, validate their hard work, and share their excitement.
+3. ADVICE & PREPARATION: If they ask about interview preparation, DSA, or system design, give practical, doable tips.
+4. REJECTIONS & STRESS: If they are struggling with rejection, burnout, or comparison, normalize non-linear career timelines with grounded perspective.
+5. USE RETRIEVED MATERIAL when relevant. DO NOT invent statistics, hiring policies, alumni stories, or sources.
+6. RESPECT PREFERENCE: If a student asks just to vent, listen and reflect without forcing unwanted study plans.
+7. PRACTICAL ACTION: When helpful, suggest ONE concrete, realistic 10-15 minute step (or a celebration/next-step suggestion if they got placed).
+8. NATURAL CONVERSATION: Write 2 to 3 natural, flowing paragraphs. Avoid robotic bulleted checklists or repetitive clichés.
 
 Return ONLY a valid JSON object matching this schema:
 {
   "reply": "Your conversational response as Pivot (warm, grounded, specific)",
-  "next_action": "One concrete 10-15 min step, or null if the user asked only to vent"
+  "next_action": "One concrete step or celebration idea, or null if venting"
 }
 """
 
@@ -118,32 +125,35 @@ Respond as Pivot in valid JSON."""
             except Exception as e:
                 print(f"[Pivot LLM] Groq call note: {e}")
 
-        # 2. Try Gemini 2.0 / 1.5 Flash via google-genai
-        if _GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here":
+        # 2. Try Gemini Flash via google-genai
+        gemini_key = os.getenv("GEMINI_API_KEY", "") or _GEMINI_API_KEY
+        if gemini_key and gemini_key != "your_gemini_api_key_here":
             try:
                 def _call_gemini():
                     from google import genai
                     from google.genai import types
-                    client = genai.Client(api_key=_GEMINI_API_KEY)
+                    client = genai.Client(api_key=gemini_key)
                     cfg = types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
-                        temperature=0.3,
+                        temperature=0.35,
                         max_output_tokens=800,
                         response_mime_type="application/json"
                     )
-                    for candidate_model in ["gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]:
+                    for candidate_model in ["gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-flash-latest"]:
                         try:
                             res = client.models.generate_content(
                                 model=candidate_model,
                                 contents=user_prompt,
                                 config=cfg
                             )
-                            return json.loads(res.text.strip())
+                            parsed = json.loads(res.text.strip())
+                            if "reply" in parsed:
+                                return parsed
                         except Exception as me:
                             print(f"[Pivot LLM] Model {candidate_model} note: {me}")
                     return None
 
-                gemini_res = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=8.0)
+                gemini_res = await asyncio.wait_for(asyncio.to_thread(_call_gemini), timeout=35.0)
                 if gemini_res and "reply" in gemini_res:
                     return {
                         "reply": gemini_res["reply"],
@@ -173,7 +183,21 @@ Respond as Pivot in valid JSON."""
         """
         lower = message.lower()
 
-        # Handle specific test exercise RESET-17
+        # 1. Positive Milestones / Placed / Offer celebration
+        celebration_triggers = ["placed", "offer", "selected", "cracked", "hired", "got into", "cleared", "happy", "celebrat", "congrat"]
+        negative_triggers = ["not placed", "didn't get", "failed", "rejected", "haven't", "crying", "depressed"]
+        if any(t in lower for t in celebration_triggers) and not any(neg in lower for neg in negative_triggers):
+            return {
+                "reply": (
+                    "Huge congratulations! That is an incredible milestone. Getting placed and seeing your preparation "
+                    "pay off is something you should be truly proud of.\n\n"
+                    "Take time to soak this in and celebrate with your family and friends tonight. You earned this!"
+                ),
+                "next_action": "Take tonight to step away from prep and celebrate your milestone with loved ones!",
+                "mode": "conversational"
+            }
+
+        # 2. Handle specific test exercise RESET-17
         if "reset-17" in lower or "reset 17" in lower:
             return {
                 "reply": (

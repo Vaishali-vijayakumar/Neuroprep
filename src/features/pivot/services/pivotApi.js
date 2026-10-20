@@ -43,7 +43,7 @@ export async function sendPivotMessage({ message, conversation_id = null, histor
   for (const endpoint of endpoints) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +121,10 @@ Guidelines:
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
@@ -190,7 +193,26 @@ Guidelines:
 function generateGroundedRuleFallback(message, conversationId) {
   const lower = message.toLowerCase();
 
-  // 1. Upcoming Interview / Tomorrow / TCS / Final Round
+  // 1. Placed / Offers / Success / Happy Celebrations
+  const celebrationKeywords = ['placed', 'offer', 'selected', 'cracked', 'hired', 'got into', 'cleared', 'happy', 'celebrate', 'congrats'];
+  const negativeKeywords = ['not placed', 'no offer', "didn't get", 'failed', 'rejected', 'sad', 'crying', 'depressed', "haven't"];
+  if (celebrationKeywords.some(k => lower.includes(k)) && !negativeKeywords.some(k => lower.includes(k))) {
+    const companyMatch = message.match(/(?:at|in|with|for)\s+([A-Za-z0-9]+)/i);
+    const companyName = companyMatch ? companyMatch[1] : '';
+    const companyNote = companyName ? ` at ${companyName}` : '';
+    return {
+      conversation_id: conversationId,
+      reply: `Huge congratulations! Landing an offer${companyNote} and getting placed is an extraordinary achievement that reflects all of your grit, late-night problem solving, and resilience throughout this placement season.\n\nTake this moment to genuinely step back, celebrate with your family and close friends, and let the relief sink in. You worked exceptionally hard to reach this milestone, and you've earned every bit of this celebration!\n\nWhen the dust settles, if you want tips on team onboarding, offer negotiation, or pre-joining preparation, I'm right here. But tonight, enjoy your win!`,
+      category: 'celebration',
+      confidence: 0.99,
+      support_need: 'validation',
+      reason: 'Student placement success celebration and positive milestone acknowledgment.',
+      evidence: [],
+      response_mode: 'grounded_advice'
+    };
+  }
+
+  // 2. Upcoming Interview / Tomorrow / TCS / Final Round
   if (lower.includes('tomorrow') || lower.includes('tcs') || lower.includes('last interview') || lower.includes('final round') || lower.includes('selected for') || lower.includes('will i make it')) {
     return {
       conversation_id: conversationId,
@@ -260,15 +282,15 @@ function generateGroundedRuleFallback(message, conversationId) {
     };
   }
 
-  // 6. Natural contextual reply reflecting the student's question
+  // 6. Conversational guidance reflecting the student's question
   const cleanSnippet = message.length > 60 ? `${message.substring(0, 58)}...` : message;
   return {
     conversation_id: conversationId,
-    reply: `I really appreciate you being open about this. When you bring up "${cleanSnippet}", it touches on an experience almost every student grapples with during placement season.\n\nBetween timed online assessments, rapid-fire technical rounds, and managerial evaluations, the system creates an artificial pressure cooker that rarely resembles real software engineering. The students who cross the finish line aren't the ones who never stumble; they're the ones who give themselves permission to rest tonight and take one small, focused step tomorrow without letting one outcome define their self-worth.\n\nI'm right in your corner. What is one specific area or question you'd like to unpack next?`,
-    category: 'cbt_framework',
+    reply: `I hear you, and it's great that you're thinking through this. When you bring up "${cleanSnippet}", it touches on an important part of navigating placement season and building your career.\n\nEvery engineer's path looks different, and the most important skill is approaching each step with curiosity and consistent practice rather than rushing or putting undue pressure on yourself.\n\nI'm right here in your corner. What specific part of this would you like to explore or practice together?`,
+    category: 'conversational_support',
     confidence: 0.92,
-    support_need: 'perspective',
-    reason: 'Personalized perspective shift acknowledging student query.',
+    support_need: 'guidance',
+    reason: 'Contextual student perspective acknowledging query.',
     evidence: [],
     response_mode: 'grounded_advice'
   };

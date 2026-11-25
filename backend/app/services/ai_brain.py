@@ -1,30 +1,68 @@
 """
-Gemini AI Brain — Interview Conductor
-Uses the new google-genai SDK (replaces deprecated google-generativeai).
-Model: gemini-1.5-flash (higher free-tier quota than gemini-2.0-flash)
+NeuroPrep AI Brain — Multi-Provider Interview Conductor
+=======================================================
+Routes each module to the best free model for speed, context, and quality:
+
+  Module 1  — evaluate_answer()         → Groq   : openai/gpt-oss-120b   (120B, ~1s, $0)
+  Module 2  — get_next_question()       → Groq   : llama-3.1-8b-instant  (8B, lowest latency, $0)
+  Module 3  — start greeting/parse      → Gemini : gemini-2.5-flash-lite  (1M ctx, $0)
+  Module 4  — generate_report()         → OpenRouter: nvidia/nemotron-ultra-253b-v1:free (frontier, $0)
+  Module 5  — transcribe_audio_bytes()  → Groq   : whisper-large-v3-turbo (~200ms, $0)
+  Module 6  — 429 failover              → Gemini : gemini-2.0-flash-lite   (independent bucket, $0)
+
+All providers degrade gracefully to Python heuristic fallbacks on error.
 """
 import os
 import re
 import json
+import asyncio
+import logging
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env"))
 
-_API_KEY = os.getenv("GEMINI_API_KEY", "")
-_GEMINI_AVAILABLE = bool(_API_KEY and _API_KEY != "your_gemini_api_key_here")
+logger = logging.getLogger(__name__)
 
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")   # Active, fast, reliable model
+# ── API Keys ───────────────────────────────────────────────────────────────────
+_GEMINI_API_KEY    = os.getenv("GEMINI_API_KEY", "")
+_GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
+_OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+
+_GEMINI_AVAILABLE     = bool(_GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here")
+_GROQ_AVAILABLE       = bool(_GROQ_API_KEY and _GROQ_API_KEY != "your_groq_api_key_here")
+_OPENROUTER_AVAILABLE = bool(_OPENROUTER_API_KEY and _OPENROUTER_API_KEY != "your_openrouter_api_key_here")
+
+# ── Per-module model names ─────────────────────────────────────────────────────
+MODEL_EVALUATE   = os.getenv("MODEL_EVALUATE",   "openai/gpt-oss-120b")        # Module 1 — Groq
+MODEL_QUESTION   = os.getenv("MODEL_QUESTION",   "llama-3.1-8b-instant")       # Module 2 — Groq
+MODEL_GREETING   = os.getenv("MODEL_GREETING",   "gemini-2.5-flash-lite-preview-06-17") # Module 3 — Google AI Studio
+MODEL_REPORT     = os.getenv("MODEL_REPORT",     "nvidia/nemotron-ultra-253b-v1:free")  # Module 4 — OpenRouter
+MODEL_WHISPER    = os.getenv("MODEL_WHISPER",    "whisper-large-v3-turbo")     # Module 5 — Groq
+MODEL_FAILOVER   = os.getenv("MODEL_FAILOVER",   "gemini-2.0-flash-lite")      # Module 6 — Gemini fallback
+
+# Legacy single-model constant kept for any imports outside this file
+MODEL_NAME = MODEL_GREETING
+
+# ── Provider base URLs ─────────────────────────────────────────────────────────
+_GROQ_BASE        = "https://api.groq.com/openai/v1"
+_OPENROUTER_BASE  = "https://openrouter.ai/api/v1"
 
 
-def _get_client():
+# ══════════════════════════════════════════════════════════════════════════════
+# PROVIDER CLIENTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _get_gemini_client(api_key: str | None = None):
     from google import genai
-    return genai.Client(api_key=_API_KEY)
+    return genai.Client(api_key=api_key or _GEMINI_API_KEY)
 
 
-def _get_config(system_instruction: str = None, max_output_tokens: int = 800, response_mime_type: str = None):
+def _get_gemini_config(system_instruction: str = None, max_output_tokens: int = 800,
+                       response_mime_type: str = None):
     try:
         from google.genai import types
-        cfg = {"max_output_tokens": max_output_tokens}
+        cfg: dict = {"max_output_tokens": max_output_tokens}
         if system_instruction:
             cfg["system_instruction"] = system_instruction
         if response_mime_type:
@@ -37,6 +75,115 @@ def _get_config(system_instruction: str = None, max_output_tokens: int = 800, re
         if response_mime_type:
             cfg["response_mime_type"] = response_mime_type
         return cfg
+
+
+async def _groq_chat(
+    messages: list[dict],
+    model: str,
+    max_tokens: int = 800,
+    temperature: float = 0.4,
+    response_format: dict | None = None,
+) -> str:
+    """
+    Call Groq's OpenAI-compatible chat-completions endpoint asynchronously.
+    Returns the assistant text or raises on HTTP error.
+    """
+    if not _GROQ_AVAILABLE:
+        raise RuntimeError("Groq API key not configured")
+
+    payload: dict = {
+        "model":       model,
+        "messages":    messages,
+        "max_tokens":  max_tokens,
+        "temperature": temperature,
+    }
+    if response_format:
+        payload["response_format"] = response_format
+
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        resp = await client.post(
+            f"{_GROQ_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {_GROQ_API_KEY}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+
+
+async def _openrouter_chat(
+    messages: list[dict],
+    model: str,
+    max_tokens: int = 1200,
+    temperature: float = 0.4,
+    response_format: dict | None = None,
+) -> str:
+    """
+    Call OpenRouter's OpenAI-compatible chat-completions endpoint asynchronously.
+    """
+    if not _OPENROUTER_AVAILABLE:
+        raise RuntimeError("OpenRouter API key not configured")
+
+    payload: dict = {
+        "model":       model,
+        "messages":    messages,
+        "max_tokens":  max_tokens,
+        "temperature": temperature,
+    }
+    if response_format:
+        payload["response_format"] = response_format
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            f"{_OPENROUTER_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {_OPENROUTER_API_KEY}",
+                "Content-Type":  "application/json",
+                "HTTP-Referer":  "https://neroprep.app",
+                "X-Title":       "NeuroPrep AI Interview Engine",
+            },
+            json=payload,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+
+
+async def _gemini_text(
+    prompt_or_contents,
+    model: str = None,
+    system_instruction: str = None,
+    max_output_tokens: int = 800,
+    response_mime_type: str = None,
+) -> str:
+    """
+    Thin async wrapper around the google-genai SDK (runs in thread to avoid blocking event loop).
+    """
+    if not _GEMINI_AVAILABLE:
+        raise RuntimeError("Gemini API key not configured")
+
+    client = _get_gemini_client()
+    cfg    = _get_gemini_config(system_instruction, max_output_tokens, response_mime_type)
+    _model = model or MODEL_GREETING
+
+    result = await asyncio.to_thread(
+        client.models.generate_content,
+        model=_model,
+        contents=prompt_or_contents,
+        config=cfg,
+    )
+    return result.text.strip()
+
+
+# Keep backward-compat aliases used by external imports
+def _get_client():
+    return _get_gemini_client()
+
+def _get_config(system_instruction=None, max_output_tokens=800, response_mime_type=None):
+    return _get_gemini_config(system_instruction, max_output_tokens, response_mime_type)
 
 
 def _clean_and_parse_json(raw_text: str) -> dict:
@@ -674,162 +821,168 @@ async def get_next_question(
     blueprint: dict = None,
     question_records: list = None,
 ) -> str:
-    if not _GEMINI_AVAILABLE:
-        return _fallback_question(config, question_count, stress_index, is_first)
+    # ── Module 2: Groq llama-3.1-8b-instant (14,400 RPD free, ~0.3s latency) ──
+    # Blueprint already chose the concept; 8B model excels at fast conversational phrasing.
+    # Fallback chain: Groq → Gemini (failover bucket) → Python heuristic
 
-    try:
-        client = _get_client()
+    # ── Build system prompt with blueprint + coverage block ──────────────
+    system = _build_prompt(
+        config, question_count, stress_index,
+        strong_topics, weak_topics,
+        blueprint=blueprint,
+        question_records=question_records,
+    )
 
-        # ── Build system prompt with blueprint + coverage block ──────────────
-        system = _build_prompt(
-            config, question_count, stress_index,
-            strong_topics, weak_topics,
-            blueprint=blueprint,
-            question_records=question_records,
-        )
+    # ── Build messages list (OpenAI format for Groq) ─────────────────────
+    messages: list[dict] = [{"role": "system", "content": system}]
 
-        # ── Build conversation contents with strict alternating turns ─────────
-        contents = []
-        if is_first:
-            contents.append({
-                "role": "user",
-                "parts": [{"text": "Begin the interview. Greet the candidate warmly and ask your first question based on the CANDIDATE PROFILE above."}]
-            })
+    if is_first:
+        messages.append({
+            "role": "user",
+            "content": "Begin the interview. Greet the candidate warmly and ask your first question based on the CANDIDATE PROFILE above."
+        })
+    else:
+        # Convert {role, text} history to OpenAI messages format
+        for msg in conversation_history[-16:]:
+            text = msg.get("text", "").strip()
+            if not text:
+                continue
+            oai_role = "user" if msg.get("role") == "user" else "assistant"
+            if messages and messages[-1]["role"] == oai_role:
+                messages[-1]["content"] += f"\n{text}"
+            else:
+                messages.append({"role": oai_role, "content": text})
+
+        bp_hint = ""
+        if blueprint:
+            bp_hint = f" [Blueprint Focus: Test '{blueprint.get('concept')}' at '{blueprint.get('dimension')}' cognitive level]"
+
+        track_id = str(config.get("trackId", "default")).lower()
+        company  = config.get("company", "the company")
+        role_name = config.get("role", "this role")
+
+        # Grab the last user answer from conversation_history for explicit grounding
+        last_user_answer = ""
+        for msg in reversed(conversation_history[-12:]):
+            if msg.get("role") == "user":
+                last_user_answer = msg.get("text", "")[:400]
+                break
+
+        last_ans_block = (
+            f"\n\n=== CANDIDATE'S LAST SPOKEN ANSWER (GROUND YOUR NEXT QUESTION DIRECTLY IN THIS) ===\n"
+            f"{last_user_answer}\n"
+            f"{'=' * 65}"
+        ) if last_user_answer else ""
+
+        if track_id == "hr":
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[MAYA HR DIRECTIVE — NEXT QUESTION RULES:]\n"
+                f"1. Pick ONE specific detail, project, decision, or metric from the candidate's last spoken answer above and build your question around it.\n"
+                f"2. Frame the question with natural reference to {company} and the {role_name} position.\n"
+                f"3. If their last answer used 'we did X', probe for individual ownership ('What was your exact personal role?'). If no measurable result was stated, probe for the outcome.\n"
+                f"4. Begin with a natural conversational bridge, then ask a punchy 1-2 sentence question.\n"
+                f"5. {bp_hint}"
+            )
+        elif track_id in ("dsa", "coding"):
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[ARIA ALGORITHM & CODE EVALUATOR DIRECTIVE:]\n"
+                f"1. Critique the algorithmic logic, data structure choice, or code from the candidate's last answer.\n"
+                f"2. Demand exact Big-O Time & Space complexity analysis, challenge an inner loop bottleneck, or test a tricky edge case (nulls, duplicates, overflows).\n"
+                f"3. Start with an authentic conversational bridge (e.g., 'Makes sense on the lookup path.', 'Good intuition on the pointer movement.'), followed by a crisp 1-2 sentence algorithmic question.\n"
+                f"4. {bp_hint}"
+            )
+        elif track_id in ("system_design", "lld"):
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[DANIEL DISTRIBUTED ARCHITECT & LLD DIRECTIVE:]\n"
+                f"1. Directly challenge the architectural tier, database model, or class abstraction from the candidate's last answer.\n"
+                f"2. Probe a concrete failure scenario: network partition, replication lag, single point of failure (SPOF), cache stampede, or SOLID tight coupling.\n"
+                f"3. Start with a peer-architect conversational bridge ('Solid partitioning approach.', 'Understood on the write path.'), then deliver a 1-2 sentence architectural challenge.\n"
+                f"4. {bp_hint}"
+            )
+        elif track_id in ("tech", "project"):
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[ALEX SYSTEMS & CODE LEAD DIRECTIVE:]\n"
+                f"1. Drill into the technical mechanics of what they just explained (memory models, concurrency, database indexes, or framework internals).\n"
+                f"2. Ask why they chose that specific implementation over alternatives, or what happens when an upstream dependency fails.\n"
+                f"3. Start with a quick human acknowledgment ('Fair point on that.', 'Got it.'), then ask a razor-sharp 1-2 sentence technical probe.\n"
+                f"4. {bp_hint}"
+            )
+        elif track_id in ("behavioral", "managerial"):
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[SARAH / MAYA LEADERSHIP & BEHAVIORAL DIRECTIVE:]\n"
+                f"1. Analyze the candidate's STAR narrative from their last answer.\n"
+                f"2. Drill into interpersonal conflict, managing ambiguity, technical pushback, or prioritization trade-offs under deadlines.\n"
+                f"3. Open with a warm, perceptive acknowledgment, then ask a concise 1-2 sentence behavioral question.\n"
+                f"4. {bp_hint}"
+            )
+        elif track_id == "stress":
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[VICTOR PRESSURE & RESILIENCE DIRECTIVE:]\n"
+                f"1. Skeptically question an assumption or complexity claimed in the candidate's last answer ('Are you confident in that proof?', 'Under peak SLA, that will exhaust worker threads. How do you mitigate it immediately?').\n"
+                f"2. Test their composure, logical resilience, and emotional non-defensiveness.\n"
+                f"3. Keep to 1-2 direct, authoritative sentences without being unprofessional or hostile.\n"
+                f"4. {bp_hint}"
+            )
+        elif track_id == "ai_ml":
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[NOVA STAFF AI/ML RESEARCH DIRECTIVE:]\n"
+                f"1. Drill into the loss formulation, attention geometry, vector retrieval mechanics, or inference latency trade-offs from their answer.\n"
+                f"2. Ask a focused 1-2 sentence question testing fundamental ML math and production MLOps rather than superficial API calls.\n"
+                f"3. {bp_hint}"
+            )
+        elif track_id == "cybersecurity":
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[CIPHER PRINCIPAL SECURITY ARCHITECT DIRECTIVE:]\n"
+                f"1. Challenge the candidate on threat vectors (SSRF, privilege escalation, mTLS, JWT tampering, SQLi) in the scenario they just described.\n"
+                f"2. Ask how they enforce Zero Trust boundaries in a crisp 1-2 sentence probe.\n"
+                f"3. {bp_hint}"
+            )
+        elif track_id in ("cloud", "devops"):
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[MARCUS / SOREN CLOUD & PLATFORM DIRECTIVE:]\n"
+                f"1. Probe multi-region failover, egress cost traps, Kubernetes pod disruption budgets, or GitOps canary rollbacks from their last answer.\n"
+                f"2. Ask a pragmatic 1-2 sentence infrastructure question.\n"
+                f"3. {bp_hint}"
+            )
         else:
-            for msg in conversation_history[-16:]:
-                role = "user" if msg.get("role") == "user" else "model"
-                text = msg.get("text", "").strip()
-                if not text:
-                    continue
-                if contents and contents[-1]["role"] == role:
-                    contents[-1]["parts"][0]["text"] += f"\n{text}"
-                else:
-                    contents.append({"role": role, "parts": [{"text": text}]})
+            directive = (
+                f"{last_ans_block}"
+                f"\n\n[MORGAN SENIOR INTERVIEWER DIRECTIVE:]\n"
+                f"1. Formulate your next question directly grounded in the candidate's last answer above.\n"
+                f"2. Start with a natural 2-4 word human bridge (e.g. 'Makes sense.', 'Understood on that.') and ask a concise 1-2 sentence follow-up.\n"
+                f"3. {bp_hint}"
+            )
 
-            bp_hint = ""
-            if blueprint:
-                bp_hint = f" [Blueprint Focus: Test '{blueprint.get('concept')}' at '{blueprint.get('dimension')}' cognitive level]"
+        # Append directive to last user message or add new one
+        if messages and messages[-1]["role"] == "user":
+            messages[-1]["content"] += directive
+        else:
+            messages.append({"role": "user", "content": directive})
 
-            track_id = str(config.get("trackId", "default")).lower()
-            company  = config.get("company", "the company")
-            role     = config.get("role", "this role")
-
-            # Grab the last user answer from conversation_history for explicit grounding
-            last_user_answer = ""
-            for msg in reversed(conversation_history[-12:]):
-                if msg.get("role") == "user":
-                    last_user_answer = msg.get("text", "")[:400]
-                    break
-
-            last_ans_block = (
-                f"\n\n=== CANDIDATE'S LAST SPOKEN ANSWER (GROUND YOUR NEXT QUESTION DIRECTLY IN THIS) ===\n"
-                f"{last_user_answer}\n"
-                f"=" * 65
-            ) if last_user_answer else ""
-
-            if track_id == "hr":
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[MAYA HR DIRECTIVE — NEXT QUESTION RULES:]\n"
-                    f"1. Pick ONE specific detail, project, decision, or metric from the candidate's last spoken answer above and build your question around it.\n"
-                    f"2. Frame the question with natural reference to {company} and the {role} position.\n"
-                    f"3. If their last answer used 'we did X', probe for individual ownership ('What was your exact personal role?'). If no measurable result was stated, probe for the outcome.\n"
-                    f"4. Begin with a natural conversational bridge, then ask a punchy 1-2 sentence question.\n"
-                    f"5. {bp_hint}"
-                )
-            elif track_id in ("dsa", "coding"):
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[ARIA ALGORITHM & CODE EVALUATOR DIRECTIVE:]\n"
-                    f"1. Critique the algorithmic logic, data structure choice, or code from the candidate's last answer.\n"
-                    f"2. Demand exact Big-O Time & Space complexity analysis, challenge an inner loop bottleneck, or test a tricky edge case (nulls, duplicates, overflows).\n"
-                    f"3. Start with an authentic conversational bridge (e.g., 'Makes sense on the lookup path.', 'Good intuition on the pointer movement.'), followed by a crisp 1-2 sentence algorithmic question.\n"
-                    f"4. {bp_hint}"
-                )
-            elif track_id in ("system_design", "lld"):
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[DANIEL DISTRIBUTED ARCHITECT & LLD DIRECTIVE:]\n"
-                    f"1. Directly challenge the architectural tier, database model, or class abstraction from the candidate's last answer.\n"
-                    f"2. Probe a concrete failure scenario: network partition, replication lag, single point of failure (SPOF), cache stampede, or SOLID tight coupling.\n"
-                    f"3. Start with a peer-architect conversational bridge ('Solid partitioning approach.', 'Understood on the write path.'), then deliver a 1-2 sentence architectural challenge.\n"
-                    f"4. {bp_hint}"
-                )
-            elif track_id in ("tech", "project"):
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[ALEX SYSTEMS & CODE LEAD DIRECTIVE:]\n"
-                    f"1. Drill into the technical mechanics of what they just explained (memory models, concurrency, database indexes, or framework internals).\n"
-                    f"2. Ask why they chose that specific implementation over alternatives, or what happens when an upstream dependency fails.\n"
-                    f"3. Start with a quick human acknowledgment ('Fair point on that.', 'Got it.'), then ask a razor-sharp 1-2 sentence technical probe.\n"
-                    f"4. {bp_hint}"
-                )
-            elif track_id in ("behavioral", "managerial"):
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[SARAH / MAYA LEADERSHIP & BEHAVIORAL DIRECTIVE:]\n"
-                    f"1. Analyze the candidate's STAR narrative from their last answer.\n"
-                    f"2. Drill into interpersonal conflict, managing ambiguity, technical pushback, or prioritization trade-offs under deadlines.\n"
-                    f"3. Open with a warm, perceptive acknowledgment, then ask a concise 1-2 sentence behavioral question.\n"
-                    f"4. {bp_hint}"
-                )
-            elif track_id == "stress":
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[VICTOR PRESSURE & RESILIENCE DIRECTIVE:]\n"
-                    f"1. Skeptically question an assumption or complexity claimed in the candidate's last answer ('Are you confident in that proof?', 'Under peak SLA, that will exhaust worker threads. How do you mitigate it immediately?').\n"
-                    f"2. Test their composure, logical resilience, and emotional non-defensiveness.\n"
-                    f"3. Keep to 1-2 direct, authoritative sentences without being unprofessional or hostile.\n"
-                    f"4. {bp_hint}"
-                )
-            elif track_id == "ai_ml":
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[NOVA STAFF AI/ML RESEARCH DIRECTIVE:]\n"
-                    f"1. Drill into the loss formulation, attention geometry, vector retrieval mechanics, or inference latency trade-offs from their answer.\n"
-                    f"2. Ask a focused 1-2 sentence question testing fundamental ML math and production MLOps rather than superficial API calls.\n"
-                    f"3. {bp_hint}"
-                )
-            elif track_id == "cybersecurity":
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[CIPHER PRINCIPAL SECURITY ARCHITECT DIRECTIVE:]\n"
-                    f"1. Challenge the candidate on threat vectors (SSRF, privilege escalation, mTLS, JWT tampering, SQLi) in the scenario they just described.\n"
-                    f"2. Ask how they enforce Zero Trust boundaries in a crisp 1-2 sentence probe.\n"
-                    f"3. {bp_hint}"
-                )
-            elif track_id in ("cloud", "devops"):
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[MARCUS / SOREN CLOUD & PLATFORM DIRECTIVE:]\n"
-                    f"1. Probe multi-region failover, egress cost traps, Kubernetes pod disruption budgets, or GitOps canary rollbacks from their last answer.\n"
-                    f"2. Ask a pragmatic 1-2 sentence infrastructure question.\n"
-                    f"3. {bp_hint}"
-                )
-            else:
-                directive = (
-                    f"{last_ans_block}"
-                    f"\n\n[MORGAN SENIOR INTERVIEWER DIRECTIVE:]\n"
-                    f"1. Formulate your next question directly grounded in the candidate's last answer above.\n"
-                    f"2. Start with a natural 2-4 word human bridge (e.g. 'Makes sense.', 'Understood on that.') and ask a concise 1-2 sentence follow-up.\n"
-                    f"3. {bp_hint}"
-                )
-
-            if contents and contents[-1]["role"] == "user":
-                contents[-1]["parts"][0]["text"] += directive
-            else:
-                contents.append({"role": "user", "parts": [{"text": directive}]})
-
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=contents,
-            config=_get_config(system_instruction=system, max_output_tokens=600),
-        )
-        return response.text.strip()
-
-    except Exception as e:
-        print(f"[AIBrain] get_next_question error: {e}")
-        return _fallback_question(config, question_count, stress_index, is_first)
+    # ── Call Groq (Module 2: llama-3.1-8b-instant) ──────────────────────────────
+    try:
+        return await _groq_chat(messages, model=MODEL_QUESTION, max_tokens=600, temperature=0.5)
+    except Exception as e_groq:
+        logger.warning(f"[get_next_question] Groq failed ({e_groq}), trying Gemini failover")
+        try:
+            return await _gemini_text(
+                messages[-1]["content"],
+                model=MODEL_FAILOVER,
+                system_instruction=system,
+                max_output_tokens=600,
+            )
+        except Exception as e_gem:
+            logger.warning(f"[get_next_question] Gemini failover failed ({e_gem})")
+            return _fallback_question(config, question_count, stress_index, is_first)
 
 
 async def evaluate_answer(
@@ -844,11 +997,10 @@ async def evaluate_answer(
     Includes correctness verdict (is_correct, verdict, what_was_right, what_was_missing),
     star_depth, communication, and concept mastery metadata.
     """
-    if not _GEMINI_AVAILABLE:
+    if not (_GROQ_AVAILABLE or _GEMINI_AVAILABLE):
         return _fallback_evaluation(answer, blueprint, question=question, config=config)
 
     try:
-        client  = _get_client()
         track   = config.get("trackId", "default")
         profile = TRACK_PROFILES.get(track, TRACK_PROFILES["default"])
         metrics = profile["evaluation_metrics"]
@@ -859,7 +1011,7 @@ async def evaluate_answer(
         ])
         short_ans = (answer or "")[:800]
 
-        # Include blueprint context so Gemini can correctly identify the concepts
+        # Include blueprint context so the model can correctly identify the concepts
         blueprint_context = ""
         if blueprint:
             blueprint_context = (
@@ -891,16 +1043,38 @@ async def evaluate_answer(
             f'}}'
         )
 
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-            config=_get_config(max_output_tokens=700),
-        )
-        text = response.text.strip()
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"): text = text[4:]
-        result = json.loads(text.strip())
+        # ── Module 1: Groq openai/gpt-oss-120b — 120B reasoning, ~1s, $0 ─────────
+        raw_text: str | None = None
+        try:
+            raw_text = await asyncio.wait_for(
+                _groq_chat(
+                    [{"role": "user", "content": prompt}],
+                    model=MODEL_EVALUATE,
+                    max_tokens=700,
+                    temperature=0.2,
+                    response_format={"type": "json_object"},
+                ),
+                timeout=7.5,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("[evaluate_answer] Groq timed out, trying Gemini failover")
+        except Exception as e_groq:
+            logger.warning(f"[evaluate_answer] Groq failed ({e_groq}), trying Gemini failover")
+
+        # ── Gemini failover (Module 6 bucket — independent quota) ───────────────
+        if raw_text is None and _GEMINI_AVAILABLE:
+            try:
+                raw_text = await asyncio.wait_for(
+                    _gemini_text(prompt, model=MODEL_FAILOVER, max_output_tokens=700),
+                    timeout=7.5,
+                )
+            except Exception as e_gem:
+                logger.warning(f"[evaluate_answer] Gemini failover failed ({e_gem})")
+
+        if raw_text is None:
+            return _fallback_evaluation(answer, blueprint, question=question, config=config)
+
+        result = _clean_and_parse_json(raw_text)
 
         # Ensure core correctness and mastery fields always exist
         over_score = result.get("overall", 70)
@@ -929,11 +1103,7 @@ async def evaluate_answer(
 
 
 async def generate_report(session_data: dict) -> dict:
-    if not _GEMINI_AVAILABLE:
-        return _fallback_report(session_data)
-
     try:
-        client  = _get_client()
         config  = session_data.get("config", {})
         answers = session_data.get("answers", [])
         rubrics = session_data.get("rubric_scores", [])
@@ -1065,12 +1235,36 @@ async def generate_report(session_data: dict) -> dict:
             '"ideal_answers":["1-2 sentence ideal answer for Q1","1-2 sentence ideal answer for Q2"]}'
         )
 
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=narrative_prompt,
-            config=_get_config(max_output_tokens=1000, response_mime_type="application/json"),
-        )
-        narr = _clean_and_parse_json(response.text)
+        # ── Module 4: OpenRouter nvidia/nemotron-ultra — frontier reasoning, $0, once per session ──
+        narr: dict = {}
+        try:
+            raw = await asyncio.wait_for(
+                _openrouter_chat(
+                    [{"role": "user", "content": narrative_prompt}],
+                    model=MODEL_REPORT,
+                    max_tokens=1200,
+                    temperature=0.3,
+                    response_format={"type": "json_object"},
+                ),
+                timeout=28.0,
+            )
+            narr = _clean_and_parse_json(raw)
+        except Exception as e_or:
+            logger.warning(f"[generate_report] OpenRouter failed ({e_or}), trying Gemini failover")
+            try:
+                raw = await asyncio.wait_for(
+                    _gemini_text(
+                        narrative_prompt,
+                        model=MODEL_FAILOVER,
+                        max_output_tokens=1200,
+                        response_mime_type="application/json",
+                    ),
+                    timeout=28.0,
+                )
+                narr = _clean_and_parse_json(raw)
+            except Exception as e_gem:
+                logger.warning(f"[generate_report] Gemini failover failed ({e_gem}), using Python fallback")
+                return _fallback_report(session_data)
 
         ideals = narr.get("ideal_answers", [])
         question_reviews = []
@@ -1515,15 +1709,36 @@ def _fallback_report(session_data):
 
 async def transcribe_audio_bytes(audio_bytes: bytes, mime_type: str = "audio/webm") -> dict:
     """
-    Transcribe raw recorded audio bytes using Gemini multimodal audio model.
-    Falls back gracefully if unavailable.
+    Transcribe raw recorded audio bytes.
+    Primary: Groq Whisper (Module 5 — whisper-large-v3-turbo, ~200ms, $0).
+    Fallback: Gemini multimodal audio model.
     """
+    # ── Module 5: Groq Whisper — /openai/v1/audio/transcriptions ────────────────
+    if _GROQ_AVAILABLE:
+        try:
+            import io
+            async with httpx.AsyncClient(timeout=15.0) as hx:
+                files = {"file": ("audio.webm", io.BytesIO(audio_bytes), mime_type)}
+                data  = {"model": MODEL_WHISPER, "response_format": "json", "language": "en"}
+                resp  = await hx.post(
+                    f"{_GROQ_BASE}/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {_GROQ_API_KEY}"},
+                    files=files,
+                    data=data,
+                )
+                resp.raise_for_status()
+                transcript = resp.json().get("text", "").strip()
+                return {"transcript": transcript, "source": "groq-whisper", "confidence": 0.97}
+        except Exception as e:
+            logger.warning(f"[transcribe] Groq Whisper failed ({e}), trying Gemini multimodal")
+
+    # ── Gemini multimodal fallback ───────────────────────────────────────────────
     if not _GEMINI_AVAILABLE:
         return {"transcript": "", "source": "offline", "confidence": 0.0}
 
     try:
         from google.genai import types
-        client = _get_client()
+        client = _get_gemini_client()
 
         part = types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
         prompt = (
@@ -1539,16 +1754,16 @@ async def transcribe_audio_bytes(audio_bytes: bytes, mime_type: str = "audio/web
 
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model=MODEL_NAME,
+            model=MODEL_GREETING,
             contents=[part, prompt],
-            config=_get_config(max_output_tokens=1000)
+            config=_get_gemini_config(max_output_tokens=1000),
         )
 
         transcript = response.text.strip() if response and response.text else ""
         return {"transcript": transcript, "source": "gemini-audio", "confidence": 0.98}
 
     except Exception as e:
-        print(f"[AIBrain] transcribe_audio_bytes error: {e}")
+        logger.warning(f"[transcribe] Gemini fallback failed: {e}")
         return {"transcript": "", "error": str(e), "source": "fallback"}
 
 

@@ -1,107 +1,90 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * Dual-state royalty-free ($0) real-human video interviewer personas.
- * - `videoUrl`: plays with smooth crossfade when `aiStatus === 'speaking'`
- * - `idleVideoUrl` (optional): plays when listening/thinking; if omitted,
- *   crossfades cleanly to an animated lifelike breathing portrait (`posterUrl`)
- *   so the interviewer never mouths words while the candidate is speaking.
+ * 100% Free ($0) Real-Human Talking Face Personas.
+ * Uses CORS-enabled high-res portraits (200 OK, Access-Control-Allow-Origin: *)
+ * animated at 60fps via HTML5 Canvas (head sway, breathing, eye blink, and
+ * speech-cadence jaw/mouth articulation) so it never breaks on 403 video hotlinks.
  */
 export const SADTALKER_TRACK_PERSONAS = {
   hr: {
     name: 'Maya',
     role: 'HR Talent Lead',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-woman-talking-at-a-conference-video-call-42792-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   tech: {
     name: 'Alex',
     role: 'Technical Specialist',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-having-a-video-call-in-front-of-his-laptop-42805-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   dsa: {
     name: 'Aria',
     role: 'DSA Evaluator',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-woman-talking-at-a-conference-video-call-42792-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   coding: {
     name: 'Aria',
     role: 'Live Coding Lead',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-woman-talking-at-a-conference-video-call-42792-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   system_design: {
     name: 'Daniel',
     role: 'System Architect',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-businessman-in-suit-having-a-video-call-42820-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   lld: {
     name: 'Daniel',
     role: 'LLD Specialist',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-businessman-in-suit-having-a-video-call-42820-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   behavioral: {
     name: 'Maya',
     role: 'Behavioral Evaluator',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-sitting-on-a-desk-talking-on-a-video-call-42813-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   managerial: {
     name: 'Sarah',
     role: 'Engineering Manager',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-sitting-on-a-desk-talking-on-a-video-call-42813-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   project: {
     name: 'Alex',
     role: 'Project Viva Examiner',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-having-a-video-call-in-front-of-his-laptop-42805-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   resume: {
     name: 'Sarah',
     role: 'Resume Examiner',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-sitting-on-a-desk-talking-on-a-video-call-42813-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   stress: {
     name: 'Victor',
     role: 'Stress Interviewer',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-businessman-in-suit-having-a-video-call-42820-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   ai_ml: {
     name: 'Nova',
     role: 'AI / ML Specialist',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-woman-talking-at-a-conference-video-call-42792-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   cybersecurity: {
     name: 'Cipher',
     role: 'Security Architect',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-having-a-video-call-in-front-of-his-laptop-42805-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   cloud: {
     name: 'Marcus',
     role: 'Cloud Architect',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-businessman-in-suit-having-a-video-call-42820-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   devops: {
     name: 'Soren',
     role: 'DevOps Engineer',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-having-a-video-call-in-front-of-his-laptop-42805-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   default: {
     name: 'Morgan',
     role: 'AI Interviewer',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-woman-talking-at-a-conference-video-call-42792-large.mp4',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   }
 };
@@ -114,48 +97,151 @@ export default function SadTalkerRealHumanAvatar({
   width = '100%',
   height = '100%'
 }) {
-  const speakingVideoRef = useRef(null);
-  const idleVideoRef = useRef(null);
-  const [speakingLoaded, setSpeakingLoaded] = useState(false);
-  const [speakingError, setSpeakingError] = useState(false);
-  const [idleError, setIdleError] = useState(false);
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
+  const statusRef = useRef(aiStatus);
+  const textRef = useRef(spokenText);
+  const [canvasReady, setCanvasReady] = useState(false);
+
+  statusRef.current = aiStatus;
+  textRef.current = spokenText;
 
   const cleanTrackId = String(trackId || 'hr').toLowerCase();
   const persona = SADTALKER_TRACK_PERSONAS[cleanTrackId] || SADTALKER_TRACK_PERSONAS.default;
   const isSpeaking = aiStatus === 'speaking';
-  const hasIdleVideo = Boolean(persona.idleVideoUrl) && !idleError;
 
-  // Sync dual-state video playback without slow-motion mouthing during listening
+  // Load CORS-enabled portrait image once per persona
   useEffect(() => {
-    const speakVid = speakingVideoRef.current;
-    const idleVid = idleVideoRef.current;
+    let cancelled = false;
+    setCanvasReady(false);
 
-    if (speakVid) {
-      speakVid.muted = true;
-      speakVid.volume = 0;
-      if (isSpeaking) {
-        speakVid.playbackRate = 1.0;
-        speakVid.play().catch(() => {});
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (cancelled) return;
+      imgRef.current = img;
+      setCanvasReady(true);
+    };
+    img.onerror = () => {
+      if (cancelled) return;
+      imgRef.current = null;
+      setCanvasReady(false);
+    };
+    img.src = persona.posterUrl;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [persona.posterUrl]);
+
+  // 60fps Canvas Talking-Face Rig (head sway, breathing, eye blink, jaw/mouth articulation)
+  useEffect(() => {
+    if (!canvasReady) return;
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let rafId = 0;
+    const startTime = performance.now();
+
+    const render = (now) => {
+      const t = (now - startTime) / 1000;
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const speaking = statusRef.current === 'speaking';
+      const thinking = statusRef.current === 'thinking';
+
+      ctx.clearRect(0, 0, cw, ch);
+
+      // Compute cover-fit source rectangle focused on upper-center portrait
+      const imgAspect = img.width / img.height;
+      const boxAspect = cw / ch;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (imgAspect > boxAspect) {
+        sw = img.height * boxAspect;
+        sx = (img.width - sw) / 2;
       } else {
-        speakVid.pause();
+        sh = img.width / boxAspect;
+        sy = Math.max(0, (img.height - sh) * 0.18);
       }
-    }
 
-    if (idleVid && hasIdleVideo) {
-      idleVid.muted = true;
-      idleVid.volume = 0;
-      if (!isSpeaking && aiStatus !== 'connecting') {
-        idleVid.playbackRate = 0.9;
-        idleVid.play().catch(() => {});
-      } else {
-        idleVid.pause();
+      // 1. Organic breathing & head micro-motion
+      const breathe = 1.045 + Math.sin(t * 1.4) * 0.008;
+      const headSwayX = speaking
+        ? Math.sin(t * 2.1) * 1.8 + Math.cos(t * 0.9) * 0.8
+        : Math.sin(t * 0.7) * 0.9;
+      const headNodY = speaking
+        ? Math.sin(t * 3.2) * 1.4
+        : thinking
+          ? Math.sin(t * 0.8) * 1.1
+          : Math.sin(t * 1.2) * 0.7;
+      const headTilt = speaking
+        ? Math.sin(t * 1.3) * 0.018
+        : Math.sin(t * 0.55) * 0.009;
+
+      ctx.save();
+      ctx.translate(cw / 2 + headSwayX, ch / 2 + headNodY);
+      ctx.rotate(headTilt);
+      ctx.scale(breathe, breathe);
+
+      // Draw base portrait
+      ctx.drawImage(img, sx, sy, sw, sh, -cw / 2, -ch / 2, cw, ch);
+
+      // 2. Real-time speech-cadence jaw & mouth articulation when speaking
+      if (speaking) {
+        // Multi-harmonic syllable envelope (4–7 Hz speech cadence with natural pauses)
+        const textSeed = (textRef.current?.length || 12) * 0.13;
+        const phraseGate = 0.55 + 0.45 * Math.sin(t * 2.4 + textSeed);
+        const syllable = Math.max(
+          0,
+          (Math.sin(t * 14.5) * 0.5 + Math.sin(t * 23.0 + 1.1) * 0.35 + 0.45) * phraseGate
+        );
+        const jawDrop = syllable * 3.4; // pixels of jaw/lower-lip articulation
+
+        if (jawDrop > 0.35) {
+          // Lower-face jaw band (roughly 50%..74% down the portrait frame)
+          const jawTopNorm = 0.50;
+          const jawHeightNorm = 0.24;
+          const srcY = sy + sh * jawTopNorm;
+          const srcH = sh * jawHeightNorm;
+          const dstY = -ch / 2 + ch * jawTopNorm;
+          const dstH = ch * jawHeightNorm;
+
+          // Subtle mouth interior shadow behind the lowered jaw
+          ctx.fillStyle = `rgba(28, 16, 16, ${Math.min(0.32, jawDrop * 0.08)})`;
+          ctx.beginPath();
+          ctx.ellipse(0, dstY + ch * 0.035, cw * 0.085, Math.max(1.2, jawDrop * 0.85), 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Articulated lower jaw slice shifted smoothly downward
+          ctx.drawImage(
+            img,
+            sx, srcY, sw, srcH,
+            -cw / 2, dstY + jawDrop, cw, dstH
+          );
+        }
       }
-    }
-  }, [aiStatus, isSpeaking, hasIdleVideo]);
 
-  const filterStyle = isEmpathyActive
-    ? 'contrast(1.06) saturate(1.12)'
-    : 'contrast(1.02)';
+      // 3. Natural eye blink every ~4.2 seconds
+      const blinkCycle = t % 4.2;
+      if (blinkCycle > 4.02) {
+        const blinkPhase = Math.sin(((blinkCycle - 4.02) / 0.18) * Math.PI);
+        if (blinkPhase > 0.05) {
+          ctx.fillStyle = `rgba(38, 28, 24, ${0.42 * blinkPhase})`;
+          ctx.fillRect(-cw * 0.22, -ch * 0.18, cw * 0.44, ch * 0.055 * blinkPhase);
+        }
+      }
+
+      ctx.restore();
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(rafId);
+  }, [canvasReady]);
 
   return (
     <div
@@ -172,82 +258,44 @@ export default function SadTalkerRealHumanAvatar({
       }}
     >
       <style>{`
-        @keyframes avatarIdleBreathe {
-          0%, 100% { transform: scale(1.03) translateY(0px); }
-          50% { transform: scale(1.055) translateY(-1px); }
-        }
         @keyframes avatarVoiceBar {
           0%, 100% { height: 4px; }
           50% { height: 12px; }
         }
       `}</style>
 
-      {/* ── Layer 1: Attentive Idle / Listening State (Poster or Idle Clip) ── */}
-      {hasIdleVideo ? (
-        <video
-          ref={idleVideoRef}
-          src={persona.idleVideoUrl}
-          poster={persona.posterUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          onError={() => setIdleError(true)}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: !isSpeaking ? 1 : 0,
-            transition: 'opacity 0.35s ease',
-            transform: 'scale(1.04)',
-            filter: filterStyle
-          }}
-        />
-      ) : (
-        <img
-          src={persona.posterUrl}
-          alt={persona.name}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            filter: filterStyle,
-            animation: !isSpeaking ? 'avatarIdleBreathe 4.5s ease-in-out infinite' : 'none',
-            transform: 'scale(1.04)'
-          }}
-        />
-      )}
+      {/* Instant Portrait Base Layer (always visible immediately) */}
+      <img
+        src={persona.posterUrl}
+        alt={persona.name}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          transform: 'scale(1.04)',
+          filter: isEmpathyActive ? 'contrast(1.06) saturate(1.12)' : 'contrast(1.02)'
+        }}
+      />
 
-      {/* ── Layer 2: Active Speaking Video (Crossfades in only when speaking) ── */}
-      {!speakingError && (
-        <video
-          ref={speakingVideoRef}
-          src={persona.videoUrl}
-          poster={persona.posterUrl}
-          loop
-          muted
-          playsInline
-          onLoadedData={() => setSpeakingLoaded(true)}
-          onError={() => setSpeakingError(true)}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: isSpeaking && speakingLoaded ? 1 : 0,
-            transition: 'opacity 0.35s ease',
-            transform: 'scale(1.04)',
-            filter: filterStyle
-          }}
-        />
-      )}
+      {/* 60fps Animated Talking Face Canvas Layer */}
+      <canvas
+        ref={canvasRef}
+        width={240}
+        height={240}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          opacity: canvasReady ? 1 : 0,
+          transition: 'opacity 0.25s ease',
+          filter: isEmpathyActive ? 'contrast(1.06) saturate(1.12)' : 'contrast(1.02)'
+        }}
+      />
 
-      {/* ── Layer 3: Subtle Live Activity Indicator (Voice Bars / Listening Dot) ── */}
+      {/* Subtle Live Activity Indicator (Voice Bars / Listening Dot) */}
       <div
         aria-label={isSpeaking ? 'Interviewer speaking' : `Interviewer ${aiStatus}`}
         style={{

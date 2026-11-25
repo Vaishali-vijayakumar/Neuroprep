@@ -1,93 +1,152 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { TalkingHead } from '@met4citizen/talkinghead';
+import { LipsyncEn } from '@met4citizen/talkinghead/modules/lipsync-en.mjs';
 
 /**
- * 100% Free ($0) Real-Human Talking Face Personas.
- * Uses CORS-enabled high-res portraits (200 OK, Access-Control-Allow-Origin: *)
- * animated at 60fps via HTML5 Canvas (head sway, breathing, eye blink, and
- * speech-cadence jaw/mouth articulation) so it never breaks on 403 video hotlinks.
+ * 100% Free ($0 Forever) 3D WebGL TalkingHead Personas.
+ * Renders real-time 3D GLB avatars in the browser with Oculus Viseme lip-sync,
+ * blinking, eye contact, head motion, and mood expressions.
+ * Keeps CORS-enabled portrait posters as an instant loading/fallback layer.
  */
+const GLB_FEMALE = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.8/avatars/brunette.glb';
+const GLB_MALE   = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.8/avatars/avaturn.glb';
+
 export const SADTALKER_TRACK_PERSONAS = {
   hr: {
     name: 'Maya',
     role: 'HR Talent Lead',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   tech: {
     name: 'Alex',
     role: 'Technical Specialist',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   dsa: {
     name: 'Aria',
     role: 'DSA Evaluator',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   coding: {
     name: 'Aria',
     role: 'Live Coding Lead',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   system_design: {
     name: 'Daniel',
     role: 'System Architect',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   lld: {
     name: 'Daniel',
     role: 'LLD Specialist',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   behavioral: {
     name: 'Maya',
     role: 'Behavioral Evaluator',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   managerial: {
     name: 'Sarah',
     role: 'Engineering Manager',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   project: {
     name: 'Alex',
     role: 'Project Viva Examiner',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   resume: {
     name: 'Sarah',
     role: 'Resume Examiner',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=85'
   },
   stress: {
     name: 'Victor',
     role: 'Stress Interviewer',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   ai_ml: {
     name: 'Nova',
     role: 'AI / ML Specialist',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   },
   cybersecurity: {
     name: 'Cipher',
     role: 'Security Architect',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   cloud: {
     name: 'Marcus',
     role: 'Cloud Architect',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=85'
   },
   devops: {
     name: 'Soren',
     role: 'DevOps Engineer',
+    glbUrl: GLB_MALE,
+    body: 'M',
     posterUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=85'
   },
   default: {
     name: 'Morgan',
     role: 'AI Interviewer',
+    glbUrl: GLB_FEMALE,
+    body: 'F',
     posterUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=85'
   }
 };
+
+/**
+ * Build word-timing arrays from text so TalkingHead's Oculus Viseme engine
+ * animates real phoneme lip-sync alongside browser Web Speech TTS.
+ */
+function buildWordTimings(text) {
+  const words = String(text || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const wtimes = [];
+  const wdurations = [];
+  let cursorMs = 0;
+
+  for (const w of words) {
+    const dur = Math.min(520, Math.max(170, w.length * 52));
+    wtimes.push(cursorMs);
+    wdurations.push(dur);
+    cursorMs += dur + 45;
+  }
+  return { words, wtimes, wdurations, totalMs: Math.max(600, cursorMs) };
+}
 
 export default function SadTalkerRealHumanAvatar({
   aiStatus = 'speaking', // 'speaking' | 'listening' | 'thinking' | 'connecting'
@@ -97,151 +156,137 @@ export default function SadTalkerRealHumanAvatar({
   width = '100%',
   height = '100%'
 }) {
-  const canvasRef = useRef(null);
-  const imgRef = useRef(null);
-  const statusRef = useRef(aiStatus);
-  const textRef = useRef(spokenText);
-  const [canvasReady, setCanvasReady] = useState(false);
-
-  statusRef.current = aiStatus;
-  textRef.current = spokenText;
+  const containerRef = useRef(null);
+  const headRef = useRef(null);
+  const lastSpokenRef = useRef('');
+  const [avatarReady, setAvatarReady] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const cleanTrackId = String(trackId || 'hr').toLowerCase();
   const persona = SADTALKER_TRACK_PERSONAS[cleanTrackId] || SADTALKER_TRACK_PERSONAS.default;
   const isSpeaking = aiStatus === 'speaking';
 
-  // Load CORS-enabled portrait image once per persona
+  // Initialize TalkingHead 3D WebGL scene and load persona GLB
   useEffect(() => {
-    let cancelled = false;
-    setCanvasReady(false);
+    const node = containerRef.current;
+    if (!node) return;
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      if (cancelled) return;
-      imgRef.current = img;
-      setCanvasReady(true);
-    };
-    img.onerror = () => {
-      if (cancelled) return;
-      imgRef.current = null;
-      setCanvasReady(false);
-    };
-    img.src = persona.posterUrl;
+    let cancelled = false;
+    setAvatarReady(false);
+    setAvatarError(false);
+
+    let head = null;
+    try {
+      head = new TalkingHead(node, {
+        ttsEndpoint: null,
+        lipsyncModules: [],
+        cameraView: 'head',
+        cameraDistance: 0.42,
+        cameraY: 0.04,
+        lightAmbientColor: 0xffffff,
+        lightAmbientIntensity: 2.2,
+        lightDirectColor: 0xfff5eb,
+        lightDirectIntensity: 18,
+        avatarMood: 'neutral'
+      });
+      // Register bundled English viseme processor directly (safe for Vite production builds)
+      head.lipsync['en'] = new LipsyncEn();
+      headRef.current = head;
+
+      head
+        .showAvatar({
+          url: persona.glbUrl,
+          body: persona.body,
+          avatarMood: 'neutral',
+          lipsyncLang: 'en'
+        })
+        .then(() => {
+          if (cancelled) return;
+          setAvatarReady(true);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          console.warn('[TalkingHead] 3D GLB load fallback:', err?.message || err);
+          setAvatarError(true);
+        });
+    } catch (err) {
+      console.warn('[TalkingHead] WebGL init fallback:', err?.message || err);
+      setAvatarError(true);
+    }
 
     return () => {
       cancelled = true;
+      try {
+        head?.stopSpeaking?.();
+        head?.dispose?.();
+      } catch {
+        // ignore cleanup errors
+      }
+      if (headRef.current === head) {
+        headRef.current = null;
+      }
+      if (node) {
+        node.innerHTML = '';
+      }
     };
-  }, [persona.posterUrl]);
+  }, [persona.glbUrl, persona.body]);
 
-  // 60fps Canvas Talking-Face Rig (head sway, breathing, eye blink, jaw/mouth articulation)
+  // Sync facial mood with empathy / track
   useEffect(() => {
-    if (!canvasReady) return;
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let rafId = 0;
-    const startTime = performance.now();
-
-    const render = (now) => {
-      const t = (now - startTime) / 1000;
-      const cw = canvas.width;
-      const ch = canvas.height;
-      const speaking = statusRef.current === 'speaking';
-      const thinking = statusRef.current === 'thinking';
-
-      ctx.clearRect(0, 0, cw, ch);
-
-      // Compute cover-fit source rectangle focused on upper-center portrait
-      const imgAspect = img.width / img.height;
-      const boxAspect = cw / ch;
-      let sx = 0, sy = 0, sw = img.width, sh = img.height;
-      if (imgAspect > boxAspect) {
-        sw = img.height * boxAspect;
-        sx = (img.width - sw) / 2;
+    const head = headRef.current;
+    if (!head || !avatarReady) return;
+    try {
+      if (isEmpathyActive) {
+        head.setMood('happy');
+      } else if (cleanTrackId === 'stress') {
+        head.setMood('neutral');
       } else {
-        sh = img.width / boxAspect;
-        sy = Math.max(0, (img.height - sh) * 0.18);
+        head.setMood('neutral');
       }
+    } catch {
+      // ignore mood errors
+    }
+  }, [isEmpathyActive, cleanTrackId, avatarReady]);
 
-      // 1. Organic breathing & head micro-motion
-      const breathe = 1.045 + Math.sin(t * 1.4) * 0.008;
-      const headSwayX = speaking
-        ? Math.sin(t * 2.1) * 1.8 + Math.cos(t * 0.9) * 0.8
-        : Math.sin(t * 0.7) * 0.9;
-      const headNodY = speaking
-        ? Math.sin(t * 3.2) * 1.4
-        : thinking
-          ? Math.sin(t * 0.8) * 1.1
-          : Math.sin(t * 1.2) * 0.7;
-      const headTilt = speaking
-        ? Math.sin(t * 1.3) * 0.018
-        : Math.sin(t * 0.55) * 0.009;
+  // Trigger real-time 3D viseme lip-sync when speaking, stop immediately when listening
+  useEffect(() => {
+    const head = headRef.current;
+    if (!head || !avatarReady) return;
 
-      ctx.save();
-      ctx.translate(cw / 2 + headSwayX, ch / 2 + headNodY);
-      ctx.rotate(headTilt);
-      ctx.scale(breathe, breathe);
-
-      // Draw base portrait
-      ctx.drawImage(img, sx, sy, sw, sh, -cw / 2, -ch / 2, cw, ch);
-
-      // 2. Real-time speech-cadence jaw & mouth articulation when speaking
-      if (speaking) {
-        // Multi-harmonic syllable envelope (4–7 Hz speech cadence with natural pauses)
-        const textSeed = (textRef.current?.length || 12) * 0.13;
-        const phraseGate = 0.55 + 0.45 * Math.sin(t * 2.4 + textSeed);
-        const syllable = Math.max(
-          0,
-          (Math.sin(t * 14.5) * 0.5 + Math.sin(t * 23.0 + 1.1) * 0.35 + 0.45) * phraseGate
-        );
-        const jawDrop = syllable * 3.4; // pixels of jaw/lower-lip articulation
-
-        if (jawDrop > 0.35) {
-          // Lower-face jaw band (roughly 50%..74% down the portrait frame)
-          const jawTopNorm = 0.50;
-          const jawHeightNorm = 0.24;
-          const srcY = sy + sh * jawTopNorm;
-          const srcH = sh * jawHeightNorm;
-          const dstY = -ch / 2 + ch * jawTopNorm;
-          const dstH = ch * jawHeightNorm;
-
-          // Subtle mouth interior shadow behind the lowered jaw
-          ctx.fillStyle = `rgba(28, 16, 16, ${Math.min(0.32, jawDrop * 0.08)})`;
-          ctx.beginPath();
-          ctx.ellipse(0, dstY + ch * 0.035, cw * 0.085, Math.max(1.2, jawDrop * 0.85), 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Articulated lower jaw slice shifted smoothly downward
-          ctx.drawImage(
-            img,
-            sx, srcY, sw, srcH,
-            -cw / 2, dstY + jawDrop, cw, dstH
-          );
-        }
+    if (!isSpeaking) {
+      try {
+        head.stopSpeaking();
+      } catch {
+        // ignore
       }
+      lastSpokenRef.current = '';
+      return;
+    }
 
-      // 3. Natural eye blink every ~4.2 seconds
-      const blinkCycle = t % 4.2;
-      if (blinkCycle > 4.02) {
-        const blinkPhase = Math.sin(((blinkCycle - 4.02) / 0.18) * Math.PI);
-        if (blinkPhase > 0.05) {
-          ctx.fillStyle = `rgba(38, 28, 24, ${0.42 * blinkPhase})`;
-          ctx.fillRect(-cw * 0.22, -ch * 0.18, cw * 0.44, ch * 0.055 * blinkPhase);
-        }
+    const text = (spokenText || '').trim();
+    if (!text || text === lastSpokenRef.current) return;
+    lastSpokenRef.current = text;
+
+    try {
+      if (head.audioCtx?.state === 'suspended') {
+        head.audioCtx.resume().catch(() => {});
       }
+      const { words, wtimes, wdurations, totalMs } = buildWordTimings(text);
+      if (!words.length || !head.audioCtx) return;
 
-      ctx.restore();
-      rafId = requestAnimationFrame(render);
-    };
+      // Silent AudioBuffer drives TalkingHead's exact viseme timeline while VoiceEngine speaks
+      const sampleRate = head.audioCtx.sampleRate || 44100;
+      const frameCount = Math.max(1, Math.ceil((totalMs / 1000) * sampleRate));
+      const silentBuffer = head.audioCtx.createBuffer(1, frameCount, sampleRate);
 
-    rafId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(rafId);
-  }, [canvasReady]);
+      head.speakAudio(
+        { audio: silentBuffer, words, wtimes, wdurations },
+        { lipsyncLang: 'en' }
+      );
+    } catch (err) {
+      console.warn('[TalkingHead] lipsync notice:', err?.message || err);
+    }
+  }, [isSpeaking, spokenText, avatarReady]);
 
   return (
     <div
@@ -251,7 +296,7 @@ export default function SadTalkerRealHumanAvatar({
         position: 'relative',
         borderRadius: '16px',
         overflow: 'hidden',
-        backgroundColor: '#1E2420',
+        background: 'radial-gradient(circle at 50% 35%, #2D3B33 0%, #161D19 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -264,34 +309,33 @@ export default function SadTalkerRealHumanAvatar({
         }
       `}</style>
 
-      {/* Instant Portrait Base Layer (always visible immediately) */}
-      <img
-        src={persona.posterUrl}
-        alt={persona.name}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transform: 'scale(1.04)',
-          filter: isEmpathyActive ? 'contrast(1.06) saturate(1.12)' : 'contrast(1.02)'
-        }}
-      />
+      {/* Instant Portrait Fallback while 3D WebGL GLB loads (or if WebGL unavailable) */}
+      {(!avatarReady || avatarError) && (
+        <img
+          src={persona.posterUrl}
+          alt={persona.name}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transform: 'scale(1.04)',
+            filter: isEmpathyActive ? 'contrast(1.06) saturate(1.12)' : 'contrast(1.02)'
+          }}
+        />
+      )}
 
-      {/* 60fps Animated Talking Face Canvas Layer */}
-      <canvas
-        ref={canvasRef}
-        width={240}
-        height={240}
+      {/* 3D WebGL TalkingHead Container */}
+      <div
+        ref={containerRef}
         style={{
           position: 'absolute',
           inset: 0,
           width: '100%',
           height: '100%',
-          opacity: canvasReady ? 1 : 0,
-          transition: 'opacity 0.25s ease',
-          filter: isEmpathyActive ? 'contrast(1.06) saturate(1.12)' : 'contrast(1.02)'
+          opacity: avatarReady && !avatarError ? 1 : 0,
+          transition: 'opacity 0.35s ease'
         }}
       />
 
@@ -309,7 +353,8 @@ export default function SadTalkerRealHumanAvatar({
           display: 'flex',
           alignItems: 'center',
           gap: '2.5px',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          zIndex: 2
         }}
       >
         {isSpeaking ? (

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@met4citizen/talkinghead": "^1.8.2",
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.117.2",
     "@tensorflow-models/coco-ssd": "^2.2.3",
@@ -18,6 +19,7 @@
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "three": "^0.187.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
